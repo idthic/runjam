@@ -9,8 +9,7 @@
 #include "user/Hydro2Jam.h"
 
 #include "spectra/ElementReso.h"
-#include "spectra/ParticleSampleFromPhasespaceDat.h"
-#include "spectra/ParticleSampleFromOversampledPhasespace.h"
+#include "spectra/ParticleSamplePhasespace.h"
 #include "spectra/ParticleSampleViscous.h"
 
 #define PACKAGE_VERSION "0.1a"
