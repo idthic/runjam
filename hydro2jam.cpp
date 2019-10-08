@@ -44,11 +44,11 @@ double deltah = 0.3;
 
 enum InitialType {
   InitialType_None = 0,
-  InitialType_PHASE,
+  InitialType_PHASE1,
   InitialType_C0LRF,
   InitialType_HYDRO,
   InitialType_Debug201304,
-  InitialType_KAWAGUCHI,
+  InitialType_PHASE,
 };
 struct Hydro2jamCommandlineArguments {
   InitialType jamInitType;
@@ -94,12 +94,14 @@ private:
       "  -dh FLOAT       deltah\n"
       "\n"
       "  -i ICSPEC       specify initial condition\n"
-      "      debug201304          IC for debugging (see ParticleSampleDebugJamAsymmetry.cxx)\n"
-      "      phase:PHASESPACE     load IC from PHASESPACE (phasespace.dat)\n"
+      "      debug201304          IC for debugging\n"
+      "                           (see ParticleSampleDebugJamAsymmetry.cxx)\n"
       "      c0lrf:HYPERSURFACE   load IC from rfh output (hypersurface.txt)\n"
       "      hydrojet:DIR         load IC from hydrojet output\n"
       "                           (DIR/freezeout.dat, DIR/position.dat)\n"
-      "      kawaguchi:PHASESPACE 暫定的機能\n"
+      "      phase:PHASESPACE     load ICs from PHASESPACE (phasespace.dat)\n"
+      "      phase1:PHASESPACE    load a single IC from PHASESPACE. This performs an\n"
+      "                           additional check that PHASESPACE has only one event.\n"
       "\n"
       "  --help          show this help\n"
       "  --switching-temperature=TEMP [MeV]\n"
@@ -184,19 +186,23 @@ public:
             }
 
             std::string spec = argv[++i];
-            if(spec == "debug201304") {
+            if (spec == "debug201304") {
               this->jamInitType = InitialType_Debug201304;
-            } else if (0 == spec.compare(0,6,"phase:",6)) {
+            } else if (0 == spec.compare(0,6,"phase:", 6)) {
               this->jamInitType=InitialType_PHASE;
               this->fnameInitialPhasespaceData = spec.substr(6);
-            } else if (0 == spec.compare(0,6,"c0lrf:",6)) {
+            } else if (0 == spec.compare(0,6,"phase1:", 6)) {
+              this->jamInitType=InitialType_PHASE1;
+              this->fnameInitialPhasespaceData = spec.substr(7);
+            } else if (0 == spec.compare(0,6,"c0lrf:", 6)) {
               this->jamInitType=InitialType_C0LRF;
               this->fnameInitialPhasespaceData = spec.substr(6);
-            } else if (0 == spec.compare(0,9,"hydrojet:",9)) {
+            } else if (0 == spec.compare(0,9,"hydrojet:", 9)) {
               this->jamInitType=InitialType_HYDRO;
               this->fnameInitialPhasespaceData = spec.substr(9);
-            } else if (0 == spec.compare(0,10,"kawaguchi:",10)) {
-              this->jamInitType=InitialType_KAWAGUCHI;
+            } else if (0 == spec.compare(0,10,"kawaguchi:", 10)) {
+              // This is a deprecated option
+              this->jamInitType = InitialType_PHASE;
               this->fnameInitialPhasespaceData = spec.substr(10);
             } else {
               std::cerr << "unrecognized option '-i " << argv[i] << "'" << std::endl;
@@ -376,13 +382,6 @@ void hadronicCascade(int mevent) {
 
   cout << "jam event generation start" << endl;
   switch (args.jamInitType) {
-  case InitialType_PHASE:
-    {
-      IParticleSample* psamp = new ParticleSampleFromPhasespaceDat(args.fnameInitialPhasespaceData);
-      jam->generateEvent(psamp);
-      delete psamp;
-    }
-    break;
   case InitialType_C0LRF:
     hadronicCascadeC0Lrf(iparam, jam, args.fnameInitialPhasespaceData);
     break;
@@ -396,17 +395,20 @@ void hadronicCascade(int mevent) {
       delete psamp;
     }
     break;
-  case InitialType_KAWAGUCHI:
+  case InitialType_PHASE1:
+  case InitialType_PHASE:
     {
-      IParticleSample* psamp = new ParticleSampleFromOversampledPhasespace(args.fnameInitialPhasespaceData);
+      ParticleSampleFromOversampledPhasespace* psamp = new ParticleSampleFromOversampledPhasespace(args.fnameInitialPhasespaceData);
+      if (args.jamInitType == InitialType_PHASE1)
+        psamp->setOverSamplingFactor(1);
       jam->generateEvent(psamp);
       delete psamp;
     }
     break;
   default: // default dir = "test"
     jam->generateEventFromHypersurfaceFiles(
-      dir+"/freezeout.dat",
-      dir+"/position.dat",
+      dir + "/freezeout.dat",
+      dir + "/position.dat",
       baryonfree,
       deltat, deltax, deltay, deltah);
     break;

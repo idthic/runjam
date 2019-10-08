@@ -17,10 +17,19 @@ public:
     this->m_overSamplingFactor=-1;
   }
 
+private:
   int m_overSamplingFactor;
   int m_currentSampleIndex;
   std::vector<std::vector<HydroParticleCF*> > pcache;
+public:
+  void setOverSamplingFactor(int value) {
+    this->m_overSamplingFactor = value;
+  }
+  int getOverSamplingFactor() const {
+    return m_overSamplingFactor;
+  }
 
+public:
   virtual ParticleIDType::value_type getParticleIdType() const{return ParticleIDType::PDGCode;}
   virtual void update();
 
