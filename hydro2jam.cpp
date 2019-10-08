@@ -1,13 +1,9 @@
-//
-// example main program for the jam afterburner
-//
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include <cstdlib>
 #include <iostream>
 #include <cstring>
-#include "user/HydroSpec.h"
+
+#include "ksh/util.h"
+
 #include "uty/Random.h"
 #include "uty/PyRand.h"
 #include "user/Hydro2Jam.h"
@@ -18,8 +14,7 @@
 #include "spectra/ParticleSampleFromOversampledPhasespace.h"
 #include "spectra/ParticleSampleViscous.h"
 
-#include "ksh/util.h"
-
+#define PACKAGE_VERSION "0.1a"
 using namespace std;
 
 void generatePhasespaceData20141020(int ibase, std::string dirJAM);
@@ -62,8 +57,6 @@ struct Hydro2jamCommandlineArguments {
 
   int nev;
 
-  int makeElem;
-
   double switchingTemperature;
 public:
   Hydro2jamCommandlineArguments(){
@@ -74,7 +67,6 @@ public:
     // 2014-06-18 KM: changed from 10 to 1 since 1 is more reasonable in the e-by-e picture
     this->nev=1;
 
-    this->makeElem=0;
     this->switchingTemperature=-1.0;
   }
 
@@ -87,7 +79,6 @@ private:
       "  -n INT          number of events to process [default: 1]\n"
       "  -s INT          seed\n"
       "  -t INT          ntest\n"
-      "  -elm INT        makeElem\n"
       "  -f FILE         output phasespace.dat\n"
       "  -ftemp FLOAT    freezeout temperature (kintmp)\n"
       "  -f0 FILE        output phasespace0.dat\n"
@@ -176,7 +167,6 @@ public:
             std::cout << "hydro2jam: randomSeed is set to '" << randomSeed << "' (hydrojet version = " << PACKAGE_VERSION << ")" << std::endl;
           } else if (!strcmp(argv[i], "-t"))      ntest = atoi(argv[++i]);
           else if (!strcmp(argv[i], "-n"))        this->nev = atoi(argv[++i]);
-          else if (!strcmp(argv[i], "-elm"))      this->makeElem = atoi(argv[++i]);
           else if (!strcmp(argv[i], "-f")) {
             fnamePS = argv[++i];
           }else if (!strcmp(argv[i], "-ftemp")) {
@@ -334,29 +324,6 @@ void savePhasespaceData(std::string fname, std::vector<HydroParticleCF*> plist, 
   std::fclose(f);
 }
 
-void getHydroSpectra() {
-  HydroSpec *spec = new HydroSpec();
-  spec->setDirectory("data");  // name of directory for output spectra.
-  spec->setDirectoryResonance(dir);
-  spec->setFreezeoutData(dir + "/freezeout.dat");
-  spec->setPositionData(dir + "/position.dat");
-  spec->setFileEccentricity(dir + "/eccentricity.dat");
-  spec->setKineticFreezeOutTemp(freezeoutTemp);
-  spec->setEoSOpt(eos_pce);
-  spec->setResoData(resodata);
-  spec->setDirectSpectra(0);
-  spec->setDirectSpectraPt(0);
-  spec->setResonanceSpectra(0);
-  spec->setResonanceElement(1);
-  spec->setSeed(120419);
-  spec->setRapidity(0);
-  spec->setRapidityPt(2);
-
-  spec->makeResonanceElement();
-
-  delete spec;
-}
-
 #ifdef USE_JAM
 void hadronicCascadeC0Lrf(Hydro2JamInitParams& iparam, Hydro2Jam* jam, std::string const& fname) {
   ResonanceListPCE reso(iparam.kintmp, iparam.eos_pce, ::resodata);
@@ -472,9 +439,6 @@ int main(int argc, char *argv[]) {
   Random* rand = new PyRand(randomSeed);
   // Random* rand = new Random(randomSeed);
   Random::setRandom(rand);
-
-  // If you do not have output "freezeout.dat", "position.dat"
-  if (args.makeElem) getHydroSpectra();
 
   hadronicCascade(args.nev);
   delete rand;
