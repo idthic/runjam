@@ -206,18 +206,6 @@ void Hydro2Jam::initialize(Hydro2JamInitParams const& iparam)
 
   jam=new Jam1();
 
-  this->hist=0;
-  this->hist0=0;
-  this->outputHistogramFlag=iparam.outputHistogramFlag;
-  if(this->outputHistogramFlag){
-    hist0 = new HistJAM(iparam.dir);
-    hist0->initialize();
-    hist = new HistJAM(iparam.dir);
-    hist->initialize();
-    hist0->setHName("before");
-    hist->setHName("after");
-  }
-
   //....Initialize JAM
   jam->setMSTC(1,iparam.seed);      // random seed.
   jam->setMSTC(2,iparam.mevent);    // number of event.
@@ -309,15 +297,6 @@ Hydro2Jam::~Hydro2Jam()
     ofs0.close();
   }
   delete jam;
-
-  if(this->hist0){
-    delete this->hist0;
-    this->hist0=0;
-  }
-  if(this->hist){
-    delete this->hist;
-    this->hist=0;
-  }
 }
 
 void Hydro2Jam::generateEvent(IParticleSample* psamp){
@@ -362,8 +341,6 @@ void Hydro2Jam::generateEvent(IParticleSample* psamp){
     //...C.M.correction.
     //cmCorrection(nv);
 
-    if(this->outputHistogramFlag)
-      fillHistInitialCondition(hist0);   // histogram for initial condition.
     if(dumpPhaseSpaceData)
       printPhaseSpaceData(ofs0); // output the distribution to phasespace0.dat
 
@@ -387,25 +364,10 @@ void Hydro2Jam::generateEvent(IParticleSample* psamp){
     if(dumpPhaseSpaceData)
       printPhaseSpaceData(ofs); // output the distribution to phasespace0.dat
 
-    if(this->outputHistogramFlag){
-      fillHist(hist);
-      fillHist2(hist);
-
-      // output histgram every 10 event.
-      if(iev%numOutputHist==0) {
-        hist0->print(1.0/(iev*numberTestParticle));
-        hist->print(1.0/(iev*numberTestParticle));
-      }
-    }
-
   }  // end event simulation loop.
 
   //...Final output.
   jam->jamFin();
-  if(this->outputHistogramFlag){
-    hist0->print(1.0/(nEvent*numberTestParticle));
-    hist->print(1.0/(nEvent*numberTestParticle));
-  }
 }
 void Hydro2Jam::generateEventFromHypersurfaceFiles(string fn_freezeout_dat, string fn_position_dat, int baryonfree, double deltat, double deltax, double deltay, double deltah)
 {
@@ -427,69 +389,6 @@ void Hydro2Jam::generateEventFromHypersurfaceFiles(string fn_freezeout_dat, stri
 
   this->generateEvent(psamp);
   delete psamp;
-}
-
-void Hydro2Jam::fillHistInitialCondition(HistJAM* hist)
-{
-  // Save the configuration.
-  vector<JAMParticle*> jamList;
-  jamList.clear();
-  int nv0 = jam->getNV();
-  int nbary0 = jam->getNBARY();
-  int nmeson0 = jam->getNMESON();
-  for(int ip=1;ip<=nv0;ip++) {
-    JAMParticle* jp=new JAMParticle();
-    for(int i=1;i<=11;i++) jp->setK(i-1,jam->getK(i,ip));
-    jp->setPx(jam->getP(1,ip));
-    jp->setPy(jam->getP(2,ip));
-    jp->setPz(jam->getP(3,ip));
-    jp->setPe(jam->getP(4,ip));
-    jp->setVx(jam->getV(1,ip));
-    jp->setVy(jam->getV(2,ip));
-    jp->setVz(jam->getV(3,ip));
-    jp->setVt(jam->getV(4,ip));
-    jp->setX(jam->getR(1,ip));
-    jp->setY(jam->getR(2,ip));
-    jp->setZ(jam->getR(3,ip));
-    jp->setT(jam->getR(4,ip));
-    jp->setMass(jam->getP(5,ip));
-    jp->setFormationTime(jam->getR(5,ip));
-    jp->setDecayTime(jam->getV(5,ip));
-    jamList.push_back(jp);
-  }
-
-  // Resonance decay.
-  jam->finalResonanceDecay();
-
-  // fill hist.
-  fillHist(hist);
-  aveNumberPart2 += (double)jam->getNV()/(nEvent*numberTestParticle);
-
-  // restore original configuration.
-  for(int ip=1;ip<=nv0;ip++) {
-    for(int i=1;i<=11;i++) jam->setK(i,ip,jamList[ip-1]->getK(i-1));
-    jam->setP(1,ip, jamList[ip-1]->getPx());
-    jam->setP(2,ip, jamList[ip-1]->getPy());
-    jam->setP(3,ip, jamList[ip-1]->getPz());
-    jam->setP(4,ip, jamList[ip-1]->getPe());
-    jam->setV(1,ip, jamList[ip-1]->getVx());
-    jam->setV(2,ip, jamList[ip-1]->getVy());
-    jam->setV(3,ip, jamList[ip-1]->getVz());
-    jam->setV(4,ip, jamList[ip-1]->getVt());
-    jam->setR(1,ip, jamList[ip-1]->getX());
-    jam->setR(2,ip, jamList[ip-1]->getY());
-    jam->setR(3,ip, jamList[ip-1]->getZ());
-    jam->setR(4,ip, jamList[ip-1]->getT());
-    jam->setP(5,ip, jamList[ip-1]->getMass());
-    jam->setR(5,ip, jamList[ip-1]->getFormationTime());
-    jam->setV(5,ip, jamList[ip-1]->getDecayTime());
-    delete jamList[ip-1];
-  }
-  jam->setNV( nv0 );          // set total number of particles.
-  jam->setNBARY( nbary0 );    // set total number of baryon.
-  jam->setNMESON( nmeson0 );  // set total number of mesons.
-  jam->setMSTD(53,0);
-
 }
 
 void Hydro2Jam::printPhaseSpaceData(ofstream& output)
@@ -520,31 +419,6 @@ void Hydro2Jam::printPhaseSpaceData(ofstream& output)
            << setw(14) << z
            << setw(14) << t
            << endl;
-  }
-}
-
-void Hydro2Jam::fillHist(HistJAM* hist)
-{
-  int nv = jam->getNV();
-  for(int i=1;i<=nv;i++) {
-    if(jam->getK(1,i) > 10) continue;
-    Vector4 p(jam->getP(4,i),jam->getP(1,i),jam->getP(2,i),jam->getP(3,i));
-    double m = jam->getP(5,i);
-    int kf=jam->getK(2,i);
-    hist->fillSingleHadronSpectrum(kf,p,m);
-  }
-}
-
-void Hydro2Jam::fillHist2(HistJAM* hist)
-{
-  int nv = jam->getNV();
-  for(int i=1;i<=nv;i++) {
-    if(jam->getK(1,i) > 10) continue;
-    Vector4 p(jam->getP(4,i),jam->getP(1,i),jam->getP(2,i),jam->getP(3,i));
-    Vector4 v(jam->getV(4,i),jam->getV(1,i),jam->getV(2,i),jam->getV(3,i));
-    double m = jam->getP(5,i);
-    int kf=jam->getK(2,i);
-    hist->fillFreezeOutSpectrum(kf,v,p,m);
   }
 }
 

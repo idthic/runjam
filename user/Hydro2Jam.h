@@ -20,13 +20,9 @@ struct Hydro2JamInitParams{
   std::string fnamePS;
   std::string fnamePS0;
 
-  bool outputHistogramFlag;
   double switchingTemperature;
 public:
-  Hydro2JamInitParams()
-    :outputHistogramFlag(true),
-     switchingTemperature(155.0)
-  {}
+  Hydro2JamInitParams(): switchingTemperature(155.0) {}
 };
 
 class Hydro2Jam

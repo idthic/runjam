@@ -42,7 +42,6 @@ double deltax = 0.3;
 double deltay = 0.3;
 double deltah = 0.3;
 
-bool outputHistogramFlag = false;
 enum InitialType {
   InitialType_None = 0,
   InitialType_PHASE,
@@ -102,8 +101,6 @@ private:
       "                           (DIR/freezeout.dat, DIR/position.dat)\n"
       "      kawaguchi:PHASESPACE 暫定的機能\n"
       "\n"
-      "  --disable-hist  do not output *.hist files [default]\n"
-      "  --enable-hist   output *.hist files\n"
       "  --help          show this help\n"
       "  --switching-temperature=TEMP [MeV]\n"
       "\n"
@@ -131,11 +128,7 @@ public:
             longname = longname.substr(0, ia);
           }
 
-          if (longname == "disable-hist") {
-            outputHistogramFlag = false;
-          } else if (longname == "enable-hist") {
-            outputHistogramFlag = true;
-          } else if (longname == "debug201304") {
+          if (longname == "debug201304") {
             this->jamInitType = InitialType_Debug201304;
           } else if (longname == "debug20150102") {
             int checkViscousCooperFryeInterpolated(bool debug);
@@ -367,7 +360,6 @@ void hadronicCascade(int mevent) {
   iparam.dpd                 = dumpPhaseSpace;
   iparam.fnamePS             = fnamePS;
   iparam.fnamePS0            = fnamePS0;
-  iparam.outputHistogramFlag = outputHistogramFlag;
   jam = new Hydro2Jam(iparam);
 
   jam->setNumberOfHistgramOutput(nhistout);
@@ -459,7 +451,6 @@ void generatePhasespaceData20141020(int ibase, std::string dirJAM) {
   iparam.dpd                 = dumpPhaseSpace;
   iparam.fnamePS             = fnamePS;
   iparam.fnamePS0            = fnamePS0;
-  iparam.outputHistogramFlag = outputHistogramFlag;
 
   {
     ResonanceListPCE reso(iparam.kintmp, iparam.eos_pce, resodata);
