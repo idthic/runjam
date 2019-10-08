@@ -1,0 +1,5 @@
+# gitignore
+
+*.o
+*.dep
+hydro2jam.exe
