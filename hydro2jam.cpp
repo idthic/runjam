@@ -9,7 +9,6 @@
 #include "user/Hydro2Jam.h"
 
 #include "spectra/ElementReso.h"
-#include "spectra/ParticleSampleDebugJamAsymmetry.h"
 #include "spectra/ParticleSampleFromPhasespaceDat.h"
 #include "spectra/ParticleSampleFromOversampledPhasespace.h"
 #include "spectra/ParticleSampleViscous.h"
@@ -47,7 +46,6 @@ enum InitialType {
   InitialType_PHASE1,
   InitialType_C0LRF,
   InitialType_HYDRO,
-  InitialType_Debug201304,
   InitialType_PHASE,
 };
 struct Hydro2jamCommandlineArguments {
@@ -94,8 +92,6 @@ private:
       "  -dh FLOAT       deltah\n"
       "\n"
       "  -i ICSPEC       specify initial condition\n"
-      "      debug201304          IC for debugging\n"
-      "                           (see ParticleSampleDebugJamAsymmetry.cxx)\n"
       "      c0lrf:HYPERSURFACE   load IC from rfh output (hypersurface.txt)\n"
       "      hydrojet:DIR         load IC from hydrojet output\n"
       "                           (DIR/freezeout.dat, DIR/position.dat)\n"
@@ -130,9 +126,7 @@ public:
             longname = longname.substr(0, ia);
           }
 
-          if (longname == "debug201304") {
-            this->jamInitType = InitialType_Debug201304;
-          } else if (longname == "debug20150102") {
+          if (longname == "debug20150102") {
             int checkViscousCooperFryeInterpolated(bool debug);
             std::exit(checkViscousCooperFryeInterpolated(true));
           } else if (longname == "check") {
@@ -186,9 +180,7 @@ public:
             }
 
             std::string spec = argv[++i];
-            if (spec == "debug201304") {
-              this->jamInitType = InitialType_Debug201304;
-            } else if (0 == spec.compare(0,6,"phase:", 6)) {
+            if (0 == spec.compare(0, 6, "phase:", 6)) {
               this->jamInitType=InitialType_PHASE;
               this->fnameInitialPhasespaceData = spec.substr(6);
             } else if (0 == spec.compare(0,6,"phase1:", 6)) {
@@ -387,13 +379,6 @@ void hadronicCascade(int mevent) {
     break;
   case InitialType_HYDRO:
     hadronicCascadeHydrojet(iparam, jam, args.fnameInitialPhasespaceData);
-    break;
-  case InitialType_Debug201304:
-    {
-      IParticleSample* psamp = new ParticleSampleDebugJamAsymmetry;
-      jam->generateEvent(psamp);
-      delete psamp;
-    }
     break;
   case InitialType_PHASE1:
   case InitialType_PHASE:
