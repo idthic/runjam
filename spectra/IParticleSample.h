@@ -1,4 +1,4 @@
-// -*- mode:c++;coding:utf-8;indent-tabs-mode:nil -*-
+// -*- mode: c++; coding: utf-8; indent-tabs-mode: nil -*-
 //
 // 2014-05-09 KM,
 //   * Created
@@ -11,7 +11,6 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include "HydroParticleCF.h"
 
 struct ParticleIDType{
   enum value_type{
@@ -19,6 +18,36 @@ struct ParticleIDType{
     PDGCode,         // usually denoted as kf
     JamInternalCode, // usually denoted as kc
   };
+};
+
+struct Particle {
+public:
+  int id;
+  double mass;
+
+  double x;
+  double y;
+  double z;
+  double t;
+
+  double e;
+  double px;
+  double py;
+  double pz;
+public:
+  Particle(int id): id(id) {
+    this->mass = -1.0;
+    this->x = 0.0;
+    this->y = 0.0;
+    this->z = 0.0;
+    this->t = 0.0;
+    this->px = 0.0;
+    this->py = 0.0;
+    this->pz = 0.0;
+    this->e  = 0.0;
+  }
+  Particle() {}
+
 };
 
 class IParticleSample{
@@ -48,17 +77,17 @@ public:
   /// \~ja 粒子分布の生成を実行します。
   virtual void update()=0;
 
-  /// @fn std::vector<HydroParticleCF*> const& getParticleList() const;
+  /// @fn std::vector<Particle*> const& getParticleList() const;
   /// \~en retrieves the generated resonance distribution.
   /// \~ja 生成した粒子分布を取得します。
-  virtual std::vector<HydroParticleCF*> const& getParticleList() const=0;
+  virtual std::vector<Particle*> const& getParticleList() const=0;
 
   virtual ParticleIDType::value_type getParticleIdType() const{return ParticleIDType::HydroParticleID;}
 };
 
-class ParticleSampleBase:public IParticleSample{
+class ParticleSampleBase: public IParticleSample {
 protected:
-  std::vector<HydroParticleCF*> plist;
+  std::vector<Particle*> plist;
 
 protected:
   void clearParticleList();
@@ -81,7 +110,7 @@ public:
 
   virtual int getIsOutput() const{return false;}
   virtual std::string const& getFileNamePos() const{static std::string dummy;return dummy;}
-  virtual std::vector<HydroParticleCF*> const& getParticleList() const{return this->plist;}
+  virtual std::vector<Particle*> const& getParticleList() const{return this->plist;}
 
 private:
   // コピー禁止

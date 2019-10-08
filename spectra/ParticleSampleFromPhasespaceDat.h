@@ -4,7 +4,6 @@
 #define spectra_PHASESPACE_DATA_SAMPLE_H
 #include <vector>
 #include <string>
-#include "HydroParticleCF.h"
 #include "IParticleSample.h"
 
 class ParticleSampleFromPhasespaceDat:public ParticleSampleBase{

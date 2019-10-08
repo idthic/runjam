@@ -4,7 +4,6 @@
 #define spectra_PARTICLE_SAMPLE_FROM_OVERSAMPLED_PHASESPACE_H
 #include <vector>
 #include <string>
-#include "HydroParticleCF.h"
 #include "IParticleSample.h"
 
 class ParticleSampleFromOversampledPhasespace:public ParticleSampleBase{
@@ -20,7 +19,7 @@ public:
 private:
   int m_overSamplingFactor;
   int m_currentSampleIndex;
-  std::vector<std::vector<HydroParticleCF*> > pcache;
+  std::vector<std::vector<Particle*> > pcache;
 public:
   void setOverSamplingFactor(int value) {
     this->m_overSamplingFactor = value;
@@ -33,7 +32,7 @@ public:
   virtual ParticleIDType::value_type getParticleIdType() const{return ParticleIDType::PDGCode;}
   virtual void update();
 
-  virtual std::vector<HydroParticleCF*> const& getParticleList() const{
+  virtual std::vector<Particle*> const& getParticleList() const{
     if(m_currentSampleIndex<0){
       std::cerr<<"ParticleSampleFromOversampledPhasespace: A phasespace file has not been read."<<std::endl;
       std::exit(EXIT_FAILURE);

@@ -15,6 +15,8 @@ LIBS     :=
 
 #------------------------------------------------------------------------------
 
+-include $(wildcard */*.dep) hydro2jam.dep
+
 CPPFLAGS = -DUSE_JAM -I . -MD -MP -MF $(@:.o=.dep)
 LDFLAGS += -L $(libjam_LIBDIR) -Wl,-rpath,$(libjam_LIBDIR)
 hydro2jam_OBJS := hydro2jam.o \
@@ -32,8 +34,7 @@ hydro2jam_OBJS := hydro2jam.o \
   user/Hydro2Jam.o \
   uty/Math.o \
   uty/PyRand.o \
-  uty/Random.o \
-  uty/Vector4.o
+  uty/Random.o
 hydro2jam_LIBS := -ljam $(LIBS)
 
 jam/%.o: jam/%.cxx

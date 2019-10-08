@@ -240,7 +240,7 @@ public:
 # include "jam/Jam1.h"
 #endif
 
-void savePhasespaceData(std::string fname, std::vector<HydroParticleCF*> plist, ParticleIDType::value_type idtype) {
+void savePhasespaceData(std::string fname, std::vector<Particle*> plist, ParticleIDType::value_type idtype) {
   std::FILE* f=std::fopen(fname.c_str(), "w");
   if (!f) {
     std::cerr << "hydro2jam(savePhasespaceData): failed to open the file '" << fname << "'" << std::endl;
@@ -249,8 +249,8 @@ void savePhasespaceData(std::string fname, std::vector<HydroParticleCF*> plist, 
 
   int const nhadron = plist.size();
   std::fprintf(f, "%-4d 1\n", nhadron);
-  for (std::vector<HydroParticleCF*>::iterator i = plist.begin(); i != plist.end(); ++i) {
-    HydroParticleCF* particle = *i;
+  for (std::vector<Particle*>::iterator i = plist.begin(); i != plist.end(); ++i) {
+    Particle* particle = *i;
 
     //---------------------------------
     // (1) kf ... PDG particle code
@@ -258,12 +258,12 @@ void savePhasespaceData(std::string fname, std::vector<HydroParticleCF*> plist, 
     switch (idtype) {
     case ParticleIDType::HydroParticleID:
       {
-        int ir = particle->getID();
+        int ir = particle->id;
         kf = Hydro2Jam::getJamID(ir + 1);
       }
       break;
     case ParticleIDType::PDGCode:
-      kf = particle->getID();
+      kf = particle->id;
       break;
     default:
       std::cerr << "hydro2jam.cxx(savePhasespaceData): invalid value of psamp->getParticleIdType()." << std::endl;
@@ -284,10 +284,10 @@ void savePhasespaceData(std::string fname, std::vector<HydroParticleCF*> plist, 
 #endif
     //---------------------------------
     // (3) px,py,pz,m
-    double const px = particle->getPx();
-    double const py = particle->getPy();
-    double const pz = particle->getPz();
-    double pe = particle->getPe();
+    double const px = particle->px;
+    double const py = particle->py;
+    double const pz = particle->pz;
+    double pe = particle->e;
     double m;
     if (pe < 0.0) {
 #ifdef USE_JAM
@@ -301,10 +301,10 @@ void savePhasespaceData(std::string fname, std::vector<HydroParticleCF*> plist, 
     }
     //---------------------------------
     // (3) x,y,z,t
-    double const x = particle->getX();
-    double const y = particle->getY();
-    double const z = particle->getZ();
-    double const t = particle->getT();
+    double const x = particle->x;
+    double const y = particle->y;
+    double const z = particle->z;
+    double const t = particle->t;
     //---------------------------------
 
     std::fprintf(
@@ -449,9 +449,9 @@ void generatePhasespaceData20141020(int ibase, std::string dirJAM) {
     psamp->update();
 
     // 振り分け
-    std::vector<HydroParticleCF*> const& plist = psamp->getParticleList();
-    std::vector<HydroParticleCF*> phases[NEvent];
-    for (std::vector<HydroParticleCF*>::const_iterator i = plist.begin(); i != plist.end(); ++i)
+    std::vector<Particle*> const& plist = psamp->getParticleList();
+    std::vector<Particle*> phases[NEvent];
+    for (std::vector<Particle*>::const_iterator i = plist.begin(); i != plist.end(); ++i)
       phases[std::min(int(Random::getRand() * NEvent), NEvent - 1)].push_back(*i);
 
     // 保存

@@ -1050,7 +1050,7 @@ namespace {
       return Random::getRand() < UnisotropicPartProbability(bpout);
     }
 
-    bool generateParticleSample(HydroParticleCF* particle) {
+    bool generateParticleSample(Particle* particle) {
       // 局所静止系での運動量
       double p[4];
       if (!generateMomentum(p)) return false;
@@ -1091,14 +1091,14 @@ namespace {
 
       // 粒子の追加
       const double hbarC = 0.197327053;
-      particle->setPe(laboratory_momentum[0] * hbarC);
-      particle->setPx(laboratory_momentum[1] * hbarC);
-      particle->setPy(laboratory_momentum[2] * hbarC);
-      particle->setPz(laboratory_momentum[3] * hbarC);
-      particle->setT (laboratory_coord[0]);
-      particle->setX (laboratory_coord[1]);
-      particle->setY (laboratory_coord[2]);
-      particle->setZ (laboratory_coord[3]);
+      particle->e  = laboratory_momentum[0] * hbarC;
+      particle->px = laboratory_momentum[1] * hbarC;
+      particle->py = laboratory_momentum[2] * hbarC;
+      particle->pz = laboratory_momentum[3] * hbarC;
+      particle->t  = laboratory_coord[0];
+      particle->x  = laboratory_coord[1];
+      particle->y  = laboratory_coord[2];
+      particle->z  = laboratory_coord[3];
       return true;
     }
 
@@ -1126,7 +1126,7 @@ namespace {
     }
 
   public:
-    void SampleResonance(std::vector<HydroParticleCF*>& plist, IResonanceList const* reso, int ireso) {
+    void SampleResonance(std::vector<Particle*>& plist, IResonanceList const* reso, int ireso) {
       double const _sign  = reso->statisticsSign(ireso);
       double const _bmass = beta * reso->mass(ireso);
       //double const _bmu   = beta * surface->chemicalPotential(ireso); //□mu not supported
@@ -1193,13 +1193,13 @@ namespace {
         this->totalIsotropicPartCDF = totalIntegral;
       }
 
-      HydroParticleCF particle(ireso);
+      Particle particle(ireso);
       for (int i = 0; i < n; i++) {
         if (m_dominating && Random::getRand() >= prob) continue;
 
         if (generateParticleSample(&particle)) {
-          particle.setPe(-1.0); // isospin 等を決めてから mass Pe を決める。
-          plist.push_back(new HydroParticleCF(particle));
+          particle.e = -1.0; // isospin 等を決めてから mass Pe を決める。
+          plist.push_back(new Particle(particle));
         }
       }
     }
@@ -1210,7 +1210,7 @@ namespace {
 // Implementations
 
 void SampleParticlesC0lrf(
-  std::vector<HydroParticleCF*>& plist,
+  std::vector<Particle*>& plist,
   HypersurfaceElementC0Lrf const& surface,
   IResonanceList const* rlist,
   double overSamplingFactor,
@@ -1252,8 +1252,8 @@ void OversampledParticleSampleBase::update() {
   if (this->numberOfExpectedEvents > 0) {
     double const& ncache = this->numberOfExpectedEvents;
     this->updateWithOverSampling(this->m_overSamplingFactor * ncache);
-    this->pcache.resize(ncache, std::vector<HydroParticleCF*>());
-    for (std::vector<HydroParticleCF*>::const_iterator i = this->base::plist.begin(); i != this->base::plist.end(); ++i)
+    this->pcache.resize(ncache, std::vector<Particle*>());
+    for (std::vector<Particle*>::const_iterator i = this->base::plist.begin(); i != this->base::plist.end(); ++i)
       this->pcache[int(Random::getRand() * ncache)].push_back(*i);
 
     this->numberOfExpectedEvents = 0;

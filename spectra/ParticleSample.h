@@ -4,11 +4,9 @@
 #include <vector>
 #include <string>
 #include "ElementReso.h"
-#include "HydroParticleCF.h"
 #include "IParticleSample.h"
 
-class ParticleSample:public ElementReso,public IParticleSample
-{
+class ParticleSample: public ElementReso, public IParticleSample {
 private:
   std::ifstream *resDataPos;
   std::string   outfilepos;
@@ -18,7 +16,7 @@ private:
   std::ofstream outdatneg;
   int di; // iteration number in bisection method
   int isOutput;
-  std::vector<HydroParticleCF*> plist;
+  std::vector<Particle*> plist;
   int    baryonfree;
   double tmpf;
   double mubf;
@@ -28,8 +26,7 @@ private:
   bool fReverseParticleList;
   bool fShuffleParticleList;
 public:
-  ParticleSample(std::string dir, std::string* outf, int kin, int eos_pce,
-  std::string fname);
+  ParticleSample(std::string const& dir, std::string* outf, int kin, int eos_pce, std::string const& fname);
   ~ParticleSample();
   void setBaryonFree(int i) {baryonfree=i;}
   void setTMPF(double t) {tmpf=t/sctr*1000.0;}
@@ -49,7 +46,7 @@ public:
   void setIsOutput(int i){this->isOutput=i;}
   int getIsOutput() const{return this->isOutput;}
   std::string const& getFileNamePos() const{return outfilepos;}
-  std::vector<HydroParticleCF*> const& getParticleList() const{return plist;}
+  std::vector<Particle*> const& getParticleList() const{return plist;}
 
 private:
   std::string fn_freezeout_dat;

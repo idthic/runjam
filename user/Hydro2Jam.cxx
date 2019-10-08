@@ -437,24 +437,24 @@ struct dbg_counter{
 
 void Hydro2Jam::initJam(IParticleSample* psamp)
 {
-  std::vector<HydroParticleCF*> const& plist = psamp->getParticleList();
+  std::vector<Particle*> const& plist = psamp->getParticleList();
 
   //std::cerr<<"dbg20140822: "<<psamp->getParticleIdType()<<" (HydroParticleID = "<<ParticleIDType::HydroParticleID<<")"<<std::endl;
 
-  std::vector<HydroParticleCF*>::const_iterator mp;
+  std::vector<Particle*>::const_iterator mp;
   for(mp=plist.begin(); mp != plist.end(); mp++) {
-    HydroParticleCF const* const particle=*mp;
+    Particle const* const particle=*mp;
 
     int kf; // PDG particle code.
     switch(psamp->getParticleIdType()){
     case ParticleIDType::HydroParticleID:
       {
-        int ir=particle->getID();
-        kf=getJamID(ir+1);
+        int ir = particle->id;
+        kf = getJamID(ir+1);
       }
       break;
     case ParticleIDType::PDGCode:
-      kf=particle->getID();
+      kf=particle->id;
       break;
     default:
       std::cerr<<"Hydro2Jam::initJam: invalid value of psamp->getParticleIdType()."<<std::endl;
@@ -490,20 +490,20 @@ void Hydro2Jam::initJam(IParticleSample* psamp)
     jam->setK(10,nv,0);
     jam->setK(11,nv,0);
 
-    double const x=particle->getX();
-    double const y=particle->getY();
-    double const z=particle->getZ();
-    double const t=particle->getT();
-    double const px=particle->getPx();
-    double const py=particle->getPy();
-    double const pz=particle->getPz();
-    double pe=particle->getPe();
+    double const x  = particle->x;
+    double const y  = particle->y;
+    double const z  = particle->z;
+    double const t  = particle->t;
+    double const px = particle->px;
+    double const py = particle->py;
+    double const pz = particle->pz;
+    double pe = particle->e;
     double pm;
-    if(pe<0.0){
-      pm=jam->jamMass(kf);
-      pe=sqrt(px*px+py*py+pz*pz+pm*pm);
+    if (pe<0.0) {
+      pm = jam->jamMass(kf);
+      pe = sqrt(px*px+py*py+pz*pz+pm*pm);
     }else{
-      pm=sqrt(pe*pe-(px*px+py*py+pz*pz));
+      pm = sqrt(pe*pe-(px*px+py*py+pz*pz));
     }
 
     jam->setP(1,nv, px);
@@ -538,7 +538,7 @@ void Hydro2Jam::initJam(IParticleSample* psamp)
   jam->setNMESON( nmeson );  // set total number of mesons.
 }
 
-// void LoadHydroData(std::vector<HydroParticleCF*>& plist,std::string const& fname){
+// void LoadHydroData(std::vector<Particle*>& plist,std::string const& fname){
 //   std::ifstream fdata(fname.c_str());
 //   if(!fdata){
 //     std::cerr<<"Hydro2Jam.cxx (LoadHydroData): failed to open the file '"<<fname<<"'"<<std::endl;
@@ -560,7 +560,7 @@ void Hydro2Jam::initJam(IParticleSample* psamp)
 //     }
 
 //     // type==ParticleIDType::HydroParticleID
-//     HydroParticleCF* particle=new HydroParticleCF;
+//     Particle* particle=new Particle;
 //     particle->setID(ir);
 
 //     particle->setPx(px);

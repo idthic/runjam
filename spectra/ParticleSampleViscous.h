@@ -17,7 +17,7 @@
 struct HypersurfaceElementC0Lrf;
 
 void SampleParticlesC0lrf(
-  std::vector<HydroParticleCF*>& plist,
+  std::vector<Particle*>& plist,
   HypersurfaceElementC0Lrf const& surface,
   IResonanceList const* rlist,
   double overSamplingFactor = 1.0,
@@ -85,10 +85,10 @@ public:
 private:
   int numberOfExpectedEvents;
   int indexOfCachedEvents;
-  std::vector<std::vector<HydroParticleCF*> > pcache;
+  std::vector<std::vector<Particle*> > pcache;
 
 public:
-  virtual std::vector<HydroParticleCF*> const& getParticleList() const {
+  virtual std::vector<Particle*> const& getParticleList() const {
     if (this->indexOfCachedEvents >= 0)
       return this->pcache[indexOfCachedEvents];
     else

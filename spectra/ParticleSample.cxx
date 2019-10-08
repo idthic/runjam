@@ -16,7 +16,7 @@ using namespace std;
 
 static const double FreezeoutSkipTemperature=0.01; // unit: [/fm]
 
-ParticleSample::ParticleSample(string dir, string* outf,int kin, int eos_pce, string fname)
+ParticleSample::ParticleSample(std::string const& dir, std::string* outf,int kin, int eos_pce, std::string const& fname)
   : ElementReso(dir,outf,kin,eos_pce,fname)
 {
 	outfilepos = "particlesample_pos.dat";
@@ -56,7 +56,7 @@ ParticleSample::ParticleSample(string dir, string* outf,int kin, int eos_pce, st
 ParticleSample::~ParticleSample()
 {
   if(plist.size()>0) {
-    std::vector<HydroParticleCF*>::iterator cp;
+    std::vector<Particle*>::iterator cp;
     for(cp = plist.begin(); cp != plist.end();cp++) delete *cp;
     plist.clear();
   }
@@ -171,7 +171,7 @@ void ParticleSample::analyze(string fn_freezeout_dat, string fn_p)
   initialize(fn_freezeout_dat, fn_p);
 
   if(plist.size()>0) {
-    vector<HydroParticleCF*>::iterator cp;
+    vector<Particle*>::iterator cp;
     for(cp = plist.begin(); cp != plist.end();cp++) delete *cp;
     plist.clear();
   }
@@ -267,7 +267,7 @@ void ParticleSample::analyze(string fn_freezeout_dat, string fn_p)
       if(numResNeg > 1.0)
         cout << "Funny fluid element! ir =" << ir << endl;
 #endif
-	
+
       if(bulk == 1){
         ds0 = dss * cosh(hh);
         dsz = -dss * sinh(hh);
@@ -275,106 +275,106 @@ void ParticleSample::analyze(string fn_freezeout_dat, string fn_p)
         ds0 = dss * sinh(hh);
         dsz = -dss * cosh(hh);
       }
-	
+
       //	    if(!bulk){
       for(int isamp=0;isamp<nsamp;isamp++){
         if((iw == 1)  ||  (iw == 5)) {
-	
+
           //out going
           ipos = 1;
           ran = Random::getRand();
-          if(ran < numResPos)	
+          if(ran < numResPos)
             getSample(vx,vy,yv,ds0,dsx,dsy,dsz,ir,ipos,tau,xx,yy,eta);
           ran = Random::getRand();
-          if(ran < numResPos)	
+          if(ran < numResPos)
             getSample(vx,-vy,yv,ds0,dsx,-dsy,dsz,ir,ipos,tau,xx,-yy,eta);
           ran = Random::getRand();
-          if(ran < numResPos)	
+          if(ran < numResPos)
             getSample(-vx,vy,-yv,ds0,-dsx,dsy,-dsz,ir,ipos,tau,-xx,yy,-eta);
           ran = Random::getRand();
-          if(ran < numResPos)	
+          if(ran < numResPos)
             getSample(-vx,-vy,-yv,ds0,-dsx,-dsy,-dsz,ir,ipos,tau,-xx,-yy,-eta);
-	
+
           //in coming
           ipos = 0;
           ran = Random::getRand();
-          if(ran < numResNeg)	
+          if(ran < numResNeg)
             getSample(vx,vy,yv,ds0,dsx,dsy,dsz,ir,ipos,tau,xx,yy,eta);
           ran = Random::getRand();
-          if(ran < numResNeg)	
+          if(ran < numResNeg)
             getSample(vx,-vy,yv,ds0,dsx,-dsy,dsz,ir,ipos,tau,xx,-yy,eta);
           ran = Random::getRand();
-          if(ran < numResNeg)	
+          if(ran < numResNeg)
             getSample(-vx,vy,-yv,ds0,-dsx,dsy,-dsz,ir,ipos,tau,-xx,yy,-eta);
           ran = Random::getRand();
-          if(ran < numResNeg)	
+          if(ran < numResNeg)
             getSample(-vx,-vy,-yv,ds0,-dsx,-dsy,-dsz,ir,ipos,tau,-xx,-yy,-eta);
-	
+
         } else if((iw == 3)  ||  (iw == 7)) {
-	
+
           //out going
           ipos = 1;
           ran = Random::getRand();
-          if(ran < numResPos)	
+          if(ran < numResPos)
             getSample(vx,vy,yv,ds0,dsx,dsy,dsz,ir,ipos,tau,xx,yy,eta);
           ran = Random::getRand();
-          if(ran < numResPos)	
+          if(ran < numResPos)
             getSample(-vx,vy,-yv,ds0,-dsx,dsy,-dsz,ir,ipos,tau,-xx,yy,-eta);
-	
+
           //in coming
           ipos = 0;
           ran = Random::getRand();
-          if(ran < numResNeg)	
+          if(ran < numResNeg)
             getSample(vx,vy,yv,ds0,dsx,dsy,dsz,ir,ipos,tau,xx,yy,eta);
           ran = Random::getRand();
-          if(ran < numResNeg)	
+          if(ran < numResNeg)
             getSample(-vx,vy,-yv,ds0,-dsx,dsy,-dsz,ir,ipos,tau,-xx,yy,-eta);
-	
+
         } else if((iw == 2)  ||  (iw == 6)) {
-	
+
           //out going
           ipos = 1;
           ran = Random::getRand();
-          if(ran < numResPos)	
+          if(ran < numResPos)
             getSample(vx,vy,yv,ds0,dsx,dsy,dsz,ir,ipos,tau,xx,yy,eta);
           ran = Random::getRand();
-          if(ran < numResPos)	
+          if(ran < numResPos)
             getSample(vx,-vy,yv,ds0,dsx,-dsy,dsz,ir,ipos,tau,xx,-yy,eta);
-	
+
           //in coming
           ipos = 0;
           ran = Random::getRand();
-          if(ran < numResNeg)	
+          if(ran < numResNeg)
             getSample(vx,vy,yv,ds0,dsx,dsy,dsz,ir,ipos,tau,xx,yy,eta);
           ran = Random::getRand();
-          if(ran < numResNeg)	
+          if(ran < numResNeg)
             getSample(vx,-vy,yv,ds0,dsx,-dsy,dsz,ir,ipos,tau,xx,-yy,eta);
-	
+
         } else if((iw == 4)  ||  (iw == 8)) {
-	
+
           //out going
           ipos = 1;
           ran = Random::getRand();
-          if(ran < numResPos)	
+          if(ran < numResPos)
             getSample(vx,vy,yv,ds0,dsx,dsy,dsz,ir,ipos,tau,xx,yy,eta);
-	
+
           //in coming
           ipos = 0;
           ran = Random::getRand();
-          if(ran < numResNeg)	
+          if(ran < numResNeg)
             getSample(vx,vy,yv,ds0,dsx,dsy,dsz,ir,ipos,tau,xx,yy,eta);
-	
+
         }
-	
+
       }
       //	    }//if(bulk)
     }
-	
+
   }
 
   // 2013/04/30, KM, shuffle the particle list
-  if(this->fShuffleParticleList)
-    std::random_shuffle(this->plist.begin(),this->plist.end());
+  if (this->fShuffleParticleList)
+    std::random_shuffle(this->plist.begin(), this->plist.end());
 
   finish();
 }
@@ -471,7 +471,7 @@ getSample(double vx,double vy,double yv,
   }
   do{
     do{
-	
+
       //Generate momentum [0:6GeV/c]
       //according to Bose/Fermi distribution
       //in local rest frame
@@ -480,7 +480,7 @@ getSample(double vx,double vy,double yv,
       double pmax = 6000.0/sctr;
       double pmin = 0.0;
       double ppp = (pmax+pmin)*0.5;
-	
+
       for(int id=0;id<di;id++) {
         ppp = (pmax+pmin)*0.5;
         Gauss12(0.0,ppp,p1,pw1);
@@ -503,13 +503,13 @@ getSample(double vx,double vy,double yv,
       double r2 = -2*Random::getRand() + 1;
       double theta = acos(r2);
       double phd = 2*M_PI*Random::getRand();
-	
+
       // uniform random number on surface
       double prxd = ppp*sin(theta)*cos(phd);
       double pryd = ppp*sin(theta)*sin(phd);
       double przd = ppp*cos(theta);
       double erd = sqrt(ppp*ppp+mres2);
-	
+
       //Lorentz transformation by flow velocity
       double ddd=gamma*(erd+(prxd*vx+pryd*vy+przd*vz)*gamma/(1.+gamma));
 
@@ -520,14 +520,14 @@ getSample(double vx,double vy,double yv,
 
       double prt = sqrt(prx*prx+pry*pry);
       er = sqrt(prt*prt+prz*prz+mres2);
-	
+
       //	double mrt = sqrt(prt*prt+mres2);
       //	double yr = log((er+prz)/(er-prz))*0.5;
-	
+
       pu = gamma*(er-vx*prx-vy*pry-vz*prz); //pu = erd
       prds = er*ds0+prx*dsx+pry*dsy+prz*dsz;
       if(!ipos)prds=-(er*ds0+prx*dsx+pry*dsy+prz*dsz);
-	
+
     } while (prds < 0.0);
 
     if(prds/pu/gamma > ranmax){
@@ -571,21 +571,21 @@ void ParticleSample::putParticle(double px,double py,double pz,
 	double y, double eta,int ipos)
 {
   if(!ipos) return;
-  HydroParticleCF* jp = new(std::nothrow) HydroParticleCF(ir);
-  if(!jp) {
-    cerr << "(ParticleSample::putPartile:) No more memory" << endl;
+  Particle* jp = new(std::nothrow) Particle(ir);
+  if (!jp) {
+    std::cerr << "(ParticleSample::putPartile:) No more memory" << std::endl;
     exit(1);
   }
 
-  jp->setPx(px*hbarC);
-  jp->setPy(py*hbarC);
-  jp->setPz(pz*hbarC);
+  jp->px = px * hbarC;
+  jp->py = py * hbarC;
+  jp->pz = pz * hbarC;
   //jp->setPe(std::sqrt(m*m+px*px+py*py+pz*pz)*hbarC);
-  jp->setPe(-1.0); // 自動で計算する様にする
-  jp->setX(x);
-  jp->setY(y);
-  jp->setT(tau*cosh(eta));
-  jp->setZ(tau*sinh(eta));
+  jp->e = -1.0; // 自動で計算する様にする
+  jp->x = x;
+  jp->y = y;
+  jp->t = tau * std::cosh(eta);
+  jp->z = tau * std::sinh(eta);
   this->plist.push_back(jp);
 }
 
@@ -594,30 +594,30 @@ void ParticleSample::outputData(double prx,double pry,double prz,
 	double yy, double eta, int ipos)
 {
 
-	if(ipos){
-	  outdatpos << setw(14) << prx*hbarC
-              << setw(14) << pry*hbarC
-              << setw(14) << prz*hbarC
-              << setw(14) << er*hbarC
-              << setw(14) << mres*hbarC
-              << setw(4)  << ir
-              << setw(6)  << tau
-              << setw(14) << xx
-              << setw(14) << yy
-              << setw(14) << eta
-              << endl;
-	}else{
-	  outdatneg << setw(14) << prx*hbarC
-              << setw(14) << pry*hbarC
-              << setw(14) << prz*hbarC
-              << setw(14) << er*hbarC
-              << setw(14) << mres*hbarC
-              << setw(4)  << ir
-              << setw(6)  << tau
-              << setw(14) << xx
-              << setw(14) << yy
-              << setw(14) << eta
-              << endl;
+	if (ipos) {
+	  outdatpos << std::setw(14) << prx*hbarC
+              << std::setw(14) << pry*hbarC
+              << std::setw(14) << prz*hbarC
+              << std::setw(14) << er*hbarC
+              << std::setw(14) << mres*hbarC
+              << std::setw(4)  << ir
+              << std::setw(6)  << tau
+              << std::setw(14) << xx
+              << std::setw(14) << yy
+              << std::setw(14) << eta
+              << std::endl;
+	} else {
+	  outdatneg << std::setw(14) << prx*hbarC
+              << std::setw(14) << pry*hbarC
+              << std::setw(14) << prz*hbarC
+              << std::setw(14) << er*hbarC
+              << std::setw(14) << mres*hbarC
+              << std::setw(4)  << ir
+              << std::setw(6)  << tau
+              << std::setw(14) << xx
+              << std::setw(14) << yy
+              << std::setw(14) << eta
+              << std::endl;
 	}
 
 }
