@@ -1,0 +1,16 @@
+Koichi Murase <phys.murase@gmail.com>
+
+# This program was originally developed as a part of the package
+# "hydrojet" created and maintained by the following people.
+
+Yasushi Nara <nara@aiu.ac.jp>
+Testufumi Hirano <hirano@sophia.ac.jp>
+Koichi Murase <murase@nt.phys.s.u-tokyo.ac.jp>
+
+# The "hydrojet" was a package of ideal hydro + cascade model.  Later
+# the module for the Cooper-Frye sampling is rewritten from scratch by
+# KM to support the viscous correction of distribution function.
+# Recently (as of 2015+) only this Cooper-Frye sampling codes and the
+# invokation code of JAM is used for dynamical calculations.  To
+# reduce the complexity and promote portability, only this part is
+# extracted as a standalone program.

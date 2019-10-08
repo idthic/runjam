@@ -1,13 +1,22 @@
-#
+# -*- mode: makefile-gmake -*-
 
 all:
 .PHONY: all clean
 
+#------------------------------------------------------------------------------
+# Configuration
+
 libjam_LIBDIR := $(HOME)/opt/jam-1.820/lib
 
-CPPFLAGS = -DUSE_JAM -I . -MD -MP -MF $(@:.o=.dep)
+#CXX      := g++
 CXXFLAGS := -march=native -O3
-LDFLAGS := -L $(libjam_LIBDIR) -Wl,-rpath,$(libjam_LIBDIR)
+LDFLAGS  :=
+LIBS     :=
+
+#------------------------------------------------------------------------------
+
+CPPFLAGS = -DUSE_JAM -I . -MD -MP -MF $(@:.o=.dep)
+LDFLAGS += -L $(libjam_LIBDIR) -Wl,-rpath,$(libjam_LIBDIR)
 hydro2jam_OBJS := hydro2jam.o \
   jam/Jam1.o \
   ksh/integrator.o \
@@ -26,7 +35,7 @@ hydro2jam_OBJS := hydro2jam.o \
   uty/PyRand.o \
   uty/Random.o \
   uty/Vector4.o
-hydro2jam_LIBS := -ljam
+hydro2jam_LIBS := -ljam $(LIBS)
 
 jam/%.o: jam/%.cxx
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
