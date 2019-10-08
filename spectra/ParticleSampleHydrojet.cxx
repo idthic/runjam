@@ -6,7 +6,7 @@
 #include <physicsbase/Const.h>
 #include <ksh/phys/Minkowski.h>
 #include <spectra/IntegratedCooperFrye.h>
-#include "ParticleSample.h"
+#include "ParticleSampleHydrojet.h"
 
 #define CHG20110804
 //#define DBG20141010_TestViscousCorrection 202
@@ -16,7 +16,7 @@ using namespace std;
 
 static const double FreezeoutSkipTemperature=0.01; // unit: [/fm]
 
-ParticleSample::ParticleSample(std::string const& dir, std::string* outf,int kin, int eos_pce, std::string const& fname)
+ParticleSampleHydrojet::ParticleSampleHydrojet(std::string const& dir, std::string* outf,int kin, int eos_pce, std::string const& fname)
   : ElementReso(dir,outf,kin,eos_pce,fname)
 {
 	outfilepos = "particlesample_pos.dat";
@@ -41,7 +41,7 @@ ParticleSample::ParticleSample(std::string const& dir, std::string* outf,int kin
     const char* env=std::getenv("ParticleSample_ReverseParticleList");
     this->fReverseParticleList=env&&std::atoi(env);
     if(this->fReverseParticleList)
-      std::cout<<"ParticleSample: ReverseParticleList mode enabled!"<<std::endl;
+      std::cout<<"ParticleSampleHydrojet: ReverseParticleList mode enabled!"<<std::endl;
   }
 
   // 2013/04/30, KM, shuffle the particle list
@@ -49,11 +49,11 @@ ParticleSample::ParticleSample(std::string const& dir, std::string* outf,int kin
     const char* env=std::getenv("ParticleSample_ShuffleParticleList");
     this->fShuffleParticleList=env&&std::atoi(env);
     if(this->fShuffleParticleList)
-      std::cout<<"ParticleSample: ShuffleParticleList mode enabled!"<<std::endl;
+      std::cout<<"ParticleSampleHydrojet: ShuffleParticleList mode enabled!"<<std::endl;
   }
 }
 
-ParticleSample::~ParticleSample()
+ParticleSampleHydrojet::~ParticleSampleHydrojet()
 {
   if(plist.size()>0) {
     std::vector<Particle*>::iterator cp;
@@ -62,7 +62,7 @@ ParticleSample::~ParticleSample()
   }
 }
 
-void ParticleSample::initialize(std::string const& fn_freezeout_dat, std::string const& fn_p)
+void ParticleSampleHydrojet::initialize(std::string const& fn_freezeout_dat, std::string const& fn_p)
 {
   nreso_loop = ResonanceListPCE::nreso;
   //    if(baryonfree)nreso_loop = 20;
@@ -74,7 +74,7 @@ void ParticleSample::initialize(std::string const& fn_freezeout_dat, std::string
   {
     // Try to read ELEMENT.* cache files
     //**************************
-    std::cout<<"ParticleSample.cxx(ParticleSample::initialize): checking Cooper-Frye cache files (.POS/.NEG)... "<<std::flush;
+    std::cout<<"ParticleSampleHydrojet.cxx(ParticleSampleHydrojet::initialize): checking Cooper-Frye cache files (.POS/.NEG)... "<<std::flush;
     resDataPos = new ifstream [nreso_loop];
     for(int i=0;i<nreso_loop;i++) {
       string fnpos = elemFile[i]+".POS";
@@ -98,7 +98,7 @@ void ParticleSample::initialize(std::string const& fn_freezeout_dat, std::string
     if(mode_delayed_cooperfrye){
       std::cout
         <<"no(incomplete).\n"
-        <<"ParticleSample.cxx(ParticleSample::initialize): entering delayed Cooper-Frye evaluation mode."<<std::endl;
+        <<"ParticleSampleHydrojet.cxx(ParticleSampleHydrojet::initialize): entering delayed Cooper-Frye evaluation mode."<<std::endl;
 
       // Close files if ELEMENT.* is not a complete set.
       if(resDataPos){
@@ -124,7 +124,7 @@ void ParticleSample::initialize(std::string const& fn_freezeout_dat, std::string
     string fnpos = elemFile[i]+".POS";
     resDataPos[i].open(fnpos.c_str(), ios::in);
     if (!resDataPos[i])  {
-      cerr << "ParticleSample::initialize! unable to open file " << fnpos << endl;
+      cerr << "ParticleSampleHydrojet::initialize! unable to open file " << fnpos << endl;
       mode_delayed_cooperfrye=true;
       break;
     }
@@ -135,7 +135,7 @@ void ParticleSample::initialize(std::string const& fn_freezeout_dat, std::string
     string fnneg = elemFile[i]+".NEG";
     resDataNeg[i].open(fnneg.c_str(), ios::in);
     if (!resDataNeg[i])  {
-      cerr << "ParticleSample::initialize! unable to open file " << fnneg << endl;
+      cerr << "ParticleSampleHydrojet::initialize! unable to open file " << fnneg << endl;
       mode_delayed_cooperfrye=true;
       break;
     }
@@ -146,7 +146,7 @@ void ParticleSample::initialize(std::string const& fn_freezeout_dat, std::string
   if(isOutput!=0){
     outdatpos.open(outfilepos.c_str());
     if (!outdatpos)  {
-      cerr << "ParticleSample::initialize! unable to open file " << outfilepos << endl;
+      cerr << "ParticleSampleHydrojet::initialize! unable to open file " << outfilepos << endl;
       exit(1);
     }
     outdatpos << "# p_x(GeV) p_y(GeV) p_z(GeV) E(GeV) m(GeV)";
@@ -154,7 +154,7 @@ void ParticleSample::initialize(std::string const& fn_freezeout_dat, std::string
 
     outdatneg.open(outfileneg.c_str());
     if (!outdatneg)  {
-      cerr << "ParticleSample::initialize! unable to open file " << outfileneg << endl;
+      cerr << "ParticleSampleHydrojet::initialize! unable to open file " << outfileneg << endl;
       exit(1);
     }
     outdatneg << "# p_x(GeV) p_y(GeV) p_z(GeV) E(GeV) m(GeV)";
@@ -162,8 +162,8 @@ void ParticleSample::initialize(std::string const& fn_freezeout_dat, std::string
   }
 }
 
-//void ParticleSample::analyze(string fn_freezeout_dat, string fn_p, string fn_ecc)
-void ParticleSample::analyze(string fn_freezeout_dat, string fn_p)
+//void ParticleSampleHydrojet::analyze(string fn_freezeout_dat, string fn_p, string fn_ecc)
+void ParticleSampleHydrojet::analyze(string fn_freezeout_dat, string fn_p)
 {
   nreso_loop = ResonanceListPCE::nreso;
 
@@ -198,13 +198,13 @@ void ParticleSample::analyze(string fn_freezeout_dat, string fn_p)
 
 #ifdef CHG20110804
     if(tf == 0.0) {
-      std::cerr << "ParticleSample.cxx(ParticleSample::analyze)! TF=ZERO" << std::endl;
+      std::cerr << "ParticleSampleHydrojet.cxx(ParticleSampleHydrojet::analyze)! TF=ZERO" << std::endl;
       continue;
     }
 
     // 2014-07-30
     if(tf<FreezeoutSkipTemperature){
-      //std::cerr << "ParticleSample.cxx(ParticleSample::analyze): skipped lowT surface." << std::endl;
+      //std::cerr << "ParticleSampleHydrojet.cxx(ParticleSampleHydrojet::analyze): skipped lowT surface." << std::endl;
       continue;
     }
 #endif
@@ -379,7 +379,7 @@ void ParticleSample::analyze(string fn_freezeout_dat, string fn_p)
   finish();
 }
 
-void ParticleSample::finish()
+void ParticleSampleHydrojet::finish()
 {
   closeDataFile();
   closePDataFile();
@@ -410,7 +410,7 @@ void ParticleSample::finish()
   //**************************
 }
 
-void ParticleSample::
+void ParticleSampleHydrojet::
 getSample(double vx,double vy,double yv,
 	  double ds0,double dsx,double dsy,double dsz,int ir, int ipos,
 	  double tau,double x0,double y0,double eta0)
@@ -535,7 +535,7 @@ getSample(double vx,double vy,double yv,
            << "Please increase 'facranmax'"
            << " at least "
            << prds/pu/gamma/ranmax*facranmax
-           << " [at ParticleSample::getSample]"
+           << " [at ParticleSampleHydrojet::getSample]"
            << endl;
       //continue;
     }
@@ -566,14 +566,14 @@ getSample(double vx,double vy,double yv,
   }
 }
 
-void ParticleSample::putParticle(double px,double py,double pz,
+void ParticleSampleHydrojet::putParticle(double px,double py,double pz,
 	double e,double m, int ir, double tau,double x,
 	double y, double eta,int ipos)
 {
   if(!ipos) return;
   Particle* jp = new(std::nothrow) Particle(ir);
   if (!jp) {
-    std::cerr << "(ParticleSample::putPartile:) No more memory" << std::endl;
+    std::cerr << "(ParticleSampleHydrojet::putPartile:) No more memory" << std::endl;
     exit(1);
   }
 
@@ -589,7 +589,7 @@ void ParticleSample::putParticle(double px,double py,double pz,
   this->plist.push_back(jp);
 }
 
-void ParticleSample::outputData(double prx,double pry,double prz,
+void ParticleSampleHydrojet::outputData(double prx,double pry,double prz,
 	double er,double mres, int ir, double tau,double xx,
 	double yy, double eta, int ipos)
 {

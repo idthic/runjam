@@ -4,7 +4,7 @@
 
 #include <string>
 #include <fstream>
-#include "spectra/ParticleSample.h"
+#include "spectra/ParticleSampleHydrojet.h"
 #include "jam/Jam1.h"
 
 //#include "HistJAM.h"

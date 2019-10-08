@@ -1307,7 +1307,7 @@ void ParticleSampleViscous::updateWithOverSampling(double overSamplingFactor) {
       if (arg.compare(0, 4, "Tsw=", 4) == 0) {
         switchingTemperature = std::atof(arg.c_str() + 4);
       } else {
-        std::cerr << "(ParticleSample::update):" << fname_hypersurface << ":1: unknown argument (arg=" << arg << ")" << std::endl;
+        std::cerr << "(ParticleSampleHydrojet::update):" << fname_hypersurface << ":1: unknown argument (arg=" << arg << ")" << std::endl;
         std::exit(EXIT_FAILURE);
       }
     }

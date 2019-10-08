@@ -2,7 +2,7 @@
 //
 // 2014-05-09 KM,
 //   * Created
-//   * class IParticleSample was moved from ParticleSample.h.
+//   * class IParticleSample was moved from ParticleSampleHydrojet.h.
 //   * Added comments.
 //
 #ifndef spectra_IParticleSample_h

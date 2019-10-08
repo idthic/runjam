@@ -6,7 +6,7 @@
 #include "ElementReso.h"
 #include "IParticleSample.h"
 
-class ParticleSample: public ElementReso, public IParticleSample {
+class ParticleSampleHydrojet: public ElementReso, public IParticleSample {
 private:
   std::ifstream *resDataPos;
   std::string   outfilepos;
@@ -26,8 +26,8 @@ private:
   bool fReverseParticleList;
   bool fShuffleParticleList;
 public:
-  ParticleSample(std::string const& dir, std::string* outf, int kin, int eos_pce, std::string const& fname);
-  ~ParticleSample();
+  ParticleSampleHydrojet(std::string const& dir, std::string* outf, int kin, int eos_pce, std::string const& fname);
+  ~ParticleSampleHydrojet();
   void setBaryonFree(int i) {baryonfree=i;}
   void setTMPF(double t) {tmpf=t/sctr*1000.0;}
   void setMUBF(double m) {mubf=m/sctr*1000.0;}
