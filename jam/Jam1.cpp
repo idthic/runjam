@@ -95,12 +95,17 @@ void Jam1::jamList(int i) {
 char* Jam1::getFNAME(int i) const {
   static char buf[81] = "";
   strncpy(buf, jamdat3_.FNAME[i-1], 80);
-  buf[80] = 0;
+  buf[80] = '\0';
   return buf;
 }
 
 void  Jam1::setFNAME(int i, const char* v) {
-  strncpy(jamdat3_.FNAME[i-1], v, strlen(v));
+  if (std::strlen(v) >= 80) {
+    std::cerr << "hydro2jam: filename \"" << v << "\" is too long" << std::endl;
+    std::exit(1);
+  }
+  strncpy(jamdat3_.FNAME[i - 1], v, 79);
+  jamdat3_.FNAME[i - 1][79] = '\0';
 }
 
 void  Jam1::finalResonanceDecay() {
