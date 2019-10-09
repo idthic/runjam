@@ -57,19 +57,19 @@ class IParticleSample {
 public:
   virtual ~IParticleSample(){}
 
-  virtual void setAdviceNumberOfExpectedEvents(int nEvents){}
+  virtual void setAdviceNumberOfExpectedEvents(int nEvents) {}
 
   /// @fn void update();
   /// \~en generates a resonance distribution
   /// \~ja 粒子分布の生成を実行します。
-  virtual void update()=0;
+  virtual void update() = 0;
 
   /// @fn std::vector<Particle*> const& getParticleList() const;
   /// \~en retrieves the generated resonance distribution.
   /// \~ja 生成した粒子分布を取得します。
-  virtual std::vector<Particle*> const& getParticleList() const=0;
+  virtual std::vector<Particle*> const& getParticleList() const = 0;
 
-  virtual ParticleIDType::value_type getParticleIdType() const{return ParticleIDType::HydroParticleID;}
+  virtual ParticleIDType::value_type getParticleIdType() const { return ParticleIDType::HydroParticleID; }
 };
 
 class ParticleSampleBase: public IParticleSample {
@@ -83,17 +83,17 @@ protected:
   /// @param[in] py [GeV/c] momentum in the y-direction
   /// @param[in] pz [GeV/c] momentum in the z-direction
   /// @param[in] m  [GeV/c] mass 粒子番号から計算する場合は -1.0 を指定する。
-  void addParticleMinkowski(int iReso,double px,double py,double pz,double m,double x,double y,double z,double t);
+  void addParticleMinkowski(int iReso, double px, double py, double pz, double m, double x, double y, double z, double t);
 
   /// @param[in] px [GeV/c] momentum in the x-direction
   /// @param[in] py [GeV/c] momentum in the y-direction
   /// @param[in] pz [GeV/c] momentum in the z-direction
   /// @param[in] m  [GeV/c] mass 粒子番号から計算する場合は -1.0 を指定する。
-  void addParticleTauEta(int iReso,double px,double py,double pz,double m,double x,double y,double tau,double eta);
+  void addParticleTauEta(int iReso, double px, double py, double pz, double m, double x, double y, double tau, double eta);
 
 public:
-  ParticleSampleBase(){}
-  virtual ~ParticleSampleBase(){this->clearParticleList();}
+  ParticleSampleBase() {}
+  virtual ~ParticleSampleBase() { this->clearParticleList(); }
   virtual std::vector<Particle*> const& getParticleList() const { return this->plist; }
 
 private:

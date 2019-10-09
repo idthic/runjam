@@ -295,7 +295,7 @@ void Hydro2Jam::generateEvent(IParticleSample* psamp) {
   int nprint = 1;
 
   //...Simulation start.
-  for(int iev=1;iev<= nevent;iev++) {
+  for (int iev = 1; iev <= nevent; iev++) {
 
     // if(iev%nprint == 0)
     //   std::cout << "Hydro2Jam.cxx(Hydro2Jam::generateEvent): event=" << iev << std::endl;
@@ -306,12 +306,12 @@ void Hydro2Jam::generateEvent(IParticleSample* psamp) {
     nmeson=0;
 
     // Sample particles from hydro output.
-    for(int i=0;i<numberTestParticle;i++){
+    for (int i = 0; i < numberTestParticle; i++) {
       psamp->update();
       initJam(psamp);
     }
 
-    if(iev%nprint==0){
+    if (iev % nprint == 0) {
       std::cout << "Hydro2Jam.cxx(Hydro2Jam::generateEvent):"<< "iev="<<iev<<": "
                 << "sampling done. The number of initial test particles is nv=" << nv << "." << std::endl;
     }
@@ -398,12 +398,11 @@ void Hydro2Jam::printPhaseSpaceData(std::ofstream& output)
   }
 }
 
-void Hydro2Jam::initJam(IParticleSample* psamp)
-{
+void Hydro2Jam::initJam(IParticleSample* psamp) {
   std::vector<Particle*> const& plist = psamp->getParticleList();
 
   std::vector<Particle*>::const_iterator mp;
-  for(mp=plist.begin(); mp != plist.end(); mp++) {
+  for (mp = plist.begin(); mp != plist.end(); mp++) {
     Particle const* const particle = *mp;
 
     int kf; // PDG particle code.
@@ -412,7 +411,7 @@ void Hydro2Jam::initJam(IParticleSample* psamp)
       kf = sampleJamID(particle->id + 1);
       break;
     case ParticleIDType::PDGCode:
-      kf=particle->id;
+      kf = particle->id;
       break;
     default:
       std::cerr<<"Hydro2Jam::initJam: invalid value of psamp->getParticleIdType()."<<std::endl;
@@ -490,106 +489,6 @@ void Hydro2Jam::initJam(IParticleSample* psamp)
   jam->setNV(nv);          // set total number of particles.
   jam->setNBARY(nbary);    // set total number of baryon.
   jam->setNMESON(nmeson);  // set total number of mesons.
-}
-
-void Hydro2Jam::initJam(std::string fname)
-{
-  std::ifstream fdata;
-  if(fdata.is_open()) {
-    std::cerr << "funny! (Hydro2Jam:) file areadly opend"
-         << fname << std::endl;
-    std::exit(1);
-  }
-
-  fdata.open(fname.c_str(), std::ios::in);
-  if(!fdata) {
-    std::cerr << "Hydro2Jam: Error: unable to open file "
-              << fname  << std::endl;
-    std::exit(1);
-  }
-  double px,py,pz,e,em,tau,rx,ry,eta;
-  int ir;
-  std::string line;
-  int lp=1;
-  while(getline(fdata,line)) {
-    int com = line.find('#');
-    if(com >=0) continue;
-    std::istringstream is(line);
-    if(!(is >> px >> py >> pz >> e >> em >> ir >> tau >> rx >> ry >> eta)) {
-      std::cerr << "Invalid data at line " << lp << std::endl;
-      exit(1);
-    }
-    lp++;
-
-    int kf=sampleJamID(ir+1);   // PDG particle code.
-    if(kf == 0) continue;
-    int kc=jam->jamComp(kf);      // internal particle code.
-    //int ibary=isign(kchg(kc,6),kf)  // baryon number
-    int ibary=jam->getBaryonNumber(kc,kf);  // baryon number
-    if(ibary == 0)
-      nmeson++;
-    else
-      nbary++;
-
-    nv++;
-
-    //...Zero the vector.
-    jam->jamZero(nv);
-
-    //....Particle mass.
-    double pm=jam->jamMass(kf);
-
-    if(jam->getPMAS(kc,2) <= 1e-7 || jam->getMDCY(kc,1) == 0
-       || jam->getMDCY(kc,2) == 0 || jam->getMDCY(kc,3) == 0)
-      jam->setK(1,nv,1);
-    else
-      jam->setK(1,nv,2);
-
-    jam->setK(2,nv, kf);
-    jam->setK(3,nv, 0);
-    jam->setK(4,nv, 0);
-    jam->setK(5,nv, -1);
-    jam->setK(6,nv, 0);
-    jam->setK(7,nv, 1);
-    jam->setK(8,nv, 1);
-    jam->setK(9,nv, ibary);
-    jam->setK(10,nv, 0);
-    jam->setK(11,nv, 0);
-    jam->setP(1,nv, px);
-    jam->setP(2,nv, py);
-    jam->setP(3,nv, pz);
-    jam->setP(4,nv, sqrt(px*px+py*py+pz*pz+pm*pm));
-    jam->setP(5,nv, pm);
-
-    jam->setR(1,nv, rx);
-    jam->setR(2,nv, ry);
-    jam->setR(3,nv, tau*sinh(eta));
-    jam->setR(4,nv, tau*cosh(eta));
-    jam->setR(5,nv, jam->getR(4,nv)  );         // formation time
-
-    //...Vertex
-    jam->setV(1,nv, jam->getR(1,nv));
-    jam->setV(2,nv, jam->getR(2,nv));
-    jam->setV(3,nv, jam->getR(3,nv));
-    jam->setV(4,nv, jam->getR(4,nv));
-
-    //.....Set resonance decay time.
-    jam->setV(5,nv, 1.e+35);
-    if(jam->getK(1,nv) == 2)
-      jam->setV(5,nv, jam->getR(4,nv)
-        + jam->jamDecayTime(1,kf,kc,
-          jam->getK(1,nv),jam->getP(5,nv),jam->getP(4,nv)));
-
-    //jam->print(nv);
-
-  }
-
-  fdata.close();
-
-  jam->setNV(nv);          // set total number of particles.
-  jam->setNBARY(nbary);    // set total number of baryon.
-  jam->setNMESON(nmeson);  // set total number of mesons.
-
 }
 
 void Hydro2Jam::cmCorrection() {

@@ -29,6 +29,7 @@ hydro2jam_OBJS := hydro2jam.o \
   spectra/IResonanceList.o \
   spectra/IntegratedCooperFrye.o \
   spectra/ParticleSampleHydrojet.o \
+  spectra/ParticleSampleRead.o \
   spectra/ParticleSamplePhasespace.o \
   spectra/ParticleSampleViscous.o \
   Hydro2Jam.o \

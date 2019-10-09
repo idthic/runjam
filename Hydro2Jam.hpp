@@ -50,7 +50,6 @@ public:
     std::string const& fn_position_dat,
     int baryonfree, double deltat, double deltax, double deltay, double deltah);
   void   generateEvent(IParticleSample* psamp);
-  void   initJam(std::string fname);
   void   initJam(IParticleSample* psamp);
   void   cmCorrection();
   void   printPhaseSpaceData(std::ofstream& output);

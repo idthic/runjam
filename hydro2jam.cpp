@@ -11,6 +11,7 @@
 #include "spectra/ElementReso.hpp"
 #include "spectra/ParticleSamplePhasespace.hpp"
 #include "spectra/ParticleSampleViscous.hpp"
+#include "spectra/ParticleSampleRead.hpp"
 
 #define PACKAGE_VERSION "0.1a"
 
@@ -38,6 +39,7 @@ enum InitialType {
   InitialType_C0LRF,
   InitialType_HYDRO,
   InitialType_PHASE,
+  InitialType_PSAMPLE,
 };
 
 struct Hydro2jamCommandlineArguments {
@@ -75,14 +77,15 @@ private:
       "  -dh FLOAT       deltah\n"
       "\n"
       "  -i ICSPEC       specify initial condition\n"
-      "      c0lrf:HYPERSURFACE   load IC from rfh output (hypersurface.txt)\n"
-      "      hydrojet:DIR         load IC from hydrojet output\n"
-      "                           (DIR/freezeout.dat, DIR/position.dat)\n"
-      "      phase:PHASESPACE     load ICs from PHASESPACE (phasespace.dat)\n"
-      "      phase1:PHASESPACE    load a single IC from PHASESPACE. This performs an\n"
-      "                           additional check that PHASESPACE has only one event.\n"
-      "      psample:FILENAME     read a particle list from\n"
-      "                           hydro2jam \"particlesample_pos.dat\"\n"
+      "    c0lrf:FILENAME    sample particles using the rfh output\n"
+      "                      \"hypersurface_v1.txt\"\n"
+      "    hydrojet:DIR      load IC from hydrojet output\n"
+      "                      (DIR/freezeout.dat, DIR/position.dat)\n"
+      "    phase:FILENAME    load ICs from PHASESPACE (phasespace.dat)\n"
+      "    phase1:FILENAME   load a single IC from PHASESPACE. This performs an\n"
+      "                      additional check that PHASESPACE has only one event.\n"
+      "    psample:FILENAME  read a particle list from the file in the format of\n"
+      "                      hydro2jam \"particlesample_pos.dat\"\n"
       "\n"
       "  --help          show this help\n"
       "  --switching-temperature=TEMP [MeV]\n"
@@ -179,7 +182,7 @@ public:
             if (0 == spec.compare(0, 6, "phase:", 6)) {
               this->jamInitType=InitialType_PHASE;
               this->fnameInitialPhasespaceData = spec.substr(6);
-            } else if (0 == spec.compare(0,6,"phase1:", 6)) {
+            } else if (0 == spec.compare(0,7,"phase1:", 7)) {
               this->jamInitType=InitialType_PHASE1;
               this->fnameInitialPhasespaceData = spec.substr(7);
             } else if (0 == spec.compare(0,6,"c0lrf:", 6)) {
@@ -188,6 +191,9 @@ public:
             } else if (0 == spec.compare(0,9,"hydrojet:", 9)) {
               this->jamInitType=InitialType_HYDRO;
               this->fnameInitialPhasespaceData = spec.substr(9);
+            } else if (0 == spec.compare(0, 8,"psample:", 8)) {
+              this->jamInitType = InitialType_PSAMPLE;
+              this->fnameInitialPhasespaceData = spec.substr(8);
             } else if (0 == spec.compare(0,10,"kawaguchi:", 10)) {
               // This is a deprecated option
               this->jamInitType = InitialType_PHASE;
@@ -352,6 +358,13 @@ void hadronicCascade(hydro2jam_context const& ctx) {
       ParticleSampleFromOversampledPhasespace* psamp = new ParticleSampleFromOversampledPhasespace(args.fnameInitialPhasespaceData);
       if (args.jamInitType == InitialType_PHASE1)
         psamp->setOverSamplingFactor(1);
+      jam->generateEvent(psamp);
+      delete psamp;
+    }
+    break;
+  case InitialType_PSAMPLE:
+    {
+      ParticleSampleRead* psamp = new ParticleSampleRead(args.fnameInitialPhasespaceData);
       jam->generateEvent(psamp);
       delete psamp;
     }
