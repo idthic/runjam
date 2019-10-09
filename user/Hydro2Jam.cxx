@@ -369,6 +369,7 @@ void Hydro2Jam::generateEvent(IParticleSample* psamp){
   //...Final output.
   jam->jamFin();
 }
+
 void Hydro2Jam::generateEventFromHypersurfaceFiles(string fn_freezeout_dat, string fn_position_dat, int baryonfree, double deltat, double deltax, double deltay, double deltah)
 {
   // Now initilize the sampling of the particles from hydro simulation.

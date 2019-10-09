@@ -16,9 +16,10 @@ public:
   Random()      { seed = ::time(0); /* srand=0; */ }
   Random(int s) { seed = s;         /* srand=0; */ }
   virtual ~Random() { }
-  virtual void   setSeed()      {seed = ::time(0); srand48(seed);}
-  virtual void   setSeed(int s) {srand48(s); seed=s;}
+  virtual void   setSeed()      { seed = ::time(0); srand48(seed);}
+  virtual void   setSeed(int s) { srand48(s); seed=s;}
   virtual double rand()         { return drand48();}
+  virtual unsigned long lrand() { return lrand48(); }
   double Gauss(double mean, double sigma);
 
 private:
@@ -47,8 +48,17 @@ public:
   /// @param value the mean value of a Poisson distribution
   static int getRandPoisson(double value);
 
+  static long getUniformLong() { return srand->lrand(); }
+
 };
 
 //extern Random *gRandomX;
+
+struct RandomURGB {
+  typedef unsigned long result_type;
+  static result_type min() { return 0; }
+  static result_type max() { return ((result_type) 1 << 31) - 1; }
+  result_type operator()() const { return Random::getUniformLong(); }
+};
 
 #endif

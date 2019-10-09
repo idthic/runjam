@@ -1,6 +1,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <new>
+#include <algorithm>
 
 #include "uty/Random.h"
 #include <physicsbase/Const.h>
@@ -373,8 +374,13 @@ void ParticleSampleHydrojet::analyze(string fn_freezeout_dat, string fn_p)
   }
 
   // 2013/04/30, KM, shuffle the particle list
-  if (this->fShuffleParticleList)
+  if (this->fShuffleParticleList) {
+#if __cplusplus >= 201703L
+    std::shuffle(this->plist.begin(), this->plist.end(), RandomURGB());
+#else
     std::random_shuffle(this->plist.begin(), this->plist.end());
+#endif
+  }
 
   finish();
 }

@@ -74,9 +74,6 @@ public:
   void   initJam(std::string fname);
   void   initJam(IParticleSample* psamp);
   void   cmCorrection();
-  // void   fillHist(HistJAM* h);
-  // void   fillHist2(HistJAM* hist);
-  // void   fillHistInitialCondition(HistJAM* hist);
   void   printPhaseSpaceData(std::ofstream& output);
 
   static int getJamID(int ir);
