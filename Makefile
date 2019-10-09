@@ -54,4 +54,4 @@ hydro2jam.exe: $(hydro2jam_OBJS)
 	$(CXX) $(LDFLAGS) -o $@ $^ $(hydro2jam_LIBS)
 
 clean:
-	-rm -f *.o */*.o
+	-rm -f *.o */*.o *.dep */*.dep

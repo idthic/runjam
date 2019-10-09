@@ -4,7 +4,7 @@
 
 #include <string>
 #include <fstream>
-#include "spectra/ParticleSampleHydrojet.h"
+#include "spectra/IParticleSample.h"
 #include "jam/Jam1.h"
 
 //#include "HistJAM.h"
@@ -67,8 +67,8 @@ public:
   void   unsetWeakDecay() {jam->setMSTC(42,1);}  //=1:no weak decays
   void   setMSTC(int i,int j) {jam->setMSTC(i,j);}
   void   generateEventFromHypersurfaceFiles(
-    std::string fn_freezeout_dat,
-    std::string fn_position_dat,
+    std::string const& fn_freezeout_dat,
+    std::string const& fn_position_dat,
     int baryonfree, double deltat, double deltax, double deltay, double deltah);
   void   generateEvent(IParticleSample* psamp);
   void   initJam(std::string fname);

@@ -142,25 +142,25 @@ ResonanceListPCE::resonance ResonanceListPCE::resT[5][21] = {
 ResonanceListPCE::ResonanceListPCE(int kineticTemp,int eos_pce,std::string const& fname_rlist){
   //temporal modification
   m_numberOfResonances = ResonanceListPCE::nreso;
-  if(eos_pce < 2 || eos_pce == 5){
-    m_numberOfResonances=21;
-  }else if (eos_pce == 4){
-    m_numberOfResonances=75;
+  if (eos_pce < 2 || eos_pce == 5) {
+    m_numberOfResonances = 21;
+  } else if (eos_pce == 4) {
+    m_numberOfResonances = 75;
   }
 
   this->data.resize(m_numberOfResonances);
 
-  if(fname_rlist.size() <= 0) {
-    std::cerr << "ElementReso::ElementReso! something is wrong: Resonance table not available " << std::endl;
+  if (fname_rlist.size() <= 0) {
+    std::cerr << "ResonanceListPCE::.ctor! something is wrong: Resonance table not available " << std::endl;
     std::exit(1);
   }
 
   std::ifstream fdata(fname_rlist.c_str(), std::ios::in);
   if (!fdata)  {
-    std::cerr << "ElementReso::ElementReso! unable to open file " << fname_rlist << std::endl;
+    std::cerr << "ResonanceListPCE::.ctor! unable to open file " << fname_rlist << std::endl;
     std::exit(1);
   }
-  for(int i=0;i<m_numberOfResonances;i++) {
+  for (int i = 0; i < m_numberOfResonances; i++) {
     resonance& record=data[i];
     int bftype;
     fdata >> record.mass >> record.deg >> record.degeff
@@ -170,27 +170,27 @@ ResonanceListPCE::ResonanceListPCE(int kineticTemp,int eos_pce,std::string const
     record.bf = bftype==1?-1: bftype==2?1: bftype;
   }
 
-	if(eos_pce == 1){
-    int const ir = kineticTemp-1;
-	  if(ir >=0 && ir <5) {
-	    for(int i=0;i<m_numberOfResonances;i++) {
-        resonance& recdst=data[i];
-        resonance& recsrc=resT[ir][i];
+	if (eos_pce == 1) {
+    int const ir = kineticTemp - 1;
+	  if (ir >= 0 && ir < 5) {
+	    for (int i = 0; i < m_numberOfResonances; i++) {
+        resonance& recdst = data[i];
+        resonance& recsrc = resT[ir][i];
 
 	      recdst.mu = recsrc.mu;
         // recdst.mass = recsrc.mass;
-        // recdst.deg   = recsrc.deg;
-        // recdst.degeff= recsrc.degeff;
-        // recdst.bf    = recsrc.bf;
-        // recdst.anti  = recsrc.anti;
+        // recdst.deg    = recsrc.deg;
+        // recdst.degeff = recsrc.degeff;
+        // recdst.bf     = recsrc.bf;
+        // recdst.anti   = recsrc.anti;
 
 	      recdst.mu /= sctr;
         // recdst.mass /= sctr;
-        // if(recdst.bf==1) recdst.bf=-1;
-        // if(recdst.bf==2) recdst.bf= 1;
+        // if (recdst.bf == 1) recdst.bf = -1;
+        // if (recdst.bf == 2) recdst.bf = 1;
 	    }
 	  } else {
-      std::cerr << "ElementReso::ElementReso! something is wrong: Resonance table not available " << std::endl;
+      std::cerr << "ResonanceListPCE::.ctor! something is wrong: Resonance table not available " << std::endl;
       std::exit(1);
 	  }
 	}
