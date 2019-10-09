@@ -3,7 +3,7 @@
 #ifndef Jam1_h
 #define Jam1_h
 #include <cstdlib>
-#include "Jam1Common.h"
+#include "Jam1Common.hpp"
 
 class Jam1
 {

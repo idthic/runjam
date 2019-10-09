@@ -1,7 +1,7 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#include "HydroSpectrum.h"
+#include "HydroSpectrum.hpp"
 #include <cmath>
 #include <cstdlib>
 #include <cstdio>

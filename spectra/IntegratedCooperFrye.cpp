@@ -3,9 +3,9 @@
 #endif
 #include <cmath>
 #include <cstdio>
-#include <ksh/integrator.h>
-#include <ksh/phys/Minkowski.h>
-#include "IntegratedCooperFrye.h"
+#include <ksh/integrator.hpp>
+#include <ksh/phys/Minkowski.hpp>
+#include "IntegratedCooperFrye.hpp"
 
 //#define MWG_STD_LAMBDA
 

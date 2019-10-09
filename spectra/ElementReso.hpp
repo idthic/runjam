@@ -3,8 +3,8 @@
 #ifndef ElementReso_h
 #define ElementReso_h
 #include <vector>
-#include "HydroSpectrum.h"
-#include "IResonanceList.h"
+#include "HydroSpectrum.hpp"
+#include "IResonanceList.hpp"
 
 class ElementReso : public HydroSpectrum{
 protected:

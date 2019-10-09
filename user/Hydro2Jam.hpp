@@ -4,10 +4,10 @@
 
 #include <string>
 #include <fstream>
-#include "spectra/IParticleSample.h"
-#include "jam/Jam1.h"
+#include "spectra/IParticleSample.hpp"
+#include "jam/Jam1.hpp"
 
-//#include "HistJAM.h"
+//#include "HistJAM.hpp"
 
 struct Hydro2JamInitParams{
   int mevent;

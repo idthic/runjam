@@ -3,11 +3,11 @@
 #include <new>
 #include <algorithm>
 
-#include "uty/Random.h"
-#include <physicsbase/Const.h>
-#include <ksh/phys/Minkowski.h>
-#include <spectra/IntegratedCooperFrye.h>
-#include "ParticleSampleHydrojet.h"
+#include "uty/Random.hpp"
+#include <physicsbase/Const.hpp>
+#include <ksh/phys/Minkowski.hpp>
+#include <spectra/IntegratedCooperFrye.hpp>
+#include "ParticleSampleHydrojet.hpp"
 
 #define CHG20110804
 //#define DBG20141010_TestViscousCorrection 202

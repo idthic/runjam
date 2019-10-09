@@ -1,8 +1,8 @@
 #define _USE_MATH_DEFINES
 #define _GNU_SOURCE
 
-#include "Random.h"
-#include "Math.h"
+#include "Random.hpp"
+#include "Math.hpp"
 #include <cmath>
 
 Random* Random::srand = 0;

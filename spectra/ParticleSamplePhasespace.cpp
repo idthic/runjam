@@ -3,7 +3,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
-#include "ParticleSamplePhasespace.h"
+#include "ParticleSamplePhasespace.hpp"
 
 void ParticleSampleFromOversampledPhasespace::readPhasespaceDat(){
   this->clearParticleList();

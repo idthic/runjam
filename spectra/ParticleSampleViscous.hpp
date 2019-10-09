@@ -8,8 +8,8 @@
 #define spectra_ParticleSampleViscous_h
 #include <vector>
 #include <string>
-#include "IParticleSample.h"
-#include "IResonanceList.h"
+#include "IParticleSample.hpp"
+#include "IResonanceList.hpp"
 
 //-----------------------------------------------------------------------------
 // prototype declarations

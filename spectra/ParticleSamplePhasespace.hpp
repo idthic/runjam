@@ -4,7 +4,7 @@
 #define spectra_PARTICLE_SAMPLE_FROM_OVERSAMPLED_PHASESPACE_H
 #include <vector>
 #include <string>
-#include "IParticleSample.h"
+#include "IParticleSample.hpp"
 
 class ParticleSampleFromOversampledPhasespace:public ParticleSampleBase{
   std::string fname_phasespace_dat;

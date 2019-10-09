@@ -3,8 +3,8 @@
 #define ParticleSample_h
 #include <vector>
 #include <string>
-#include "ElementReso.h"
-#include "IParticleSample.h"
+#include "ElementReso.hpp"
+#include "IParticleSample.hpp"
 
 class ParticleSampleHydrojet: public ElementReso, public IParticleSample {
 private:

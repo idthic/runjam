@@ -1,4 +1,4 @@
-#include "integrator.h"
+#include "integrator.hpp"
 namespace kashiwa{
 //NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 // Supported orders of the Gauss-Legendre quadratures are given in the following table:

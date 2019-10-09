@@ -8,10 +8,10 @@
 #include <fstream>
 #include <sstream>
 #include <iterator>
-#include <ksh/integrator.h>
+#include <ksh/integrator.hpp>
 
-#include "uty/Random.h"
-#include "ParticleSampleViscous.h"
+#include "uty/Random.hpp"
+#include "ParticleSampleViscous.hpp"
 
 namespace {
 

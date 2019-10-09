@@ -2,15 +2,15 @@
 #include <iostream>
 #include <cstring>
 
-#include "ksh/util.h"
+#include "ksh/util.hpp"
 
-#include "uty/Random.h"
-#include "uty/PyRand.h"
-#include "user/Hydro2Jam.h"
+#include "uty/Random.hpp"
+#include "uty/PyRand.hpp"
+#include "user/Hydro2Jam.hpp"
 
-#include "spectra/ElementReso.h"
-#include "spectra/ParticleSamplePhasespace.h"
-#include "spectra/ParticleSampleViscous.h"
+#include "spectra/ElementReso.hpp"
+#include "spectra/ParticleSamplePhasespace.hpp"
+#include "spectra/ParticleSampleViscous.hpp"
 
 #define PACKAGE_VERSION "0.1a"
 using namespace std;
@@ -236,7 +236,7 @@ public:
 
 #include <cmath>
 #ifdef USE_JAM
-# include "jam/Jam1.h"
+# include "jam/Jam1.hpp"
 #endif
 
 void savePhasespaceData(std::string fname, std::vector<Particle*> plist, ParticleIDType::value_type idtype) {

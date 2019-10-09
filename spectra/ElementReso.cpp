@@ -5,10 +5,10 @@
 #ifdef _OPENMP
 # include <omp.h>
 #endif
-#include <ksh/phys/Minkowski.h>
-#include <spectra/IntegratedCooperFrye.h>
+#include <ksh/phys/Minkowski.hpp>
+#include <spectra/IntegratedCooperFrye.hpp>
 
-#include "ElementReso.h"
+#include "ElementReso.hpp"
 
 ElementReso::ElementReso(std::string dir, std::string* outf, int kint, int eos_pce, std::string fname)
   : HydroSpectrum(kint, eos_pce), rlist(kint,eos_pce,fname)

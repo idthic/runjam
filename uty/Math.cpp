@@ -1,4 +1,4 @@
-#include "Math.h"
+#include "Math.hpp"
 #include <iostream>
 
 #ifdef HAVE_CONFIG_H

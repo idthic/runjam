@@ -8,7 +8,7 @@
 #include <iomanip>
 #include <cstring>
 #include <cmath>
-#include "Jam1.h"
+#include "Jam1.hpp"
 
 using namespace std;
 

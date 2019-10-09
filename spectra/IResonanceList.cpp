@@ -2,7 +2,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <fstream>
-#include "IResonanceList.h"
+#include "IResonanceList.hpp"
 
 //int ResonanceListPCE::nreso=75;
 int ResonanceListPCE::nreso=151;

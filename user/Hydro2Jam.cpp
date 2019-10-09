@@ -11,11 +11,11 @@
 #include <iomanip>
 #include <fstream>
 #include <sstream>
-#include "uty/Random.h"
-#include "Hydro2Jam.h"
-#include "spectra/ParticleSampleHydrojet.h"
+#include "uty/Random.hpp"
+#include "Hydro2Jam.hpp"
+#include "spectra/ParticleSampleHydrojet.hpp"
 
-#include "ksh/util.h"
+#include "ksh/util.hpp"
 
 using namespace std;
 

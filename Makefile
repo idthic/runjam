@@ -36,17 +36,15 @@ hydro2jam_OBJS := hydro2jam.o \
   uty/Random.o
 hydro2jam_LIBS := -ljam $(LIBS)
 
-jam/%.o: jam/%.cxx
+jam/%.o: jam/%.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 ksh/%.o: ksh/%.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
-spectra/%.o: spectra/%.cxx
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 spectra/%.o: spectra/%.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
-user/%.o: user/%.cxx
+user/%.o: user/%.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
-uty/%.o: uty/%.cxx
+uty/%.o: uty/%.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 all: hydro2jam.exe

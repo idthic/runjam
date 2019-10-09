@@ -1,7 +1,7 @@
 #ifndef PyRand_h
 #define PyRand_h
 
-#include "Random.h"
+#include "Random.hpp"
 
 //The random number generator from Pythia6.
 

@@ -1,4 +1,4 @@
-#include "PyRand.h"
+#include "PyRand.hpp"
 
 using namespace std;
 

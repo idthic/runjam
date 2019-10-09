@@ -1,7 +1,7 @@
 // -*- C++ -*-
 #ifndef HYDROJET_SPETRA_IntegratedCooperFrye_H
 #define HYDROJET_SPETRA_IntegratedCooperFrye_H
-#include <ksh/phys/Minkowski.h>
+#include <ksh/phys/Minkowski.hpp>
 namespace hydrojet{
 namespace spectra{
   void IntegrateBosonCooperFrye(
