@@ -11,22 +11,6 @@
 namespace idt {
 namespace hydro2jam {
 
-struct Hydro2JamInitParams{
-  int nevent;
-  int seed;
-  std::string dir_reso;
-  int kintmp;
-  int eos_pce;
-  std::string dir;
-  int dpd;
-  std::string fnamePS;
-  std::string fnamePS0;
-
-  double switchingTemperature;
-public:
-  Hydro2JamInitParams(): switchingTemperature(155.0) {}
-};
-
 class Hydro2Jam {
 private:
   Jam1* jam;
@@ -35,7 +19,7 @@ private:
   int kinTmp;
   int eosPCE;
   std::string resodata;
-  int nEvent;
+  int nevent;
   int isFile; // =1:read hydro data from the file.
   int numberTestParticle;
   int nv;
@@ -45,6 +29,8 @@ private:
   std::ofstream ofs;   // file for phase space data output.
   std::ofstream ofs0;   // file for phase space data output before rescattering.
   int dumpPhaseSpaceData;
+
+  bool flag_decayOnly;
 
 private:
   void initialize(hydro2jam_context const& iparam);

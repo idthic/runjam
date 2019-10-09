@@ -86,7 +86,29 @@ namespace hydro2jam {
 
   class hydro2jam_context: public idt::util::application_context {
   public:
-    int seed() const { return this->get_config("hydro2jam_seed", 18371); }
+    int seed() const {
+      return this->get_config("hydro2jam_seed", 18371);
+    }
+    int nevent(int defaultValue = 1) const {
+      return this->get_config("hydro2jam_nevent", defaultValue);
+    }
+    std::string outdir() const {
+      return this->get_config<std::string>("hydro2jam_output_directory", "jam");
+    }
+
+    int eospce() const {
+      return this->get_config("hydrojet_eospce", 6);
+    }
+    int kintmp() const {
+      return this->get_config("hydrojet_kintmp", 5);
+    }
+    std::string resodata() const {
+      return this->get_config<std::string>("hydrojet_resodata", "dict/ResonanceJam.dat");
+    }
+    std::string indir() const {
+      return this->get_config<std::string>("hydrojet_directory", "test");
+    }
+
 
   };
 

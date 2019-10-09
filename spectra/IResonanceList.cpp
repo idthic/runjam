@@ -144,16 +144,16 @@ ResonanceListPCE::resonance ResonanceListPCE::resT[5][21] = {
 };
 
 ResonanceListPCE::ResonanceListPCE(hydro2jam_context const& ctx) {
-  int const eospce = ctx.get_config("hydrojet_eospce", 6);
-  int const kintmp = ctx.get_config("hydrojet_kintmp", 5);
-  std::string const resodata = ctx.get_config<std::string>("hydrojet_resodata", "dict/ResonanceJam.dat");
+  int const eospce = ctx.eospce();
+  int const kintmp = ctx.kintmp();
+  std::string const resodata = ctx.resodata();
   initialize(kintmp, eospce, resodata);
 }
-ResonanceListPCE::ResonanceListPCE(int kineticTemp,int eos_pce,std::string const& fname_rlist){
+ResonanceListPCE::ResonanceListPCE(int kineticTemp, int eos_pce, std::string const& fname_rlist) {
   initialize(kineticTemp, eos_pce, fname_rlist);
 }
 
-void ResonanceListPCE::initialize(int kineticTemp,int eos_pce,std::string const& fname_rlist) {
+void ResonanceListPCE::initialize(int kineticTemp, int eos_pce, std::string const& fname_rlist) {
   //temporal modification
   m_numberOfResonances = ResonanceListPCE::nreso;
   if (eos_pce < 2 || eos_pce == 5) {

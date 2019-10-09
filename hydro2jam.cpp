@@ -17,8 +17,6 @@
 using namespace std;
 using namespace idt::hydro2jam;
 
-#define DATADIR "dict"
-
 void generatePhasespace0(hydro2jam_context const& ctx, std::string const& inputfile);
 
 //-----------------------------------------------------------------------------
@@ -26,17 +24,9 @@ void generatePhasespace0(hydro2jam_context const& ctx, std::string const& inputf
 
 //int seed = 1921;
 
-// std::string dir = "test";
-// std::string dirJAM = "jam";
-// int eos_pce = 6;
-// int freezeoutTemp = 5;// 1:80MeV 2:100MeV 3:120MeV 4:140MeV 5:160MeV, This option works only for eos_pce = 1.
-// std::string resodata = DATADIR "/ResonanceJam.dat";
 int baryonfree = 1;
 int ntest = 1;
 int sw_weakdecay = 0; // this does not work now, sorry. do not put =1.
-// int dumpPhaseSpace = 1; // =1: output phase space data in JAM.
-// std::string fnamePS = "phasespace.dat";
-// std::string fnamePS0 = "phasespace0.dat";
 double deltat = 0.3;
 double deltax = 0.3;
 double deltay = 0.3;
@@ -160,9 +150,9 @@ public:
           } else if (!strcmp(argv[i], "-n")) {
             ctx.set_value("hydro2jam_nevent", atoi(argv[++i]));
           } else if (!strcmp(argv[i], "-f")) {
-            ctx.set_value("hydro2jam_fname_phasespace", argv[++i]);
+            ctx.set_value("hydro2jam_phasespace_fname", argv[++i]);
           } else if (!strcmp(argv[i], "-f0")) {
-            ctx.set_value("hydro2jam_fname_phasespace0", argv[++i]);
+            ctx.set_value("hydro2jam_phasespace_fname0", argv[++i]);
           } else if (!strcmp(argv[i], "-ftemp"))  {
             ctx.set_value("hydrojet_kintmp", atoi(argv[++i]));
           } else if (!strcmp(argv[i], "-dir")) {
@@ -170,7 +160,7 @@ public:
           } else if (!strcmp(argv[i], "-dirJAM")) {
             ctx.set_value("hydrojet_output_directory", argv[++i]);
           } else if (!strcmp(argv[i], "-d")) {
-            ctx.set_value("hydro2jam_dpd", atoi(argv[++i]));
+            ctx.set_value("hydro2jam_phasespace_enabled", atoi(argv[++i]));
           } else if (!strcmp(argv[i], "-w")) {
             sw_weakdecay = atoi(argv[++i]);
           } else if (!strcmp(argv[i], "-pce")) {
@@ -237,9 +227,6 @@ public:
     return 0;
   }
 } args;
-
-
-#undef DATADIR
 
 //-----------------------------------------------------------------------------
 // routines
@@ -347,7 +334,7 @@ void hadronicCascade(hydro2jam_context const& ctx) {
   std::cout << "JAM hadronic cascade start" << std::endl;
 
   Hydro2Jam* jam = new Hydro2Jam(ctx);
-  jam->setResoData(ctx.get_config<std::string>("hydrojet_resodata", "dict/ResonanceJam.dat"));
+  jam->setResoData(ctx.resodata());
   jam->setIsFile(0);
   jam->setMSTC(156, 1);        // analysis of collision distribution
   jam->setMSTC(161, 0);        // no analysis from jam internal subr.
@@ -378,7 +365,7 @@ void hadronicCascade(hydro2jam_context const& ctx) {
     break;
   default: // default dir = "test"
     {
-      std::string const indir = ctx.get_config<std::string>("hydrojet_directory", "test");
+      std::string const indir = ctx.indir();
       jam->generateEventFromHypersurfaceFiles(
         indir + "/freezeout.dat",
         indir + "/position.dat",
@@ -397,9 +384,9 @@ void hadronicCascade(hydro2jam_context const& ctx) {
 }
 
 void generatePhasespace0(hydro2jam_context const& ctx, std::string const& inputfile) {
-  int const nevent = ctx.get_config("hydro2jam_nevent", 1000);
+  int const nevent = ctx.nevent(1000);
   int const ibase = ctx.get_config("hydro2jam_ievent_begin", 0);
-  std::string const outdir = ctx.get_config<std::string>("hydro2jam_output_directory", "jam");
+  std::string const outdir = ctx.outdir();
 
   ResonanceListPCE reso(ctx);
 
@@ -438,14 +425,6 @@ int main(int argc, char *argv[]) {
   // Random* rand = new Random(randomSeed);
   Random::setRandom(rand);
 
-  // ctx.set_value("hydro2jam_seed", randomSeed);
-  // ctx.set_value("hydrojet_directory", dir);
-  // ctx.set_value("hydrojet_kintmp", freezeoutTemp);
-  // ctx.set_value("hydrojet_eospce", eos_pce);
-  // ctx.set_value("hydro2jam_output_directory", dirJAM);
-  // ctx.set_value("hydro2jam_dpd", dumpPhaseSpace);
-  // ctx.set_value("hydro2jam_fname_phasespace", fnamePS);
-  // ctx.set_value("hydro2jam_fname_phasespace0", fnamePS0);
   hadronicCascade(ctx);
 
   delete rand;

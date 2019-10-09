@@ -180,23 +180,24 @@ Hydro2Jam::Hydro2Jam(hydro2jam_context const& ctx) {
 }
 
 void Hydro2Jam::initialize(hydro2jam_context const& ctx) {
-  ctx.read_config(this->dirReso, "hydrojet_directory");
-  ctx.read_config(this->kinTmp , "hydrojet_kintmp");
-  ctx.read_config(this->eosPCE , "hydrojet_eospce");
+  this->dirReso = ctx.indir();
+  this->kinTmp = ctx.kintmp();
+  this->eosPCE = ctx.eospce();
 
-  ctx.read_config(this->nEvent, "hydro2jam_nevent");
-  ctx.read_config(this->dumpPhaseSpaceData, "hydro2jam_dpd");
+  this->nevent = ctx.nevent(1);
+  ctx.read_config(this->dumpPhaseSpaceData, "hydro2jam_phasespace_enabled");
 
-  std::string outdir;
-  ctx.read_config(outdir, "hydro2jam_output_directory");
+  this->flag_decayOnly = ctx.get_config("hydro2jam_decay_only", false);
+
+  std::string const outdir = ctx.outdir();
 
   int const seed = ctx.seed();
 
   jam = new Jam1();
 
   //....Initialize JAM
-  jam->setMSTC(1, seed);         // random seed.
-  jam->setMSTC(2, this->nEvent); // number of event.
+  jam->setMSTC(1, ctx.get_config("hydro2jam_jamseed", seed)); // random seed.
+  jam->setMSTC(2, this->nevent); // number of event.
   //jam->setMSTC(38,6);          // io number for jamlist.
   jam->setMSTC(8,0);             // job mode.
   jam->setMSTC(16,0);            // display on/off.
@@ -242,7 +243,7 @@ void Hydro2Jam::initialize(hydro2jam_context const& ctx) {
   }
 
   //...Initialize jam.
-  jam->jamInit(this->nEvent, bmin, bmax, dt, nstep, "user", "p ", "p ", "2gev");
+  jam->jamInit(this->nevent, bmin, bmax, dt, nstep, "user", "p ", "p ", "2gev");
 
   isFile = 0;
   numberTestParticle = 1;
@@ -250,8 +251,8 @@ void Hydro2Jam::initialize(hydro2jam_context const& ctx) {
   if (dumpPhaseSpaceData) {
     std::string fname_phasespace;
     std::string fname_phasespace0;
-    ctx.read_config(fname_phasespace, "hydro2jam_fname_phasespace");
-    ctx.read_config(fname_phasespace0, "hydro2jam_fname_phasespace0");
+    ctx.read_config(fname_phasespace, "hydro2jam_phasespace_fname");
+    ctx.read_config(fname_phasespace0, "hydro2jam_phasespace_fname0");
     if (outdir.size() > 0) {
       if (fname_phasespace[0] != '/')
         fname_phasespace = outdir + "/" + fname_phasespace;
@@ -284,19 +285,18 @@ Hydro2Jam::~Hydro2Jam() {
 }
 
 void Hydro2Jam::generateEvent(IParticleSample* psamp) {
-  //int nevent=jam->getMSTC(2);
-  int const nEvent = this->nEvent;
+  int const nevent = this->nevent;
   aveNumberPart1 = 0.0;
   aveNumberPart2 = 0.0;
   jam->setMSTC(5,numberTestParticle);
 
-  if (nEvent * numberTestParticle > 0)
-    psamp->setAdviceNumberOfExpectedEvents(nEvent * numberTestParticle);
+  if (nevent * numberTestParticle > 0)
+    psamp->setAdviceNumberOfExpectedEvents(nevent * numberTestParticle);
 
   int nprint = 1;
 
   //...Simulation start.
-  for(int iev=1;iev<= nEvent;iev++) {
+  for(int iev=1;iev<= nevent;iev++) {
 
     // if(iev%nprint == 0)
     //   std::cout << "Hydro2Jam.cxx(Hydro2Jam::generateEvent): event=" << iev << std::endl;
@@ -320,7 +320,7 @@ void Hydro2Jam::generateEvent(IParticleSample* psamp) {
                 << "sampling done. The number of initial test particles is nv=" << nv << "." << std::endl;
     }
 
-    aveNumberPart1 += (double)nv/(nEvent*numberTestParticle);
+    aveNumberPart1 += (double)nv/(nevent*numberTestParticle);
 
     //...C.M.correction.
     //cmCorrection(nv);
@@ -328,7 +328,7 @@ void Hydro2Jam::generateEvent(IParticleSample* psamp) {
     if (dumpPhaseSpaceData)
       printPhaseSpaceData(ofs0); // output the distribution to phasespace0.dat
 
-    if (kashiwa::getenvAsBool("hydro2jam_decay_only",false)) {
+    if (flag_decayOnly) {
       // perform resonance decay (no rescatterings will be performed.)
       jam->finalResonanceDecay();
 
@@ -365,7 +365,7 @@ void Hydro2Jam::generateEventFromHypersurfaceFiles(std::string const& fn_freezeo
   psamp->setDh(deltah);
   psamp->setBaryonFree(baryonfree);
 
-  if(isFile)
+  if (isFile)
     psamp->setIsOutput(1);
   else
     psamp->setIsOutput(0);
