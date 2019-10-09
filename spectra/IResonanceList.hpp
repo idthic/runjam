@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <util/Constants.hpp>
+#include "../args.hpp"
 
 namespace idt {
 namespace hydro2jam {
@@ -33,7 +34,7 @@ public:
   virtual ~IResonanceList(){}
 };
 
-class ResonanceListPCE : public IResonanceList {
+class ResonanceListPCE: public IResonanceList {
 public:
   struct resonance {
     double mass;
@@ -53,7 +54,9 @@ private:
 
   std::vector<resonance> data;
 
+  void initialize(int kineticTemp, int eos_pce,std::string const& fname_rlist);
 public:
+  ResonanceListPCE(hydro2jam_context const& ctx);
   ResonanceListPCE(int kineticTemp, int eos_pce,std::string const& fname_rlist);
 
   resonance const& operator[](int ireso) const{

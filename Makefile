@@ -31,10 +31,10 @@ hydro2jam_OBJS := hydro2jam.o \
   spectra/ParticleSampleHydrojet.o \
   spectra/ParticleSamplePhasespace.o \
   spectra/ParticleSampleViscous.o \
-  user/Hydro2Jam.o \
-  uty/Math.o \
-  uty/PyRand.o \
-  uty/Random.o
+  Hydro2Jam.o \
+  util/Math.o \
+  util/PyRand.o \
+  util/Random.o
 hydro2jam_LIBS := -ljam $(LIBS)
 
 jam/%.o: jam/%.cpp

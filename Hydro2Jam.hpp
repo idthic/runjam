@@ -6,12 +6,13 @@
 #include <fstream>
 #include "spectra/IParticleSample.hpp"
 #include "jam/Jam1.hpp"
+#include "args.hpp"
 
 namespace idt {
 namespace hydro2jam {
 
 struct Hydro2JamInitParams{
-  int mevent;
+  int nevent;
   int seed;
   std::string dir_reso;
   int kintmp;
@@ -40,27 +41,21 @@ private:
   int nv;
   int nbary;
   int nmeson;
-  int numOutputHist;  // output histgram every "numOutoutHist" event.
-
-  bool outputHistogramFlag;
-  // HistJAM  *hist0, *hist; // histgram for before and after JAM.
 
   std::ofstream ofs;   // file for phase space data output.
   std::ofstream ofs0;   // file for phase space data output before rescattering.
   int dumpPhaseSpaceData;
+
 private:
-  void initialize(Hydro2JamInitParams const& iparam);
+  void initialize(hydro2jam_context const& iparam);
+
 public:
-  Hydro2Jam(
-    int mevent, int seed, std::string dir_reso,int kintmp,
-    int eos_pce,std::string dir,
-    int dpd,std::string fnameps,std::string fnameps0);
-  Hydro2Jam(Hydro2JamInitParams const& iparam);
+  Hydro2Jam(hydro2jam_context const& iparam);
   ~Hydro2Jam();
+
   void   setResoData(std::string d) {resodata=d;}
   void   setIsFile(int i) {isFile=i;}
   void   setNumberOfTestParticle(int i) {numberTestParticle=i;}
-  void   setNumberOfHistgramOutput(int i) {numOutputHist=i;}
   double getIniAverageParticleNumber1() {return aveNumberPart1;}
   double getIniAverageParticleNumber2() {return aveNumberPart2;}
   void   setWeakDecay() {jam->setMSTC(42,0);}  //=0: allow weak decays
@@ -76,7 +71,7 @@ public:
   void   cmCorrection();
   void   printPhaseSpaceData(std::ofstream& output);
 
-  static int getJamID(int ir);
+  static int sampleJamID(int ir);
 };
 
 }

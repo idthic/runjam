@@ -6,7 +6,7 @@
 
 #include "util/Random.hpp"
 #include "util/PyRand.hpp"
-#include "user/Hydro2Jam.hpp"
+#include "Hydro2Jam.hpp"
 
 #include "spectra/ElementReso.hpp"
 #include "spectra/ParticleSamplePhasespace.hpp"
@@ -17,26 +17,26 @@
 using namespace std;
 using namespace idt::hydro2jam;
 
-void generatePhasespaceData20141020(int ibase, std::string dirJAM);
+#define DATADIR "dict"
+
+void generatePhasespace0(hydro2jam_context const& ctx, std::string const& inputfile);
 
 //-----------------------------------------------------------------------------
 // parameters
 
-#define DATADIR "dict"
-int seed = 1921;
-int nhistout = 10;   // output histgram every "nhistout" event.
-std::string dir = "test";
-std::string dirJAM = "jam";
-int randomSeed = 18371;
-int eos_pce = 6;
-int freezeoutTemp = 5;// 1:80MeV 2:100MeV 3:120MeV 4:140MeV 5:160MeV, This option works only for eos_pce = 1.
-std::string resodata = DATADIR "/ResonanceJam.dat";
+//int seed = 1921;
+
+// std::string dir = "test";
+// std::string dirJAM = "jam";
+// int eos_pce = 6;
+// int freezeoutTemp = 5;// 1:80MeV 2:100MeV 3:120MeV 4:140MeV 5:160MeV, This option works only for eos_pce = 1.
+// std::string resodata = DATADIR "/ResonanceJam.dat";
 int baryonfree = 1;
 int ntest = 1;
 int sw_weakdecay = 0; // this does not work now, sorry. do not put =1.
-int dumpPhaseSpace = 1; // =1: output phase space data in JAM.
-std::string fnamePS = "phasespace.dat";
-std::string fnamePS0 = "phasespace0.dat";
+// int dumpPhaseSpace = 1; // =1: output phase space data in JAM.
+// std::string fnamePS = "phasespace.dat";
+// std::string fnamePS0 = "phasespace0.dat";
 double deltat = 0.3;
 double deltax = 0.3;
 double deltay = 0.3;
@@ -49,6 +49,7 @@ enum InitialType {
   InitialType_HYDRO,
   InitialType_PHASE,
 };
+
 struct Hydro2jamCommandlineArguments {
   InitialType jamInitType;
   std::string fnameInitialPhasespaceData;
@@ -87,7 +88,6 @@ private:
       "  -pce INT        eos_pce\n"
       "  -bfree INT      baryonfree\n"
       "  -resodata STR   resodata\n"
-      "  -ho INT         nhistout\n"
       "  -dx FLOAT       deltax\n"
       "  -dy FLOAT       deltay\n"
       "  -dh FLOAT       deltah\n"
@@ -109,13 +109,13 @@ private:
       "\n"
       "SAMPLE\n"
       "$ ./hydro2jam -s 12345 -dir hydro -dirJAM jam\n"
-      "$ ./hydro2jam -s 12345 -i phase:phasespace0.in -dirJAM jam --disable-hist\n"
+      "$ ./hydro2jam -s 12345 -i phase:phasespace0.in -dirJAM jam\n"
       "\n"
     );
   }
 
 public:
-  int read(int argc, char** argv) {
+  int read(int argc, char** argv, hydro2jam_context& ctx) {
     for (int i = 1; i < argc; i++) {
       if (argv[i][0] == '-') {
         if (argv[i][1] == '-') {
@@ -151,28 +151,41 @@ public:
           }
         } else {
           if (!strcmp(argv[i], "-s")) {
-            randomSeed = atoi(argv[++i]);
-            std::cout << "hydro2jam: randomSeed is set to '" << randomSeed << "' (hydrojet version = " << PACKAGE_VERSION << ")" << std::endl;
-          } else if (!strcmp(argv[i], "-t"))      ntest = atoi(argv[++i]);
-          else if (!strcmp(argv[i], "-n"))        this->nev = atoi(argv[++i]);
-          else if (!strcmp(argv[i], "-f")) {
-            fnamePS = argv[++i];
-          }else if (!strcmp(argv[i], "-ftemp")) {
-            // ? バグ? (本当は別のオプションを割り当てるべきではないか?)
-            freezeoutTemp = atoi(argv[++i]);
-          }else if (!strcmp(argv[i], "-f0"))      fnamePS0 = argv[++i];
-          else if (!strcmp(argv[i], "-dir"))      dir = argv[++i];
-          else if (!strcmp(argv[i], "-dirJAM"))   dirJAM = argv[++i];
-          else if (!strcmp(argv[i], "-d"))        dumpPhaseSpace = atoi(argv[++i]);
-          else if (!strcmp(argv[i], "-w"))        sw_weakdecay = atoi(argv[++i]);
-          else if (!strcmp(argv[i], "-pce"))      eos_pce = atoi(argv[++i]);
-          else if (!strcmp(argv[i], "-bfree"))    baryonfree = atoi(argv[++i]);
-          else if (!strcmp(argv[i], "-resodata")) resodata = argv[++i];
-          else if (!strcmp(argv[i], "-ho"))       nhistout = atoi(argv[++i]);
-          else if (!strcmp(argv[i], "-dx"))       deltax = atof(argv[++i]);
-          else if (!strcmp(argv[i], "-dy"))       deltay = atof(argv[++i]);
-          else if (!strcmp(argv[i], "-dh"))       deltah = atof(argv[++i]);
-          else if (!strcmp(argv[i], "-i")) {
+            int const randomSeed = atoi(argv[++i]);
+            ctx.set_value("hydro2jam_seed", randomSeed);
+            std::cout << "hydro2jam: randomSeed is set to '" << randomSeed << "'"
+                      << " [hydro2jam version " << PACKAGE_VERSION << "]" << std::endl;
+          } else if (!strcmp(argv[i], "-t")) {
+            ntest = atoi(argv[++i]);
+          } else if (!strcmp(argv[i], "-n")) {
+            ctx.set_value("hydro2jam_nevent", atoi(argv[++i]));
+          } else if (!strcmp(argv[i], "-f")) {
+            ctx.set_value("hydro2jam_fname_phasespace", argv[++i]);
+          } else if (!strcmp(argv[i], "-f0")) {
+            ctx.set_value("hydro2jam_fname_phasespace0", argv[++i]);
+          } else if (!strcmp(argv[i], "-ftemp"))  {
+            ctx.set_value("hydrojet_kintmp", atoi(argv[++i]));
+          } else if (!strcmp(argv[i], "-dir")) {
+            ctx.set_value("hydrojet_directory", argv[++i]);
+          } else if (!strcmp(argv[i], "-dirJAM")) {
+            ctx.set_value("hydrojet_output_directory", argv[++i]);
+          } else if (!strcmp(argv[i], "-d")) {
+            ctx.set_value("hydro2jam_dpd", atoi(argv[++i]));
+          } else if (!strcmp(argv[i], "-w")) {
+            sw_weakdecay = atoi(argv[++i]);
+          } else if (!strcmp(argv[i], "-pce")) {
+            ctx.set_value("hydrojet_eospce", atoi(argv[++i]));
+          } else if (!strcmp(argv[i], "-bfree")) {
+            baryonfree = atoi(argv[++i]);
+          } else if (!strcmp(argv[i], "-resodata")) {
+            ctx.set_value("hydrojet_resodata", argv[++i]);
+          } else if (!strcmp(argv[i], "-dx")) {
+            deltax = atof(argv[++i]);
+          } else if (!strcmp(argv[i], "-dy")) {
+            deltay = atof(argv[++i]);
+          } else if (!strcmp(argv[i], "-dh")) {
+            deltah = atof(argv[++i]);
+          } else if (!strcmp(argv[i], "-i")) {
             if (argv[i + 1] == 0) {
               std::cerr << "option `-i': missing an argument" << std::endl;
               std::exit(EXIT_FAILURE);
@@ -210,14 +223,11 @@ public:
       } else {
         // option 以外の文字列
         std::string const arg = argv[i];
-        if (arg == "generate_phasespace0") {
+        if (arg == "generate-phasespace0") {
           // test 用
-          Random* rand = new PyRand(randomSeed);
+          Random* rand = new PyRand(ctx.seed());
           Random::setRandom(rand);
-          {
-            int const iEv_begin = kashiwa::getenvAsInt("iEv_begin", 50000);
-            generatePhasespaceData20141020(iEv_begin, dirJAM);
-          }
+          generatePhasespace0(ctx, this->fnameInitialPhasespaceData);
           delete rand;
           std::exit(EXIT_SUCCESS);
         }
@@ -235,9 +245,7 @@ public:
 // routines
 
 #include <cmath>
-#ifdef USE_JAM
-# include "jam/Jam1.hpp"
-#endif
+#include "jam/Jam1.hpp"
 
 void savePhasespaceData(std::string fname, std::vector<Particle*> plist, ParticleIDType::value_type idtype) {
   std::FILE* f=std::fopen(fname.c_str(), "w");
@@ -258,7 +266,7 @@ void savePhasespaceData(std::string fname, std::vector<Particle*> plist, Particl
     case ParticleIDType::HydroParticleID:
       {
         int ir = particle->id;
-        kf = Hydro2Jam::getJamID(ir + 1);
+        kf = Hydro2Jam::sampleJamID(ir + 1);
       }
       break;
     case ParticleIDType::PDGCode:
@@ -275,12 +283,10 @@ void savePhasespaceData(std::string fname, std::vector<Particle*> plist, Particl
     //---------------------------------
     // (2) ks ... 安定粒子なら 1, 不安定粒子なら 2.
     int ks = 2;
-#ifdef USE_JAM
     int const kc = Jam1::jamComp(kf); // jam internal particle code.
     if (
       Jam1::getPMAS(kc,2) <= 1e-7 || Jam1::getMDCY(kc,1) == 0
       || Jam1::getMDCY(kc,2) == 0 || Jam1::getMDCY(kc,3) == 0) ks = 1;
-#endif
     //---------------------------------
     // (3) px,py,pz,m
     double const px = particle->px;
@@ -289,12 +295,8 @@ void savePhasespaceData(std::string fname, std::vector<Particle*> plist, Particl
     double pe = particle->e;
     double m;
     if (pe < 0.0) {
-#ifdef USE_JAM
       m = Jam1::jamMass(kf);
       pe = std::sqrt(px*px+py*py+pz*pz+m*m);
-#else
-      m = -1.0;
-#endif
     } else {
       m = std::sqrt(pe*pe-(px*px+py*py+pz*pz));
     }
@@ -315,8 +317,8 @@ void savePhasespaceData(std::string fname, std::vector<Particle*> plist, Particl
 }
 
 #ifdef USE_JAM
-void hadronicCascadeC0Lrf(Hydro2JamInitParams& iparam, Hydro2Jam* jam, std::string const& fname) {
-  ResonanceListPCE reso(iparam.kintmp, iparam.eos_pce, ::resodata);
+void hadronicCascadeC0Lrf(hydro2jam_context const& ctx, Hydro2Jam* jam, std::string const& fname) {
+  ResonanceListPCE reso(ctx);
 
   ParticleSampleViscous* psamp = new ParticleSampleViscous(&reso, fname);
   if (args.switchingTemperature > 0.0)
@@ -325,10 +327,10 @@ void hadronicCascadeC0Lrf(Hydro2JamInitParams& iparam, Hydro2Jam* jam, std::stri
   delete psamp;
 }
 
-void hadronicCascadeHydrojet(Hydro2JamInitParams& iparam, Hydro2Jam* jam, std::string const& dname) {
-  ResonanceListPCE reso(iparam.kintmp, iparam.eos_pce, ::resodata);
+void hadronicCascadeHydrojet(hydro2jam_context const& ctx, Hydro2Jam* jam, std::string const& dname) {
+  ResonanceListPCE reso(ctx);
 
-  ParticleSampleFromHydrojet* psamp = new ParticleSampleFromHydrojet(&reso,dname);
+  ParticleSampleFromHydrojet* psamp = new ParticleSampleFromHydrojet(&reso, dname);
   psamp->setDtau(deltat);
   psamp->setDh(deltah);
   psamp->setDx(deltax);
@@ -341,31 +343,16 @@ void hadronicCascadeHydrojet(Hydro2JamInitParams& iparam, Hydro2Jam* jam, std::s
 }
 #endif
 
-void hadronicCascade(int mevent) {
-#ifdef USE_JAM
-  cout << "JAM hadronic cascade start" << endl;
-  //int seed = (int)Random::getRand()
-  Hydro2Jam* jam;
+void hadronicCascade(hydro2jam_context const& ctx) {
+  std::cout << "JAM hadronic cascade start" << std::endl;
 
-  Hydro2JamInitParams iparam;
-  iparam.mevent              = mevent;
-  iparam.seed                = randomSeed;
-  iparam.dir_reso            = dir;
-  iparam.kintmp              = freezeoutTemp;
-  iparam.eos_pce             = eos_pce;
-  iparam.dir                 = dirJAM;
-  iparam.dpd                 = dumpPhaseSpace;
-  iparam.fnamePS             = fnamePS;
-  iparam.fnamePS0            = fnamePS0;
-  jam = new Hydro2Jam(iparam);
-
-  jam->setNumberOfHistgramOutput(nhistout);
-  jam->setResoData(resodata);
+  Hydro2Jam* jam = new Hydro2Jam(ctx);
+  jam->setResoData(ctx.get_config<std::string>("hydrojet_resodata", "dict/ResonanceJam.dat"));
   jam->setIsFile(0);
-  jam->setMSTC(156,1);        // analysis of collision distribution
-  jam->setMSTC(161,0);        // no analysis from jam internal subr.
-  jam->setMSTC(162,1);        // Output collision histroy
-  jam->setMSTC(165,1);        //
+  jam->setMSTC(156, 1);        // analysis of collision distribution
+  jam->setMSTC(161, 0);        // no analysis from jam internal subr.
+  jam->setMSTC(162, 1);        // Output collision histroy
+  jam->setMSTC(165, 1);        //
   //jam->setMSTC(41,0);         // 0:no resonance decay after simulation.
 
   jam->setNumberOfTestParticle(ntest);
@@ -374,10 +361,10 @@ void hadronicCascade(int mevent) {
   cout << "jam event generation start" << endl;
   switch (args.jamInitType) {
   case InitialType_C0LRF:
-    hadronicCascadeC0Lrf(iparam, jam, args.fnameInitialPhasespaceData);
+    hadronicCascadeC0Lrf(ctx, jam, args.fnameInitialPhasespaceData);
     break;
   case InitialType_HYDRO:
-    hadronicCascadeHydrojet(iparam, jam, args.fnameInitialPhasespaceData);
+    hadronicCascadeHydrojet(ctx, jam, args.fnameInitialPhasespaceData);
     break;
   case InitialType_PHASE1:
   case InitialType_PHASE:
@@ -390,11 +377,14 @@ void hadronicCascade(int mevent) {
     }
     break;
   default: // default dir = "test"
-    jam->generateEventFromHypersurfaceFiles(
-      dir + "/freezeout.dat",
-      dir + "/position.dat",
-      baryonfree,
-      deltat, deltax, deltay, deltah);
+    {
+      std::string const indir = ctx.get_config<std::string>("hydrojet_directory", "test");
+      jam->generateEventFromHypersurfaceFiles(
+        indir + "/freezeout.dat",
+        indir + "/position.dat",
+        baryonfree,
+        deltat, deltax, deltay, deltah);
+    }
     break;
   }
 
@@ -404,62 +394,61 @@ void hadronicCascade(int mevent) {
             << std::endl;
 
   delete jam;
-#endif
+}
+
+void generatePhasespace0(hydro2jam_context const& ctx, std::string const& inputfile) {
+  int const nevent = ctx.get_config("hydro2jam_nevent", 1000);
+  int const ibase = ctx.get_config("hydro2jam_ievent_begin", 0);
+  std::string const outdir = ctx.get_config<std::string>("hydro2jam_output_directory", "jam");
+
+  ResonanceListPCE reso(ctx);
+
+  ParticleSampleViscous* psamp = new ParticleSampleViscous(&reso, inputfile);
+  psamp->setOverSamplingFactor(nevent);
+  if (ctx.get_config("hydro2jam_turnsOffViscousEffect", false))
+    psamp->setTurnsOffViscousEffect(true);
+  psamp->update();
+
+  // 振り分け
+  std::vector<Particle*> const& plist = psamp->getParticleList();
+  std::vector<std::vector<Particle*> > phases((std::size_t) nevent);
+  for (std::vector<Particle*>::const_iterator i = plist.begin(); i != plist.end(); ++i)
+    phases[std::min(int(Random::getRand() * nevent), nevent - 1)].push_back(*i);
+
+  // 保存
+  for (int i = 0; i < nevent; i++) {
+    std::vector<char> fn(outdir.size() + 50);
+    std::sprintf(&fn[0], "%s/dens%06d_phasespace0.dat", outdir.c_str(), ibase + i);
+    savePhasespaceData(&fn[0], phases[i], psamp->getParticleIdType());
+  }
+
+  delete psamp;
 }
 
 //-----------------------------------------------------------------------------
 
 int main(int argc, char *argv[]) {
-  int const ext = args.read(argc, argv);
+  hydro2jam_context ctx;
+
+  int const ext = args.read(argc, argv, ctx);
   if (ext) return ext;
 
   // Set Random number generator.
-  Random* rand = new PyRand(randomSeed);
+  Random* rand = new PyRand(ctx.seed());
   // Random* rand = new Random(randomSeed);
   Random::setRandom(rand);
 
-  hadronicCascade(args.nev);
+  // ctx.set_value("hydro2jam_seed", randomSeed);
+  // ctx.set_value("hydrojet_directory", dir);
+  // ctx.set_value("hydrojet_kintmp", freezeoutTemp);
+  // ctx.set_value("hydrojet_eospce", eos_pce);
+  // ctx.set_value("hydro2jam_output_directory", dirJAM);
+  // ctx.set_value("hydro2jam_dpd", dumpPhaseSpace);
+  // ctx.set_value("hydro2jam_fname_phasespace", fnamePS);
+  // ctx.set_value("hydro2jam_fname_phasespace0", fnamePS0);
+  hadronicCascade(ctx);
+
   delete rand;
 
   return 0;
-}
-
-void generatePhasespaceData20141020(int ibase, std::string dirJAM) {
-  static const int NEvent = 1000;
-
-  Hydro2JamInitParams iparam;
-  iparam.mevent              = NEvent; // not used
-  iparam.seed                = randomSeed;
-  iparam.dir_reso            = dir;
-  iparam.kintmp              = freezeoutTemp;
-  iparam.eos_pce             = eos_pce;
-  iparam.dir                 = dirJAM;
-  iparam.dpd                 = dumpPhaseSpace;
-  iparam.fnamePS             = fnamePS;
-  iparam.fnamePS0            = fnamePS0;
-
-  {
-    ResonanceListPCE reso(iparam.kintmp, iparam.eos_pce, resodata);
-
-    ParticleSampleViscous* psamp = new ParticleSampleViscous(&reso, args.fnameInitialPhasespaceData);
-    psamp->setOverSamplingFactor(NEvent);
-    if (kashiwa::getenvAsBool("hydro2jam_turnsOffViscousEffect", false))
-      psamp->setTurnsOffViscousEffect(true);
-    psamp->update();
-
-    // 振り分け
-    std::vector<Particle*> const& plist = psamp->getParticleList();
-    std::vector<Particle*> phases[NEvent];
-    for (std::vector<Particle*>::const_iterator i = plist.begin(); i != plist.end(); ++i)
-      phases[std::min(int(Random::getRand() * NEvent), NEvent - 1)].push_back(*i);
-
-    // 保存
-    for (int i = 0; i < NEvent; i++) {
-      char fn[200];
-      std::sprintf(fn, "%s/dens%06d_phasespace0.dat", dirJAM.c_str(), ibase + i);
-      savePhasespaceData(fn, phases[i], psamp->getParticleIdType());
-    }
-
-    delete psamp;
-  }
 }
