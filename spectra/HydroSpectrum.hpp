@@ -7,6 +7,9 @@
 #include <fstream>
 #include <string>
 
+namespace idt {
+namespace hydro2jam {
+
 extern const double sctr; // defined in HydroSpectrum.cxx
 
 class HydroSpectrum
@@ -55,5 +58,7 @@ protected:
   double thermaldist(double ee,double pz,double mu,int iw,int sgn);
 };
 
-#endif
+}
+}
 
+#endif

@@ -2,10 +2,43 @@
 #define Jam1Common_h
 
 // This number should be the same as "mxv" in jam1.inc
-#define JAM_MXV  200000
+#ifndef JAM_MXV
+# define JAM_MXV  200000
 //#define JAM_MXV  100000
 //#define JAM_MXV  50000
 //#define JAM_MXV  30000
+#endif
+
+namespace idt {
+namespace hydro2jam {
+
+#ifdef HYDROJET_FORTRAN_NOEXTNAME
+#  define jaminit_ jaminit
+#  define jamevt_  jamevt
+#  define jamfin_  jamfin
+#  define jamzero_ jamzero
+#  define jamcomp_ jamcomp
+#  define jamdtim_ jamdtim
+#  define jamlist_ jamlist
+#  define jamchge_ jamchge
+#  define jamfdec_ jamfdec
+#  define pjmass_  pjmass
+#endif
+
+extern "C" void   jaminit_(
+  int *mev, double *bmin, double *bmax, double *dt,
+  int *nstp, const char *frame, const char *proj,
+  const char *targ, const char *cwin,
+  int lf, int lp, int lt, int lc);
+extern "C" void   jamevt_(int *iev);
+extern "C" void   jamfin_();
+extern "C" void   jamzero_(int *ip);
+extern "C" int    jamcomp_(int *kf);
+extern "C" double jamdtim_(int *im,int *kf,int *kc,int *ks,double *em,double *ee);
+extern "C" void    jamlist_(int *imode);
+extern "C" int     jamchge_(int *kf);
+extern "C" void    jamfdec_();
+extern "C" double  pjmass_(int *kf);
 
 #ifdef HYDROJET_FORTRAN_NOEXTNAME
 #  define jamevnt1_ jamevnt1
@@ -24,14 +57,14 @@ struct Jamevnt1{
   double V[JAM_MXV][5];
   int    K[JAM_MXV][11];
 };
-extern Jamevnt1 jamevnt1_;
+extern "C" Jamevnt1 jamevnt1_;
 
 struct Jamevnt2{
     int NV;
     int NBARY;
     int NMESON;
 };
-extern Jamevnt2 jamevnt2_;
+extern "C" Jamevnt2 jamevnt2_;
 
 struct Jamdat1 {
   int    MSTC[200];
@@ -39,18 +72,18 @@ struct Jamdat1 {
   int    MSTD[200];
   double PARD[200];
 };
-extern Jamdat1 jamdat1_;
+extern "C" Jamdat1 jamdat1_;
 
 struct Jamdat2 {
   int    MSTE[200];
   double PARE[200];
 };
-extern Jamdat2 jamdat2_;
+extern "C" Jamdat2 jamdat2_;
 
 struct Jamdat3 {
     char  FNAME[8][80];
 };
-extern Jamdat3 jamdat3_;
+extern "C" Jamdat3 jamdat3_;
 
 struct Jydat2 {
   int    KCHG[7][500];
@@ -58,7 +91,7 @@ struct Jydat2 {
   double PARF[2000];
   double VCKM[4][4];
 };
-extern Jydat2 jydat2_;
+extern "C" Jydat2 jydat2_;
 
 int   const KNDCAY1  =  4000; //should be 8000 for pythia62
 
@@ -68,11 +101,14 @@ struct Jydat3 {
   double BRAT[KNDCAY1];
   int    KFDP[5][KNDCAY1];
 };
-extern Jydat3 jydat3_;
+extern "C" Jydat3 jydat3_;
 
 struct Jydat4 {
   char  CHAF[2][500][16];	// here I needed manual intervention
 };
-extern Jydat4 jydat4_;
+extern "C" Jydat4 jydat4_;
+
+}
+}
 
 #endif

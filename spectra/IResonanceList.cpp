@@ -4,6 +4,9 @@
 #include <fstream>
 #include "IResonanceList.hpp"
 
+namespace idt {
+namespace hydro2jam {
+
 //int ResonanceListPCE::nreso=75;
 int ResonanceListPCE::nreso=151;
 
@@ -194,4 +197,7 @@ ResonanceListPCE::ResonanceListPCE(int kineticTemp,int eos_pce,std::string const
       std::exit(1);
 	  }
 	}
+}
+
+}
 }

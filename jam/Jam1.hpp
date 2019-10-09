@@ -1,12 +1,13 @@
 // -*- mode:c++ -*-
-#pragma once
 #ifndef Jam1_h
 #define Jam1_h
 #include <cstdlib>
 #include "Jam1Common.hpp"
 
-class Jam1
-{
+namespace idt {
+namespace hydro2jam {
+
+class Jam1 {
 public:
   Jam1();
   ~Jam1();
@@ -62,9 +63,7 @@ public:
   char*  getFNAME(int i) const;
   void   setFNAME(int i, const char* v);
 
-
-  static int isign(const int a, const int b)
-  { return  (b >= 0) ? abs(a): -abs(a); }
+  static int isign(const int a, const int b) { return  b >= 0 ? std::abs(a): -std::abs(a); }
 
   int  getBaryonNumber(int kc, int kf) {return isign(jydat2_.KCHG[5][kc-1],kf);}
 
@@ -82,5 +81,8 @@ public:
   void         print(int i);
 
 };
+
+}
+}
 
 #endif

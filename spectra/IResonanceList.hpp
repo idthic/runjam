@@ -9,6 +9,9 @@
 #include <vector>
 #include <string>
 
+namespace idt {
+namespace hydro2jam {
+
 extern const double sctr; // defined in HydroSpectrum.cxx
 
 class IResonanceList{
@@ -69,5 +72,8 @@ public:
   int numberOfDegrees  (int ireso) const{return this->data[ireso].deg;}
   int numberOfResonances() const{return this->m_numberOfResonances;}
 };
+
+}
+}
 
 #endif

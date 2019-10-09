@@ -1,6 +1,7 @@
 #include "PyRand.hpp"
 
-using namespace std;
+namespace idt {
+namespace hydro2jam {
 
 //...Generates random numbers uniformly distributed between
 //...0 and 1, excluding the endpoints.
@@ -11,7 +12,7 @@ void PyRand::init()
   mrpy1 = seed;
   //...initial values for the random number generator.
   //mrpy1 = 19780503;
- 
+
   //...Initialize generation from given seed.
   //if(mrpy2 != 0) return;
 
@@ -52,7 +53,7 @@ void PyRand::init()
   rrpy98 = &rrpy[98];
   rrpy99 = &rrpy[99];
   rrpy00 = &rrpy[100];
- 
+
 }
 
 //...Generate next random number.
@@ -74,7 +75,7 @@ double PyRand::rand()
     if(runi < 0.0) runi += 1.0;
     if(runi > 0.0 && runi < 1.0) break;
   }
- 
+
   //...Update counters. Random number to output.
   mrpy3++;
   if(mrpy3 == 1000000000) {
@@ -84,5 +85,6 @@ double PyRand::rand()
 
   return runi;
 }
- 
 
+}
+}

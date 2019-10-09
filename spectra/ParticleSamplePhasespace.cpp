@@ -5,6 +5,9 @@
 #include <iostream>
 #include "ParticleSamplePhasespace.hpp"
 
+namespace idt {
+namespace hydro2jam {
+
 void ParticleSampleFromOversampledPhasespace::readPhasespaceDat(){
   this->clearParticleList();
 
@@ -80,4 +83,7 @@ void ParticleSampleFromOversampledPhasespace::update(){
   }else{
     this->m_currentSampleIndex++;
   }
+}
+
+}
 }

@@ -17,7 +17,8 @@
 
 #include "ksh/util.hpp"
 
-using namespace std;
+namespace idt {
+namespace hydro2jam {
 
 static std::string elementOutputFilenames[151] = {
 	"ELEMENT.A0.PC170",
@@ -179,8 +180,8 @@ Hydro2Jam::Hydro2Jam(Hydro2JamInitParams const& iparam)
   this->initialize(iparam);
 }
 
-Hydro2Jam::Hydro2Jam(int mevent, int seed, string dir_reso,int kintmp,
-	int eos_pce, string dir, int dpd, string fnamePS, string fnamePS0)
+Hydro2Jam::Hydro2Jam(int mevent, int seed, std::string dir_reso,int kintmp,
+	int eos_pce, std::string dir, int dpd, std::string fnamePS, std::string fnamePS0)
 {
   Hydro2JamInitParams iparam;
   iparam.mevent  =mevent;
@@ -227,7 +228,7 @@ void Hydro2Jam::initialize(Hydro2JamInitParams const& iparam)
   //jam->setMSTC(61,0);       // isotropic resonance decay option
 
   //....Initial setting for JAM.
-  string frame="user";  // comp. frame in this case, user defined
+  std::string frame="user";  // comp. frame in this case, user defined
   double dt=100.0;          // collision time(fm/c)
   int nstep=1;            // time step (i.e. no time step)
 
@@ -290,9 +291,9 @@ void Hydro2Jam::initialize(Hydro2JamInitParams const& iparam)
 Hydro2Jam::~Hydro2Jam()
 {
   if(dumpPhaseSpaceData) {
-    ofs << -999 << endl;
+    ofs << -999 << std::endl;
     ofs.close();
-    ofs0 << -999 << endl;
+    ofs0 << -999 << std::endl;
     ofs0.close();
   }
   delete jam;
@@ -391,10 +392,10 @@ void Hydro2Jam::generateEventFromHypersurfaceFiles(std::string const& fn_freezeo
   delete psamp;
 }
 
-void Hydro2Jam::printPhaseSpaceData(ofstream& output)
+void Hydro2Jam::printPhaseSpaceData(std::ofstream& output)
 {
   int nv = jam->getNV();
-  output << nv << "  " << numberTestParticle << endl;
+  output << nv << "  " << numberTestParticle << std::endl;
   for(int i=1;i<=nv;i++) {
     //if(jam->getK(1,i) > 10) continue;
     int ks=jam->getK(1,i);
@@ -408,17 +409,17 @@ void Hydro2Jam::printPhaseSpaceData(ofstream& output)
     double y=jam->getR(2,i);
     double z=jam->getR(3,i);
     double t=jam->getR(4,i);
-    output << setw(5) << ks
-           << setw(10) << kf
-           << setw(14) << px
-           << setw(14) << py
-           << setw(14) << pz
-           << setw(14) << m
-           << setw(14) << x
-           << setw(14) << y
-           << setw(14) << z
-           << setw(14) << t
-           << endl;
+    output << std::setw(5) << ks
+           << std::setw(10) << kf
+           << std::setw(14) << px
+           << std::setw(14) << py
+           << std::setw(14) << pz
+           << std::setw(14) << m
+           << std::setw(14) << x
+           << std::setw(14) << y
+           << std::setw(14) << z
+           << std::setw(14) << t
+           << std::endl;
   }
 }
 
@@ -516,37 +517,37 @@ void Hydro2Jam::initJam(IParticleSample* psamp)
   jam->setNMESON(nmeson);  // set total number of mesons.
 }
 
-void Hydro2Jam::initJam(string fname)
+void Hydro2Jam::initJam(std::string fname)
 {
-  ifstream fdata;
+  std::ifstream fdata;
   if(fdata.is_open()) {
-    cerr << "funny! (Hydro2Jam:) file areadly opend"
-         << fname << endl;
-    exit(1);
+    std::cerr << "funny! (Hydro2Jam:) file areadly opend"
+         << fname << std::endl;
+    std::exit(1);
   }
 
-  fdata.open(fname.c_str(),ios::in);
+  fdata.open(fname.c_str(), std::ios::in);
   if(!fdata) {
-    cerr << "Hydro2Jam: Error: unable to open file "
-         << fname  << endl;
-    exit(1);
+    std::cerr << "Hydro2Jam: Error: unable to open file "
+              << fname  << std::endl;
+    std::exit(1);
   }
   double px,py,pz,e,em,tau,rx,ry,eta;
   int ir;
-  string line;
+  std::string line;
   int lp=1;
   while(getline(fdata,line)) {
     int com = line.find('#');
     if(com >=0) continue;
-    istringstream is(line);
+    std::istringstream is(line);
     if(!(is >> px >> py >> pz >> e >> em >> ir >> tau >> rx >> ry >> eta)) {
-	    cerr << "Invalid data at line " << lp << endl;
+	    std::cerr << "Invalid data at line " << lp << std::endl;
 	    exit(1);
     }
     lp++;
 
     /*
-      cout << "px= " << px
+      std::cout << "px= " << px
 	    << " py=" << py
 	    << " pz= "<< pz
 	    << " e= " << e
@@ -556,7 +557,7 @@ void Hydro2Jam::initJam(string fname)
 	    << " rx= " << rx
 	    << " ry= " << ry
 	    << " eta= " << eta
-	    << endl;
+	    << std::endl;
       cin.get();
     */
 
@@ -616,8 +617,8 @@ void Hydro2Jam::initJam(string fname)
     jam->setV(5,nv, 1.e+35);
     if(jam->getK(1,nv) == 2)
       jam->setV(5,nv, jam->getR(4,nv)
-                + jam->jamDecayTime(1,kf,kc,
-                                    jam->getK(1,nv),jam->getP(5,nv),jam->getP(4,nv)));
+        + jam->jamDecayTime(1,kf,kc,
+          jam->getK(1,nv),jam->getP(5,nv),jam->getP(4,nv)));
 
     //jam->print(nv);
 
@@ -625,9 +626,9 @@ void Hydro2Jam::initJam(string fname)
 
   fdata.close();
 
-  jam->setNV( nv );          // set total number of particles.
-  jam->setNBARY( nbary );    // set total number of baryon.
-  jam->setNMESON( nmeson );  // set total number of mesons.
+  jam->setNV(nv);          // set total number of particles.
+  jam->setNBARY(nbary);    // set total number of baryon.
+  jam->setNMESON(nmeson);  // set total number of mesons.
 
 }
 
@@ -1692,9 +1693,13 @@ int Hydro2Jam::getJamID(int irshift)
     else
       return -3326;
   default:
-    cerr << "funny ir+1=" << irshift << endl;
+    std::cerr << "funny ir+1=" << irshift << std::endl;
     return 0;
 
   }
 }
+
+}
+}
+
 #endif

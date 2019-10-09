@@ -2,7 +2,11 @@
 #ifndef Math_h
 #define Math_h
 #include <cmath>
+#include <cstdlib>
 #include <algorithm>
+
+namespace idt {
+namespace hydro2jam {
 
 class Math
 {
@@ -28,20 +32,21 @@ public:
   static double BesselI0(double x);
 };
 
-inline double Math::sign(double a, double b)
-{
-  return (b >= 0.0) ? fabs(a) : -fabs(a);
+inline double Math::sign(double a, double b) {
+  return b >= 0.0 ? std::abs(a) : -std::abs(a);
 }
 
-inline int Math::sign(int a, int b)
-{
-  return (b >= 0.0) ? (int)fabs((float)a) : -(int)fabs((float)a);
+inline int Math::sign(int a, int b) {
+  return b >= 0 ? std::abs(a) : -std::abs(a);
 }
 
 template<class T> inline const T& min(const T& a, const T& b, const T& c)
-{ return std::min(std::min(a,b),c); }
+{ return std::min(std::min(a, b), c); }
 
 template<class T> inline const T& max(const T& a, const T& b, const T& c)
-{ return std::max(std::max(a,b),c); }
+{ return std::max(std::max(a, b), c); }
+
+}
+}
 
 #endif // Math_h

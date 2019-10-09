@@ -5,6 +5,9 @@
 //-----------------------------------------------------------------------------
 // implementation of class ParticleSampleBase
 
+namespace idt {
+namespace hydro2jam {
+
 void ParticleSampleBase::addParticleMinkowski(int iReso, double px, double py, double pz, double m, double x, double y, double z, double t) {
   double const e = m < 0.0 ? -1.0 : std::sqrt(px * px + py * py + pz * pz + m * m);
   Particle* particle = new Particle(iReso);
@@ -29,4 +32,7 @@ void ParticleSampleBase::clearParticleList() {
   for(std::vector<Particle*>::const_iterator i = plist.begin(); i != plist.end(); ++i)
     delete *i;
   this->plist.clear();
+}
+
+}
 }

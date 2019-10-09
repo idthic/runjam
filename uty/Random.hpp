@@ -7,7 +7,8 @@
 #include <ctime>
 #include <cmath>
 
-using namespace std;
+namespace idt {
+namespace hydro2jam {
 
 class Random{
 protected:
@@ -23,14 +24,14 @@ public:
   double Gauss(double mean, double sigma);
 
 private:
-  static Random*  srand;
+  static Random* srand;
   //static bool     first;
 
 public:
   static void setRandom(Random* r) {
     if(srand) {
-	    cerr << "warning: setRandom should be called once!!!"
-           << endl;
+	    std::cerr << "warning: setRandom should be called once!!!"
+           << std::endl;
 	    return;
     }
     srand = r;
@@ -60,5 +61,8 @@ struct RandomURGB {
   static result_type max() { return ((result_type) 1 << 31) - 1; }
   result_type operator()() const { return Random::getUniformLong(); }
 };
+
+}
+}
 
 #endif

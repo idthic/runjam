@@ -1,9 +1,9 @@
 // -*- C++ -*-
-#ifndef HYDROJET_SPETRA_IntegratedCooperFrye_H
-#define HYDROJET_SPETRA_IntegratedCooperFrye_H
+#ifndef hydro2jam_spectra_IntegratedCooperFrye_hpp
+#define hydro2jam_spectra_IntegratedCooperFrye_hpp
 #include <ksh/phys/Minkowski.hpp>
-namespace hydrojet{
-namespace spectra{
+namespace idt {
+namespace hydro2jam {
   void IntegrateBosonCooperFrye(
     double& dNPos,double& dNNeg,
     const kashiwa::phys::vector4& u,

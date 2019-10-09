@@ -17,7 +17,11 @@ inline double min(double a, double b) { return a<=b ? a:b;}
 
 #include <iostream>
 
+namespace idt {
+namespace hydro2jam {
+
 using namespace std;
+
 const double HydroSpectrum::mPion = 139.0;
 //const double HydroSpectrum::mPion  = 1020.0;//For phi meson
 //const double HydroSpectrum::mPion  = 3096.9;//For J/psi meson
@@ -75,7 +79,7 @@ HydroSpectrum::HydroSpectrum(int kint, int eos_pce)
       mup = 0.456089e+03/sctr;
       cout << "HydroSpectrum Tf=80MeV" << endl;
       break;
-	
+
       //     (tf=100mev)
     case 2:
       mupi = 0.833141e+02/sctr;
@@ -85,8 +89,8 @@ HydroSpectrum::HydroSpectrum(int kint, int eos_pce)
       mup = 0.348810e+03/sctr;
       cout << "HydroSpectrum Tf=100MeV" << endl;
       break;
-	
-	
+
+
       //     (tf=120mev)
     case 3:
       mupi = 0.646814e+02/sctr;
@@ -94,7 +98,7 @@ HydroSpectrum::HydroSpectrum(int kint, int eos_pce)
       mup = 0.245865e+03/sctr;
       cout << "HydroSpectrum Tf=120MeV" << endl;
       break;
-	
+
       //     (tf=140mev)
     case 4:
       mupi = 0.406648e+02/sctr;
@@ -102,7 +106,7 @@ HydroSpectrum::HydroSpectrum(int kint, int eos_pce)
       mup = 0.145518e+03/sctr;
       cout << "HydroSpectrum Tf=140MeV" << endl;
       break;
-	
+
       //     (tf=160mev)
     case 5:
       mupi = 0.137867e+02/sctr;
@@ -110,7 +114,7 @@ HydroSpectrum::HydroSpectrum(int kint, int eos_pce)
       mup = 0.476744e+02/sctr;
       cout << "HydroSpectrum Tf=160MeV" << endl;
       break;
-	
+
     default:
       cerr << "HydroSpectrum::  Not avaiable sorry"<<endl;
       cerr << " kinetic temperature = " << kineticTemp << endl;
@@ -153,7 +157,7 @@ double HydroSpectrum::thermaldist(double mt,double yy,double mu,int iw,int sgn)
 	double coshyvm = cosh(yy-yv);
 	double invcoshyv  = 1.0/cosh(yv);
 	double beta = 1.0/tf;
-	
+
     if((iw == 1) || (iw == 5)) {
         if(bulk == 1){
 	pds1 = mt*dss*coshhhm + pti*cosp*dsx + pti*sinp*dsy;
@@ -247,7 +251,7 @@ return bose1+bose4+bose6+bose7;
 	double bose4=0.0;
 	double bse1=beta*(pu1-mu);
 	double bse4=beta*(pu4-mu);
-	
+
 	if(bse1<30.0) bose1 = pds1/(exp(bse1)+sgn);
 	if(bse4<30.0) bose4 = pds4/(exp(bse4)+sgn);
 #endif
@@ -773,4 +777,7 @@ void HydroSpectrum::Gauss38(double xini,double xfin,double* xn,double* wn)
     wn[i] =(xfin-xini)*w[i]/2.0;
   }
 
+}
+
+}
 }

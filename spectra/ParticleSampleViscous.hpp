@@ -3,13 +3,15 @@
 // 2014-05-01 KM,
 //   * Created
 //
-#pragma once
 #ifndef spectra_ParticleSampleViscous_h
 #define spectra_ParticleSampleViscous_h
 #include <vector>
 #include <string>
 #include "IParticleSample.hpp"
 #include "IResonanceList.hpp"
+
+namespace idt {
+namespace hydro2jam {
 
 //-----------------------------------------------------------------------------
 // prototype declarations
@@ -185,5 +187,8 @@ private:
 private:
   bool readHypersurfaceElement(HypersurfaceElementC0Lrf& surface, std::ifstream& ifsf, std::ifstream& ifsp) const;
 };
+
+}
+}
 
 #endif

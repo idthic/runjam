@@ -13,7 +13,8 @@
 //#define DBG20141010_TestViscousCorrection 202
 //#define DBG20141010_TestViscousCorrection 302
 
-using namespace std;
+namespace idt {
+namespace hydro2jam {
 
 static const double FreezeoutSkipTemperature=0.01; // unit: [/fm]
 
@@ -76,20 +77,20 @@ void ParticleSampleHydrojet::initialize(std::string const& fn_freezeout_dat, std
     // Try to read ELEMENT.* cache files
     //**************************
     std::cout<<"ParticleSampleHydrojet.cxx(ParticleSampleHydrojet::initialize): checking Cooper-Frye cache files (.POS/.NEG)... "<<std::flush;
-    resDataPos = new ifstream [nreso_loop];
+    resDataPos = new std::ifstream [nreso_loop];
     for(int i=0;i<nreso_loop;i++) {
-      string fnpos = elemFile[i]+".POS";
-      resDataPos[i].open(fnpos.c_str(), ios::in);
+      std::string fnpos = elemFile[i]+".POS";
+      resDataPos[i].open(fnpos.c_str(), std::ios::in);
       if (!resDataPos[i])  {
         mode_delayed_cooperfrye=true;
         break;
       }
     }
 
-    resDataNeg = new ifstream [nreso_loop];
+    resDataNeg = new std::ifstream [nreso_loop];
     for(int i=0;i<nreso_loop;i++) {
-      string fnneg = elemFile[i]+".NEG";
-      resDataNeg[i].open(fnneg.c_str(), ios::in);
+      std::string fnneg = elemFile[i]+".NEG";
+      resDataNeg[i].open(fnneg.c_str(), std::ios::in);
       if (!resDataNeg[i])  {
         mode_delayed_cooperfrye=true;
         break;
@@ -120,23 +121,23 @@ void ParticleSampleHydrojet::initialize(std::string const& fn_freezeout_dat, std
     //**************************
   }
 #else
-  resDataPos = new ifstream [nreso_loop];
+  resDataPos = new std::ifstream [nreso_loop];
   for(int i=0;i<nreso_loop;i++) {
-    string fnpos = elemFile[i]+".POS";
+    std::string fnpos = elemFile[i]+".POS";
     resDataPos[i].open(fnpos.c_str(), ios::in);
     if (!resDataPos[i])  {
-      cerr << "ParticleSampleHydrojet::initialize! unable to open file " << fnpos << endl;
+      std::cerr << "ParticleSampleHydrojet::initialize! unable to open file " << fnpos << std::endl;
       mode_delayed_cooperfrye=true;
       break;
     }
   }
 
-  resDataNeg = new ifstream [nreso_loop];
+  resDataNeg = new std::ifstream [nreso_loop];
   for(int i=0;i<nreso_loop;i++) {
-    string fnneg = elemFile[i]+".NEG";
+    std::string fnneg = elemFile[i]+".NEG";
     resDataNeg[i].open(fnneg.c_str(), ios::in);
     if (!resDataNeg[i])  {
-      cerr << "ParticleSampleHydrojet::initialize! unable to open file " << fnneg << endl;
+      std::cerr << "ParticleSampleHydrojet::initialize! unable to open file " << fnneg << std::endl;
       mode_delayed_cooperfrye=true;
       break;
     }
@@ -147,24 +148,24 @@ void ParticleSampleHydrojet::initialize(std::string const& fn_freezeout_dat, std
   if(isOutput!=0){
     outdatpos.open(outfilepos.c_str());
     if (!outdatpos)  {
-      cerr << "ParticleSampleHydrojet::initialize! unable to open file " << outfilepos << endl;
-      exit(1);
+      std::cerr << "ParticleSampleHydrojet::initialize! unable to open file " << outfilepos << std::endl;
+      std::exit(1);
     }
     outdatpos << "# p_x(GeV) p_y(GeV) p_z(GeV) E(GeV) m(GeV)";
-    outdatpos << " ir tau(fm) x(fm) y(fm) eta"  << endl;
+    outdatpos << " ir tau(fm) x(fm) y(fm) eta"  << std::endl;
 
     outdatneg.open(outfileneg.c_str());
     if (!outdatneg)  {
-      cerr << "ParticleSampleHydrojet::initialize! unable to open file " << outfileneg << endl;
-      exit(1);
+      std::cerr << "ParticleSampleHydrojet::initialize! unable to open file " << outfileneg << std::endl;
+      std::exit(1);
     }
     outdatneg << "# p_x(GeV) p_y(GeV) p_z(GeV) E(GeV) m(GeV)";
-    outdatneg << " ir tau(fm) x(fm) y(fm) eta"  << endl;
+    outdatneg << " ir tau(fm) x(fm) y(fm) eta"  << std::endl;
   }
 }
 
-//void ParticleSampleHydrojet::analyze(string fn_freezeout_dat, string fn_p, string fn_ecc)
-void ParticleSampleHydrojet::analyze(string fn_freezeout_dat, string fn_p)
+//void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string fn_p, std::string fn_ecc)
+void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string fn_p)
 {
   nreso_loop = ResonanceListPCE::nreso;
 
@@ -172,7 +173,7 @@ void ParticleSampleHydrojet::analyze(string fn_freezeout_dat, string fn_p)
   initialize(fn_freezeout_dat, fn_p);
 
   if(plist.size()>0) {
-    vector<Particle*>::iterator cp;
+    std::vector<Particle*>::iterator cp;
     for(cp = plist.begin(); cp != plist.end();cp++) delete *cp;
     plist.clear();
   }
@@ -227,12 +228,12 @@ void ParticleSampleHydrojet::analyze(string fn_freezeout_dat, string fn_p)
         //**************************
         resDataPos[ir] >> numResPos;
         if(numResPos > 1.0)
-          cout << "Funny fluid element! ir =" << ir
-               << " " << numResPos << endl;
+          std::cout << "Funny fluid element! ir =" << ir
+                    << " " << numResPos << std::endl;
 
         resDataNeg[ir] >> numResNeg;
         if(numResNeg > 1.0)
-          cout << "Funny fluid element! ir =" << ir << endl;
+          std::cout << "Funny fluid element! ir =" << ir << std::endl;
         //**************************
       }else{
         double npos=0.0;
@@ -244,9 +245,9 @@ void ParticleSampleHydrojet::analyze(string fn_freezeout_dat, string fn_p)
         double beta = 1.0/tf;
 
         if(rlist[ir].bf==-1){
-          hydrojet::spectra::IntegrateBosonCooperFrye(npos,nneg,u,ds,beta,rlist[ir].mass,rlist[ir].mu);
+          idt::hydro2jam::IntegrateBosonCooperFrye(npos,nneg,u,ds,beta,rlist[ir].mass,rlist[ir].mu);
         }else{
-          hydrojet::spectra::IntegrateFermionCooperFrye(npos,nneg,u,ds,beta,rlist[ir].mass,rlist[ir].mu);
+          idt::hydro2jam::IntegrateFermionCooperFrye(npos,nneg,u,ds,beta,rlist[ir].mass,rlist[ir].mu);
         }
 #if DBG20141010_TestViscousCorrection==302
         if(ir==18){
@@ -261,12 +262,12 @@ void ParticleSampleHydrojet::analyze(string fn_freezeout_dat, string fn_p)
 #else
       resDataPos[ir] >> numResPos;
       if(numResPos > 1.0)
-        cout << "Funny fluid element! ir =" << ir
-             << " " << numResPos << endl;
+        std::cout << "Funny fluid element! ir =" << ir
+                  << " " << numResPos << std::endl;
 
       resDataNeg[ir] >> numResNeg;
       if(numResNeg > 1.0)
-        cout << "Funny fluid element! ir =" << ir << endl;
+        std::cout << "Funny fluid element! ir =" << ir << std::endl;
 #endif
 
       if(bulk == 1){
@@ -537,12 +538,13 @@ getSample(double vx,double vy,double yv,
     } while (prds < 0.0);
 
     if(prds/pu/gamma > ranmax){
-      cout << "Warning: prds/pu/gamma is greater than maximum random number. "
-           << "Please increase 'facranmax'"
-           << " at least "
-           << prds/pu/gamma/ranmax*facranmax
-           << " [at ParticleSampleHydrojet::getSample]"
-           << endl;
+      std::cout
+        << "Warning: prds/pu/gamma is greater than maximum random number. "
+        << "Please increase 'facranmax'"
+        << " at least "
+        << prds/pu/gamma/ranmax*facranmax
+        << " [at ParticleSampleHydrojet::getSample]"
+        << std::endl;
       //continue;
     }
 
@@ -626,4 +628,7 @@ void ParticleSampleHydrojet::outputData(double prx,double pry,double prz,
               << std::endl;
 	}
 
+}
+
+}
 }

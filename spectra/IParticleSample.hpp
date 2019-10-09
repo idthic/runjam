@@ -12,6 +12,9 @@
 #include <vector>
 #include <string>
 
+namespace idt {
+namespace hydro2jam {
+
 struct ParticleIDType{
   enum value_type{
     HydroParticleID, // usually denoted as id
@@ -123,5 +126,8 @@ private:
     std::exit(1);
   }
 };
+
+}
+}
 
 #endif

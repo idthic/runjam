@@ -10,6 +10,9 @@
 
 #include "ElementReso.hpp"
 
+namespace idt {
+namespace hydro2jam {
+
 ElementReso::ElementReso(std::string dir, std::string* outf, int kint, int eos_pce, std::string fname)
   : HydroSpectrum(kint, eos_pce), rlist(kint,eos_pce,fname)
 {
@@ -128,9 +131,9 @@ void ElementReso::integrateForResonance(std::string const& fnameFreezeoutDat,int
     double const beta = 1.0/tf;
 
     if(recreso.bf==-1){
-      hydrojet::spectra::IntegrateBosonCooperFrye(npos,nneg,u,ds,beta,recreso.mass,recreso.mu);
+      idt::hydro2jam::IntegrateBosonCooperFrye(npos,nneg,u,ds,beta,recreso.mass,recreso.mu);
     }else{
-      hydrojet::spectra::IntegrateFermionCooperFrye(npos,nneg,u,ds,beta,recreso.mass,recreso.mu);
+      idt::hydro2jam::IntegrateFermionCooperFrye(npos,nneg,u,ds,beta,recreso.mass,recreso.mu);
     }
 
     double const n =(nneg+npos)*recreso.degeff;
@@ -149,4 +152,7 @@ void ElementReso::integrateForResonance(std::string const& fnameFreezeoutDat,int
   ostr_neg.close();
 
   closeDataFile();
+}
+
+}
 }

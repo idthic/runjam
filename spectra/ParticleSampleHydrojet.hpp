@@ -6,6 +6,9 @@
 #include "ElementReso.hpp"
 #include "IParticleSample.hpp"
 
+namespace idt {
+namespace hydro2jam {
+
 class ParticleSampleHydrojet: public ElementReso, public IParticleSample {
 private:
   std::ifstream *resDataPos;
@@ -75,5 +78,8 @@ private:
     double er,double mres, int ir, double tau,double xx,
     double yy, double eta, int ipos);
 };
+
+}
+}
 
 #endif

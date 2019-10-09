@@ -13,6 +13,8 @@
 #include "uty/Random.hpp"
 #include "ParticleSampleViscous.hpp"
 
+namespace idt {
+namespace hydro2jam {
 namespace {
 
   // sqrt(pi/2)
@@ -1159,7 +1161,7 @@ namespace {
           this->totalIntegral = base::IsotropicPartTotalCDF();
       }
 
-      if (isnan(this->totalIntegral)) {
+      if (std::isnan(this->totalIntegral)) {
         std::cerr << "ParticleSampleViscous.cxx: IsotropicPartUCDF([bmass,infty]) is nan" << std::endl;
         std::fprintf(stderr, "IsotropicPartCDF([bmass,infty])=%g bmass=%g xsig=%g vsig=%g\n", totalIsotropicPartCDF, bmass, xsig, vsig);
         std::fflush(stderr);
@@ -1620,4 +1622,7 @@ int checkViscousCooperFryeInterpolated(bool debug) {
   }
 
   return EXIT_SUCCESS;
+}
+
+}
 }

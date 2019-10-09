@@ -11,6 +11,9 @@
 
 using namespace std;
 
+namespace idt {
+namespace hydro2jam {
+
 //...Gives ordinary Gamma function Gamma(x) for positive, real arguments;
 //...see M. Abramowitz, I. A. Stegun: Handbook of Mathematical Functions
 //...(Dover, 1965) 6.1.36.
@@ -49,7 +52,7 @@ double Math::logFactorial(int n)
 #else
   if(n <= 2) return 0;
   double ga=0.0;
-  for(int i=1; i<n; i++) ga += log(double(i));
+  for(int i=1; i<n; i++) ga += std::log(double(i));
   return ga;
 #endif
 }
@@ -58,7 +61,7 @@ double Math::BesselJ0(double x)
 {
   // Numerical Recipes
 
-  double ax = abs(x);
+  double ax = std::abs(x);
   double ans = 0;
 
   if (ax < 8.0) {
@@ -77,7 +80,7 @@ double Math::BesselJ0(double x)
     double ans2 = -0.1562499995e-1+y*(0.1430488765e-3
 		+y*(-0.6911147651e-5+y*(0.7621095161e-6
 		-y*0.934935152e-7)));
-    ans=sqrt(0.636619772/ax)*(cos(xx)*ans1-z*sin(xx)*ans2);
+    ans=std::sqrt(0.636619772/ax)*(std::cos(xx)*ans1-z*std::sin(xx)*ans2);
   }
   return ans;
 }
@@ -86,7 +89,7 @@ double Math::BesselJ0(double x)
 
 double Math::BesselJ1(double x)
 {
-  float ax = abs(x);
+  float ax = std::abs(x);
   double ans,ans1,ans2;
 
   if (ax < 8.0) {
@@ -105,7 +108,7 @@ double Math::BesselJ1(double x)
     ans2=0.04687499995+y*(-0.2002690873e-3
 		+y*(0.8449199096e-5+y*(-0.88228987e-6
 		+y*0.105787412e-6)));
-    ans=sqrt(0.636619772/ax)*(cos(xx)*ans1-z*sin(xx)*ans2);
+    ans=std::sqrt(0.636619772/ax)*(std::cos(xx)*ans1-z*std::sin(xx)*ans2);
     if (x < 0.0) ans = -ans;
   }
   return ans;
@@ -146,7 +149,7 @@ double Math::BesselJ(int n, double x)
     ans = bj;
   } else {
     tox=2.0/ax;
-    int m=2*((n+(int) sqrt(ACC*n))/2);
+    int m=2*((n+(int) std::sqrt(ACC*n))/2);
     int jsum=0;
     bjp=ans=sum=0.0;
     bj=1.0;
@@ -300,7 +303,10 @@ double Math::BesselI0(double x)
     y = ((((((((c[k] * t + c[k + 1]) * t +
     c[k + 2]) * t + c[k + 3]) * t + c[k + 4]) * t +
     c[k + 5]) * t + c[k + 6]) * t + c[k + 7]) * t +
-    c[k + 8]) * sqrt(t) * exp(w);
+    c[k + 8]) * std::sqrt(t) * std::exp(w);
   }
   return y;
+}
+
+}
 }

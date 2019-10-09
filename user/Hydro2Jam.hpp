@@ -7,7 +7,8 @@
 #include "spectra/IParticleSample.hpp"
 #include "jam/Jam1.hpp"
 
-//#include "HistJAM.hpp"
+namespace idt {
+namespace hydro2jam {
 
 struct Hydro2JamInitParams{
   int mevent;
@@ -25,8 +26,7 @@ public:
   Hydro2JamInitParams(): switchingTemperature(155.0) {}
 };
 
-class Hydro2Jam
-{
+class Hydro2Jam {
 private:
   Jam1* jam;
   double   aveNumberPart1, aveNumberPart2;
@@ -78,4 +78,7 @@ public:
 
   static int getJamID(int ir);
 };
+
+}
+}
 #endif

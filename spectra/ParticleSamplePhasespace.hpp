@@ -6,6 +6,9 @@
 #include <string>
 #include "IParticleSample.hpp"
 
+namespace idt {
+namespace hydro2jam {
+
 class ParticleSampleFromOversampledPhasespace:public ParticleSampleBase{
   std::string fname_phasespace_dat;
 public:
@@ -47,5 +50,8 @@ public:
 private:
   void readPhasespaceDat();
 };
+
+}
+}
 
 #endif

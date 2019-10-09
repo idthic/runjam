@@ -13,7 +13,9 @@
 #include "spectra/ParticleSampleViscous.hpp"
 
 #define PACKAGE_VERSION "0.1a"
+
 using namespace std;
+using namespace idt::hydro2jam;
 
 void generatePhasespaceData20141020(int ibase, std::string dirJAM);
 
@@ -126,10 +128,8 @@ public:
           }
 
           if (longname == "debug20150102") {
-            int checkViscousCooperFryeInterpolated(bool debug);
             std::exit(checkViscousCooperFryeInterpolated(true));
           } else if (longname == "check") {
-            int checkViscousCooperFryeInterpolated(bool debug);
             checkViscousCooperFryeInterpolated(false);
             std::exit(EXIT_SUCCESS);
           } else if (longname == "help") {

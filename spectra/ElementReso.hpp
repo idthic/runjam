@@ -6,14 +6,17 @@
 #include "HydroSpectrum.hpp"
 #include "IResonanceList.hpp"
 
+namespace idt {
+namespace hydro2jam {
+
 class ElementReso : public HydroSpectrum{
 protected:
   ResonanceListPCE rlist;
-  //double  *mass,*deg,*degeff,*mu, *anti;
+  //double  *mass, *deg, *degeff, *mu,  *anti;
   //int bf[151];
 
-  double  phi[12],phiw[12],y[38],yw[38];
-  double  pt[58],ptw[58];
+  double  phi[12], phiw[12], y[38], yw[38];
+  double  pt[58], ptw[58];
   std::string elemFile[151];
   std::ifstream fdata;
   std::ifstream edata;
@@ -28,7 +31,7 @@ protected:
   int    nreso_loop;
 
 public:
-  double ymin,ymax;
+  double ymin, ymax;
   ElementReso(std::string dir, std::string* fname, int kint, int eos_pce, std::string fname2);
   //    ElementReso(std::string dir, std::string* fname, int kint);
   ~ElementReso();
@@ -39,7 +42,10 @@ public:
   void initialize();
   void analyze(std::string fn);
 private:
-  void integrateForResonance(std::string const& fname_freezeout_dat,int ireso);
+  void integrateForResonance(std::string const& fname_freezeout_dat, int ireso);
 };
+
+}
+}
 
 #endif
