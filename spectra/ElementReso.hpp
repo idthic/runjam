@@ -37,8 +37,8 @@ public:
   ~ElementReso();
   void setBaryonFree(int i) {baryonfree=i;}
   //    void setNresoLoop(int i) {nreso_loop=i;}
-  void setTMPF(double t) {tmpf=t/sctr*1000.0;}
-  void setMUBF(double m) {mubf=m/sctr*1000.0;}
+  void setTMPF(double t) {tmpf=t / hbarc_MeVfm * 1000.0;}
+  void setMUBF(double m) {mubf=m / hbarc_MeVfm * 1000.0;}
   void initialize();
   void analyze(std::string fn);
 private:

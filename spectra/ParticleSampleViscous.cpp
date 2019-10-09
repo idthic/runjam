@@ -9,8 +9,9 @@
 #include <sstream>
 #include <iterator>
 #include <ksh/integrator.hpp>
+#include <util/Constants.hpp>
 
-#include "uty/Random.hpp"
+#include "util/Random.hpp"
 #include "ParticleSampleViscous.hpp"
 
 namespace idt {
@@ -23,18 +24,11 @@ namespace {
   //---------------------------------------------------------------------------
   // settings
 
-  //...scale transformation 1 [fm^-1]=197.32 [MeV]
-  //sctr = 197.32;
-  // static const double CONST_INVERSE_MEVFM=197.32;
-  // static const double CONST_INVERSE_MEVFM=197.327053 ; // 197.327053 hydrojet/src/physicsbase/Const.h
-  static const double CONST_INVERSE_MEVFM = 197.3269718; // 197.3269718(44) idt/rfh/i2/common/def.h
-  static const double CONST_MEVFM = 1.0 / CONST_INVERSE_MEVFM;
-
   // // double facranmax = 1.6;
   // // double facranmax = 1.7;//06/28/2010, lower switching T, larger radial flow
   // // double facranmax = 1.8;//08/27/2019, LHC, larger radial flow
   // static const double momentumRandomMaxFactor = 1.8;
-  // static const double maximalMomentum = 6.0e3 * CONST_MEVFM;
+  // static const double maximalMomentum = 6.0e3 / hbarc_MeVfm;
 
 	//di = 10;
   static const int CONST_NumberOfBisectionIteration = 20; // di = 20;
@@ -1092,11 +1086,11 @@ namespace {
       };
 
       // 粒子の追加
-      const double hbarC = 0.197327053;
-      particle->e  = laboratory_momentum[0] * hbarC;
-      particle->px = laboratory_momentum[1] * hbarC;
-      particle->py = laboratory_momentum[2] * hbarC;
-      particle->pz = laboratory_momentum[3] * hbarC;
+      const double hbarc_GeVfm = 0.197327053;
+      particle->e  = laboratory_momentum[0] * hbarc_GeVfm;
+      particle->px = laboratory_momentum[1] * hbarc_GeVfm;
+      particle->py = laboratory_momentum[2] * hbarc_GeVfm;
+      particle->pz = laboratory_momentum[3] * hbarc_GeVfm;
       particle->t  = laboratory_coord[0];
       particle->x  = laboratory_coord[1];
       particle->y  = laboratory_coord[2];
@@ -1231,7 +1225,7 @@ void SampleParticlesC0lrf(
   //   mass [/fm] = M [MeV] / 197.32 [MeV fm] という事。
   // {
   //   for (int ireso = 0; ireso < iresoN; ireso++)
-  //     std::cerr << "mass[" << ireso << "]=" << rlist->mass(ireso) * CONST_INVERSE_MEVFM << std::endl;
+  //     std::cerr << "mass[" << ireso << "]=" << rlist->mass(ireso) * hbarc_MeVfm << std::endl;
   //   std::exit(2);
   // }
 }
@@ -1289,7 +1283,7 @@ void ParticleSampleViscous::updateWithOverSampling(double overSamplingFactor) {
 
   std::string line;
 
-  double switchingTemperature = this->m_switchingTemperature / CONST_INVERSE_MEVFM; // [/fm]
+  double switchingTemperature = this->m_switchingTemperature / hbarc_MeVfm; // [/fm]
 
   // 1行目
   if (std::getline(ifs, line)) {
@@ -1517,7 +1511,7 @@ void ParticleSampleFromHydrojet::updateWithOverSampling(double overSamplingFacto
     std::exit(EXIT_FAILURE);
   }
 
-  double switchingTemperature = this->m_switchingTemperature / CONST_INVERSE_MEVFM; // [/fm]
+  double switchingTemperature = this->m_switchingTemperature / hbarc_MeVfm; // [/fm]
 
   double const switchingBeta = 1.0 / switchingTemperature; // [/fm]
   std::cout << "ParticleSampleViscous.cxx (interpolation): initializing table..." << std::endl;
@@ -1569,7 +1563,7 @@ namespace {
   class DummyResonanceList: public IResonanceList {
   public:
     virtual int numberOfResonances() const { return 2; }
-    virtual double mass(int ir) const { return 135 / CONST_INVERSE_MEVFM; }
+    virtual double mass(int ir) const { return 135 / hbarc_MeVfm; }
     virtual double statisticsSign(int ir) const { return ir == 0 ? +1.0 : -1.0; }
 
     virtual double chemicalPotential(int ir) const { return 0.0; }
@@ -1590,7 +1584,7 @@ int checkViscousCooperFryeInterpolated(bool debug) {
   DummyResonanceList reso;
 
   ViscousCooperFryeIntegrator a;
-  double const temperature = 155 / CONST_INVERSE_MEVFM;
+  double const temperature = 155 / hbarc_MeVfm;
   double const beta = 1.0 / temperature;
   a.dsig0           = 0.3;
   a.dsig_abs        = 1.0;

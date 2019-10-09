@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstdio>
+#include <util/Constants.hpp>
 
 #ifdef ALPHA
 # define abs  fabs
@@ -27,9 +28,6 @@ const double HydroSpectrum::mPion = 139.0;
 //const double HydroSpectrum::mPion  = 3096.9;//For J/psi meson
 const double HydroSpectrum::mKaon    = 493.6;
 const double HydroSpectrum::mProton  = 939.0;
-
-//...scale transformation 1 [fm^-1]=197.32 [MeV]
-const double sctr = 197.32;
 
 //HydroSpectrum::HydroSpectrum(int kint)
 HydroSpectrum::HydroSpectrum(int kint, int eos_pce)
@@ -54,9 +52,9 @@ HydroSpectrum::HydroSpectrum(int kint, int eos_pce)
 	mpro  = 0.0;
 
   if(eos_pce !=10){
-    mpi   = mPion/sctr;
-    mk    = mKaon/sctr;
-    mpro  = mProton/sctr;
+    mpi   = mPion / hbarc_MeVfm;
+    mk    = mKaon / hbarc_MeVfm;
+    mpro  = mProton / hbarc_MeVfm;
   }
   //
 	mupi = 0.0;
@@ -74,44 +72,44 @@ HydroSpectrum::HydroSpectrum(int kint, int eos_pce)
 
       //   (tf=80mev)
     case 1:
-      mupi = 0.951925e+02/sctr;
-      muk = 0.233670e+03/sctr;
-      mup = 0.456089e+03/sctr;
+      mupi = 0.951925e+02 / hbarc_MeVfm;
+      muk = 0.233670e+03 / hbarc_MeVfm;
+      mup = 0.456089e+03 / hbarc_MeVfm;
       cout << "HydroSpectrum Tf=80MeV" << endl;
       break;
 
       //     (tf=100mev)
     case 2:
-      mupi = 0.833141e+02/sctr;
-      //	  mupi = 0.356941e+03/sctr;//For phi-meson
-      //	  mupi = 0.0/sctr;//For J/psi
-      muk = 0.180805e+03/sctr;
-      mup = 0.348810e+03/sctr;
+      mupi = 0.833141e+02 / hbarc_MeVfm;
+      //	  mupi = 0.356941e+03 / hbarc_MeVfm;//For phi-meson
+      //	  mupi = 0.0 / hbarc_MeVfm;//For J/psi
+      muk = 0.180805e+03 / hbarc_MeVfm;
+      mup = 0.348810e+03 / hbarc_MeVfm;
       cout << "HydroSpectrum Tf=100MeV" << endl;
       break;
 
 
       //     (tf=120mev)
     case 3:
-      mupi = 0.646814e+02/sctr;
-      muk = 0.128598e+03/sctr;
-      mup = 0.245865e+03/sctr;
+      mupi = 0.646814e+02 / hbarc_MeVfm;
+      muk = 0.128598e+03 / hbarc_MeVfm;
+      mup = 0.245865e+03 / hbarc_MeVfm;
       cout << "HydroSpectrum Tf=120MeV" << endl;
       break;
 
       //     (tf=140mev)
     case 4:
-      mupi = 0.406648e+02/sctr;
-      muk = 0.633578e+02/sctr;
-      mup = 0.145518e+03/sctr;
+      mupi = 0.406648e+02 / hbarc_MeVfm;
+      muk = 0.633578e+02 / hbarc_MeVfm;
+      mup = 0.145518e+03 / hbarc_MeVfm;
       cout << "HydroSpectrum Tf=140MeV" << endl;
       break;
 
       //     (tf=160mev)
     case 5:
-      mupi = 0.137867e+02/sctr;
-      muk = 0.249125e+02/sctr;
-      mup = 0.476744e+02/sctr;
+      mupi = 0.137867e+02 / hbarc_MeVfm;
+      muk = 0.249125e+02 / hbarc_MeVfm;
+      mup = 0.476744e+02 / hbarc_MeVfm;
       cout << "HydroSpectrum Tf=160MeV" << endl;
       break;
 

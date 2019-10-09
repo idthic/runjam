@@ -32,8 +32,8 @@ public:
   ParticleSampleHydrojet(std::string const& dir, std::string* outf, int kin, int eos_pce, std::string const& fname);
   ~ParticleSampleHydrojet();
   void setBaryonFree(int i) {baryonfree=i;}
-  void setTMPF(double t) {tmpf=t/sctr*1000.0;}
-  void setMUBF(double m) {mubf=m/sctr*1000.0;}
+  void setTMPF(double t) {tmpf=t / hbarc_MeVfm * 1000.0;}
+  void setMUBF(double m) {mubf=m / hbarc_MeVfm * 1000.0;}
   void initialize(std::string const& fn,std::string const& fn_p);
   void analyze(std::string fn, std::string fn_p);
   void finish();

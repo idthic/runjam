@@ -11,7 +11,7 @@
 #include <iomanip>
 #include <fstream>
 #include <sstream>
-#include "uty/Random.hpp"
+#include "util/Random.hpp"
 #include "Hydro2Jam.hpp"
 #include "spectra/ParticleSampleHydrojet.hpp"
 

@@ -7,6 +7,7 @@ all:
 # Configuration
 
 libjam_LIBDIR := $(HOME)/opt/jam-1.820/lib
+libjam_MXV    := 200000
 
 #CXX      := g++
 CXXFLAGS := -march=native -O3
@@ -17,7 +18,7 @@ LIBS     :=
 
 -include $(wildcard */*.dep) hydro2jam.dep
 
-CPPFLAGS = -DUSE_JAM -I . -MD -MP -MF $(@:.o=.dep)
+CPPFLAGS = -DUSE_JAM -DJAM_MXV=$(libjam_MXV) -I . -MD -MP -MF $(@:.o=.dep)
 LDFLAGS += -L $(libjam_LIBDIR) -Wl,-rpath,$(libjam_LIBDIR)
 hydro2jam_OBJS := hydro2jam.o \
   jam/Jam1.o \

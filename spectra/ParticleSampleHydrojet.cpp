@@ -3,9 +3,9 @@
 #include <new>
 #include <algorithm>
 
-#include "uty/Random.hpp"
-#include <physicsbase/Const.hpp>
+#include "util/Random.hpp"
 #include <ksh/phys/Minkowski.hpp>
+#include <util/Constants.hpp>
 #include <spectra/IntegratedCooperFrye.hpp>
 #include "ParticleSampleHydrojet.hpp"
 
@@ -34,9 +34,9 @@ ParticleSampleHydrojet::ParticleSampleHydrojet(std::string const& dir, std::stri
   mode_delayed_cooperfrye=false;
 
   // constants
-	tmpf = 0.16/sctr*1000.0;
-	mubf = 1.6/sctr*1000.0;
-	meanf = 0.45/sctr*1000.0;
+	tmpf = 0.16 / hbarc_MeVfm * 1000.0;
+	mubf = 1.6 / hbarc_MeVfm * 1000.0;
+	meanf = 0.45 / hbarc_MeVfm * 1000.0;
 
   // 2013/04/23, KM, reverse z axis
   {
@@ -427,7 +427,7 @@ getSample(double vx,double vy,double yv,
   double  p1[12],pw1[12];
   //    double  p1[38],pw1[38];
 
-  double ptmid=1e3/sctr;
+  double ptmid=1e3 / hbarc_MeVfm;
   double dx = getDx();
   double dy = getDy();
   double dh = getDh();
@@ -484,7 +484,7 @@ getSample(double vx,double vy,double yv,
       //in local rest frame
       //using bisection method
       double r1 = Random::getRand()*fm;
-      double pmax = 6000.0/sctr;
+      double pmax = 6000.0 / hbarc_MeVfm;
       double pmin = 0.0;
       double ppp = (pmax+pmin)*0.5;
 
@@ -585,10 +585,10 @@ void ParticleSampleHydrojet::putParticle(double px,double py,double pz,
     exit(1);
   }
 
-  jp->px = px * hbarC;
-  jp->py = py * hbarC;
-  jp->pz = pz * hbarC;
-  //jp->setPe(std::sqrt(m*m+px*px+py*py+pz*pz)*hbarC);
+  jp->px = px * hbarc_GeVfm;
+  jp->py = py * hbarc_GeVfm;
+  jp->pz = pz * hbarc_GeVfm;
+  //jp->setPe(std::sqrt(m*m+px*px+py*py+pz*pz)*hbarc_GeVfm);
   jp->e = -1.0; // 自動で計算する様にする
   jp->x = x;
   jp->y = y;
@@ -603,11 +603,11 @@ void ParticleSampleHydrojet::outputData(double prx,double pry,double prz,
 {
 
 	if (ipos) {
-	  outdatpos << std::setw(14) << prx*hbarC
-              << std::setw(14) << pry*hbarC
-              << std::setw(14) << prz*hbarC
-              << std::setw(14) << er*hbarC
-              << std::setw(14) << mres*hbarC
+	  outdatpos << std::setw(14) << prx*hbarc_GeVfm
+              << std::setw(14) << pry*hbarc_GeVfm
+              << std::setw(14) << prz*hbarc_GeVfm
+              << std::setw(14) << er*hbarc_GeVfm
+              << std::setw(14) << mres*hbarc_GeVfm
               << std::setw(4)  << ir
               << std::setw(6)  << tau
               << std::setw(14) << xx
@@ -615,11 +615,11 @@ void ParticleSampleHydrojet::outputData(double prx,double pry,double prz,
               << std::setw(14) << eta
               << std::endl;
 	} else {
-	  outdatneg << std::setw(14) << prx*hbarC
-              << std::setw(14) << pry*hbarC
-              << std::setw(14) << prz*hbarC
-              << std::setw(14) << er*hbarC
-              << std::setw(14) << mres*hbarC
+	  outdatneg << std::setw(14) << prx*hbarc_GeVfm
+              << std::setw(14) << pry*hbarc_GeVfm
+              << std::setw(14) << prz*hbarc_GeVfm
+              << std::setw(14) << er*hbarc_GeVfm
+              << std::setw(14) << mres*hbarc_GeVfm
               << std::setw(4)  << ir
               << std::setw(6)  << tau
               << std::setw(14) << xx

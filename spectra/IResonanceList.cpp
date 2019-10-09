@@ -168,8 +168,8 @@ ResonanceListPCE::ResonanceListPCE(int kineticTemp,int eos_pce,std::string const
     int bftype;
     fdata >> record.mass >> record.deg >> record.degeff
           >>  record.mu >> bftype >> record.anti;
-    record.mass /= sctr;
-    record.mu /= sctr;
+    record.mass /= hbarc_MeVfm;
+    record.mu /= hbarc_MeVfm;
     record.bf = bftype==1?-1: bftype==2?1: bftype;
   }
 
@@ -187,8 +187,8 @@ ResonanceListPCE::ResonanceListPCE(int kineticTemp,int eos_pce,std::string const
         // recdst.bf     = recsrc.bf;
         // recdst.anti   = recsrc.anti;
 
-	      recdst.mu /= sctr;
-        // recdst.mass /= sctr;
+	      recdst.mu /= hbarc_MeVfm;
+        // recdst.mass /= hbarc_MeVfm;
         // if (recdst.bf == 1) recdst.bf = -1;
         // if (recdst.bf == 2) recdst.bf = 1;
 	    }

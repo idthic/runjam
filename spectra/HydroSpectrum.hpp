@@ -10,10 +10,7 @@
 namespace idt {
 namespace hydro2jam {
 
-extern const double sctr; // defined in HydroSpectrum.cxx
-
-class HydroSpectrum
-{
+class HydroSpectrum {
 protected:
   double hbarc,pi;
   int degpi,degk,degp; // degree of freedom.

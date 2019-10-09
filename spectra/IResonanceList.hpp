@@ -3,16 +3,14 @@
 // 2015-03-25 KM
 //   * class IResonanceList: moved from ParticleSampleViscous.h
 //
-#pragma once
 #ifndef spectra_IResonanceData_h
 #define spectra_IResonanceData_h
 #include <vector>
 #include <string>
+#include <util/Constants.hpp>
 
 namespace idt {
 namespace hydro2jam {
-
-extern const double sctr; // defined in HydroSpectrum.cxx
 
 class IResonanceList{
 public:

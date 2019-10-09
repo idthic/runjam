@@ -16,9 +16,9 @@ namespace hydro2jam {
 ElementReso::ElementReso(std::string dir, std::string* outf, int kint, int eos_pce, std::string fname)
   : HydroSpectrum(kint, eos_pce), rlist(kint,eos_pce,fname)
 {
-  tmpf = 0.16/sctr*1000.0;
-  mubf = 1.6/sctr*1000.0;
-  meanf = 0.45/sctr*1000.0;
+  tmpf = 0.16 / hbarc_MeVfm * 1000.0;
+  mubf = 1.6 / hbarc_MeVfm * 1000.0;
+  meanf = 0.45 / hbarc_MeVfm * 1000.0;
 
   this->nreso_loop=this->rlist.m_numberOfResonances;
 
@@ -61,7 +61,7 @@ void ElementReso::initialize()
   //...integral region
   //    double ymin = -6.0;
   //    double ymax = 6.0;
-  double ptmin = 1e3/sctr;
+  double ptmin = 1e3 / hbarc_MeVfm;
 
   // numerical integral
   Gauss12(0.0,2.*pi,phi,phiw);

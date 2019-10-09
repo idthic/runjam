@@ -4,8 +4,8 @@
 
 #include "ksh/util.hpp"
 
-#include "uty/Random.hpp"
-#include "uty/PyRand.hpp"
+#include "util/Random.hpp"
+#include "util/PyRand.hpp"
 #include "user/Hydro2Jam.hpp"
 
 #include "spectra/ElementReso.hpp"
