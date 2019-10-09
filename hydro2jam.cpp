@@ -8,10 +8,10 @@
 #include "util/PyRand.hpp"
 #include "Hydro2Jam.hpp"
 
-#include "spectra/ElementReso.hpp"
 #include "spectra/ParticleSamplePhasespace.hpp"
 #include "spectra/ParticleSampleViscous.hpp"
 #include "spectra/ParticleSampleRead.hpp"
+#include "spectra/ParticleSampleHydrojet.hpp"
 
 #define PACKAGE_VERSION "0.1a"
 
@@ -25,8 +25,8 @@ void generatePhasespace0(hydro2jam_context const& ctx, std::string const& inputf
 
 //int seed = 1921;
 
-int baryonfree = 1;
 int ntest = 1;
+int baryonfree = 1;
 int sw_weakdecay = 0; // this does not work now, sorry. do not put =1.
 double deltat = 0.3;
 double deltax = 0.3;
@@ -179,29 +179,31 @@ public:
             }
 
             std::string spec = argv[++i];
-            if (0 == spec.compare(0, 6, "phase:", 6)) {
-              this->jamInitType=InitialType_PHASE;
-              this->fnameInitialPhasespaceData = spec.substr(6);
-            } else if (0 == spec.compare(0,7,"phase1:", 7)) {
-              this->jamInitType=InitialType_PHASE1;
-              this->fnameInitialPhasespaceData = spec.substr(7);
-            } else if (0 == spec.compare(0,6,"c0lrf:", 6)) {
-              this->jamInitType=InitialType_C0LRF;
-              this->fnameInitialPhasespaceData = spec.substr(6);
-            } else if (0 == spec.compare(0,9,"hydrojet:", 9)) {
-              this->jamInitType=InitialType_HYDRO;
-              this->fnameInitialPhasespaceData = spec.substr(9);
-            } else if (0 == spec.compare(0, 8,"psample:", 8)) {
-              this->jamInitType = InitialType_PSAMPLE;
-              this->fnameInitialPhasespaceData = spec.substr(8);
-            } else if (0 == spec.compare(0,10,"kawaguchi:", 10)) {
-              // This is a deprecated option
-              this->jamInitType = InitialType_PHASE;
-              this->fnameInitialPhasespaceData = spec.substr(10);
-            } else {
-              std::cerr << "unrecognized option '-i " << argv[i] << "'" << std::endl;
+
+            std::size_t const pos = spec.find(':');
+            if (pos == std::string::npos) {
+              std::cerr << "unrecognized input '-i " << argv[i] << "'" << std::endl;
               std::exit(EXIT_FAILURE);
             }
+
+            std::string type(spec, 0, pos);
+            this->fnameInitialPhasespaceData = spec.substr(pos + 1);
+
+            if (type == "phase" || type == "kawaguchi")
+              this->jamInitType = InitialType_PHASE;
+            else if (type == "phase1")
+              this->jamInitType = InitialType_PHASE1;
+            else if (type == "c0lrf")
+              this->jamInitType = InitialType_C0LRF;
+            else if (type == "hydrojet")
+              this->jamInitType = InitialType_HYDRO;
+            else if (type == "psample")
+              this->jamInitType = InitialType_PSAMPLE;
+            else {
+              std::cerr << "unrecognized input '-i " << argv[i] << "'" << std::endl;
+              std::exit(EXIT_FAILURE);
+            }
+
           } else {
             if (argv[i][0] == '-')
               std::cerr << "unknown option '" << argv[i] << "'" << std::endl;
@@ -334,7 +336,6 @@ void hadronicCascade(hydro2jam_context const& ctx) {
   std::cout << "JAM hadronic cascade start" << std::endl;
 
   Hydro2Jam* jam = new Hydro2Jam(ctx);
-  jam->setResoData(ctx.resodata());
   jam->setMSTC(156, 1);        // analysis of collision distribution
   jam->setMSTC(161, 0);        // no analysis from jam internal subr.
   jam->setMSTC(162, 1);        // Output collision histroy
@@ -371,12 +372,9 @@ void hadronicCascade(hydro2jam_context const& ctx) {
     break;
   default: // default dir = "test"
     {
-      std::string const indir = ctx.indir();
-      jam->generateEventFromHypersurfaceFiles(
-        indir + "/freezeout.dat",
-        indir + "/position.dat",
-        baryonfree,
-        deltat, deltax, deltay, deltah);
+      IParticleSample* psamp = CreateParticleSampleHydrojet(ctx);
+      jam->generateEvent(psamp);
+      delete psamp;
     }
     break;
   }

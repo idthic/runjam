@@ -2,12 +2,13 @@
 #include <cstdlib>
 #include <new>
 #include <algorithm>
-
-#include "util/Random.hpp"
 #include <ksh/phys/Minkowski.hpp>
 #include <util/Constants.hpp>
-#include <spectra/IntegratedCooperFrye.hpp>
+#include <util/Random.hpp>
+
 #include "ParticleSampleHydrojet.hpp"
+#include "IntegratedCooperFrye.hpp"
+#include "ElementReso.hpp"
 
 #define CHG20110804
 //#define DBG20141010_TestViscousCorrection 202
@@ -16,7 +17,72 @@
 namespace idt {
 namespace hydro2jam {
 
-static const double FreezeoutSkipTemperature=0.01; // unit: [/fm]
+  static const double FreezeoutSkipTemperature = 0.01; // unit: [/fm]
+
+  class ParticleSampleHydrojet: public ElementReso, public IParticleSample {
+  private:
+    std::ifstream *resDataPos;
+    std::ifstream *resDataNeg;
+    int di; // iteration number in bisection method
+
+    std::vector<Particle*> plist;
+    int    baryonfree;
+    double tmpf;
+    double mubf;
+    double meanf;
+
+    bool mode_delayed_cooperfrye;
+    bool fReverseParticleList;
+    bool fShuffleParticleList;
+
+  public:
+    ParticleSampleHydrojet(std::string const& dir, std::string* outf, int kin, int eos_pce, std::string const& fname);
+    ~ParticleSampleHydrojet();
+    void setBaryonFree(int i) {baryonfree=i;}
+    void setTMPF(double t) {tmpf=t / hbarc_MeVfm * 1000.0;}
+    void setMUBF(double m) {mubf=m / hbarc_MeVfm * 1000.0;}
+    void initialize(std::string const& fn,std::string const& fn_p);
+    void analyze(std::string fn, std::string fn_p);
+    void finish();
+    double dx,dy,dh,dtau;
+    void setDx(double d) {dx=d;}
+    void setDy(double d) {dy=d;}
+    void setDh(double d) {dh=d;}
+    void setDtau(double d) {dtau=d;}
+    double getDtau() {return dtau;}
+    double getDx() {return dx;}
+    double getDy() {return dy;}
+    double getDh() {return dh;}
+
+    std::vector<Particle*> const& getParticleList() const{return plist;}
+
+  private:
+    std::string fn_freezeout_dat;
+    std::string fn_position_dat;
+  public:
+    void setHypersurfaceFilenames(std::string const& fn_freezeout_dat,std::string const& fn_position_dat){
+      this->fn_freezeout_dat=fn_freezeout_dat;
+      this->fn_position_dat=fn_position_dat;
+    }
+    void update(){
+      this->analyze(this->fn_freezeout_dat,this->fn_position_dat);
+    }
+
+  private:
+    void getSample(
+      double vx,double vy,double vz,
+      double ds0,double dsx,double dsy,
+      double dsz,int ir, int ipos,
+      double tau,double xx,double yy,double eta);
+    void putParticle(
+      double px,double py,double pz,
+      double e,double m, int ir, double tau,double x,
+      double y, double eta,int ipos);
+    void outputData(
+      double prx,double pry,double prz,
+      double er,double mres, int ir, double tau,double xx,
+      double yy, double eta, int ipos);
+  };
 
 ParticleSampleHydrojet::ParticleSampleHydrojet(std::string const& dir, std::string* outf,int kin, int eos_pce, std::string const& fname):
   ElementReso(dir, outf, kin, eos_pce, fname)
@@ -563,6 +629,180 @@ void ParticleSampleHydrojet::putParticle(double px,double py,double pz,
   jp->t = tau * std::cosh(eta);
   jp->z = tau * std::sinh(eta);
   this->plist.push_back(jp);
+}
+
+static std::string elementOutputFilenames[151] = {
+  "ELEMENT.A0.PC170",
+  "ELEMENT.DELTA.PC170",
+  "ELEMENT.DELTABAR.PC170",
+  "ELEMENT.ETA.PC170",
+  "ELEMENT.ETAP.PC170",
+  "ELEMENT.F0.PC170",
+  "ELEMENT.KBAR.PC170",//previously "ELEMENT.K0S.PC170"
+  "ELEMENT.KSTAR.PC170",
+  "ELEMENT.KSTARBAR.PC170",
+  "ELEMENT.LAMBDA.PC170",
+  "ELEMENT.LAMBDABAR.PC170",
+  "ELEMENT.OMEGA.PC170",
+  "ELEMENT.PHI.PC170",
+  "ELEMENT.RHO.PC170",
+  "ELEMENT.SIGMA.PC170",
+  "ELEMENT.SIGMAB.PC170",
+  "ELEMENT.SIGMABBAR.PC170",
+  "ELEMENT.PI.PC170",
+  "ELEMENT.K.PC170",
+  "ELEMENT.PRO.PC170",
+  "ELEMENT.PBAR.PC170",
+  "ELEMENT.A1_1260.PC170",
+  "ELEMENT.A2_1320.PC170",
+  "ELEMENT.B1_1235.PC170",
+  "ELEMENT.PI_1300.PC170",
+  "ELEMENT.PI2_1670.PC170",
+  "ELEMENT.RHO_1465.PC170",
+  "ELEMENT.F2_1270.PC170",
+  "ELEMENT.F2P_1525.PC170",
+  "ELEMENT.H1_1170.PC170",
+  "ELEMENT.F0P.PC170",
+  "ELEMENT.H1P.PC170",
+  "ELEMENT.ETA_1295.PC170",
+  "ELEMENT.F1_1285.PC170",
+  "ELEMENT.F1_1420.PC170",
+  "ELEMENT.F0_1300.PC170",
+  "ELEMENT.OMEGA_1420.PC170",
+  "ELEMENT.F1_1510.PC170",
+  "ELEMENT.OMEGA_1600.PC170",
+  "ELEMENT.K1_1270.PC170",
+  "ELEMENT.K1BAR_1270.PC170",
+  "ELEMENT.K2S_1430.PC170",
+  "ELEMENT.K2SBAR_1430.PC170",
+  "ELEMENT.K0S_1430.PC170",
+  "ELEMENT.K0SBAR_1430.PC170",
+  "ELEMENT.K1_1400.PC170",
+  "ELEMENT.K1BAR_1400.PC170",
+  "ELEMENT.KSTAR_1410.PC170",
+  "ELEMENT.KSTARBAR_1410.PC170",
+  "ELEMENT.N_1440.PC170",
+  "ELEMENT.NBAR_1440.PC170",
+  "ELEMENT.N_1520.PC170",
+  "ELEMENT.NBAR_1520.PC170",
+  "ELEMENT.N_1535.PC170",
+  "ELEMENT.NBAR_1535.PC170",
+  "ELEMENT.N_1650.PC170",
+  "ELEMENT.NBAR_1650.PC170",
+  "ELEMENT.DELTA_1600.PC170",
+  "ELEMENT.DELTABAR_1600.PC170",
+  "ELEMENT.DELTA_1620.PC170",
+  "ELEMENT.DELTABAR_1620.PC170",
+  "ELEMENT.LAMBDA_1405.PC170",
+  "ELEMENT.LAMBDABAR_1405.PC170",
+  "ELEMENT.LAMBDA_1520.PC170",
+  "ELEMENT.LAMBDABAR_1520.PC170",
+  "ELEMENT.LAMBDA_1600.PC170",
+  "ELEMENT.LAMBDABAR_1600.PC170",
+  "ELEMENT.LAMBDA_1670.PC170",
+  "ELEMENT.LAMBDABAR_1670.PC170",
+  "ELEMENT.SIGMAB_1385.PC170",
+  "ELEMENT.SIGMABBAR_1385.PC170",
+  "ELEMENT.SIGMAB_1660.PC170",
+  "ELEMENT.SIGMABBAR_1660.PC170",
+  "ELEMENT.SIGMAB_1670.PC170",
+  "ELEMENT.SIGMABBAR_1670.PC170",
+  "ELEMENT.XI.PC170",
+  "ELEMENT.XIBAR.PC170",
+  "ELEMENT.XI_1530.PC170",
+  "ELEMENT.XIBAR_1530.PC170",
+  "ELEMENT.OMEGAB.PC170",
+  "ELEMENT.OMEGABBAR.PC170",
+  "ELEMENT.PHI_1680.PC170",
+  "ELEMENT.RHO_1700.PC170",
+  "ELEMENT.KSTAR_1680.PC170",
+  "ELEMENT.KSTARBAR_1680.PC170",
+  "ELEMENT.K_3_1780.PC170",
+  "ELEMENT.K_3BAR_1780.PC170",
+  "ELEMENT.K_2_1770.PC170",
+  "ELEMENT.K_2BAR_1770.PC170",
+  "ELEMENT.K_2_1820.PC170",
+  "ELEMENT.K_2BAR_1820.PC170",
+  "ELEMENT.N_1675.PC170",
+  "ELEMENT.NBAR_1675.PC170",
+  "ELEMENT.N_1680.PC170",
+  "ELEMENT.NBAR_1680.PC170",
+  "ELEMENT.N_1700.PC170",
+  "ELEMENT.NBAR_1700.PC170",
+  "ELEMENT.N_1710.PC170",
+  "ELEMENT.NBAR_1710.PC170",
+  "ELEMENT.N_1720.PC170",
+  "ELEMENT.NBAR_1720.PC170",
+  "ELEMENT.N_1990.PC170",
+  "ELEMENT.NBAR_1990.PC170",
+  "ELEMENT.DELTA_1700.PC170",
+  "ELEMENT.DELTABAR_1700.PC170",
+  "ELEMENT.DELTA_1900.PC170",
+  "ELEMENT.DELTABAR_1900.PC170",
+  "ELEMENT.DELTA_1905.PC170",
+  "ELEMENT.DELTABAR_1905.PC170",
+  "ELEMENT.DELTA_1910.PC170",
+  "ELEMENT.DELTABAR_1910.PC170",
+  "ELEMENT.DELTA_1920.PC170",
+  "ELEMENT.DELTABAR_1920.PC170",
+  "ELEMENT.DELTA_1930.PC170",
+  "ELEMENT.DELTABAR_1930.PC170",
+  "ELEMENT.DELTA_1950.PC170",
+  "ELEMENT.DELTABAR_1950.PC170",
+  "ELEMENT.LAMBDA_1690.PC170",
+  "ELEMENT.LAMBDABAR_1690.PC170",
+  "ELEMENT.LAMBDA_1800.PC170",
+  "ELEMENT.LAMBDABAR_1800.PC170",
+  "ELEMENT.LAMBDA_1810.PC170",
+  "ELEMENT.LAMBDABAR_1810.PC170",
+  "ELEMENT.LAMBDA_1820.PC170",
+  "ELEMENT.LAMBDABAR_1820.PC170",
+  "ELEMENT.LAMBDA_1830.PC170",
+  "ELEMENT.LAMBDABAR_1830.PC170",
+  "ELEMENT.LAMBDA_1890.PC170",
+  "ELEMENT.LAMBDABAR_1890.PC170",
+  "ELEMENT.LAMBDA_2100.PC170",
+  "ELEMENT.LAMBDABAR_2100.PC170",
+  "ELEMENT.LAMBDA_2110.PC170",
+  "ELEMENT.LAMBDABAR_2110.PC170",
+  "ELEMENT.SIGMAB_1750.PC170",
+  "ELEMENT.SIGMABBAR_1750.PC170",
+  "ELEMENT.SIGMAB_1775.PC170",
+  "ELEMENT.SIGMABBAR_1775.PC170",
+  "ELEMENT.SIGMAB_1915.PC170",
+  "ELEMENT.SIGMABBAR_1915.PC170",
+  "ELEMENT.SIGMAB_1940.PC170",
+  "ELEMENT.SIGMABBAR_1940.PC170",
+  "ELEMENT.SIGMAB_2030.PC170",
+  "ELEMENT.SIGMABBAR_2030.PC170",
+  "ELEMENT.XI_1690.PC170",
+  "ELEMENT.XIBAR_1690.PC170",
+  "ELEMENT.XI_1820.PC170",
+  "ELEMENT.XIBAR_1820.PC170",
+  "ELEMENT.XI_1950.PC170",
+  "ELEMENT.XIBAR_1950.PC170",
+  "ELEMENT.XI_2030.PC170",
+  "ELEMENT.XIBAR_2030.PC170",
+};
+
+IParticleSample* CreateParticleSampleHydrojet(hydro2jam_context const& ctx) {
+  std::string const indir = ctx.indir();
+  int const kintmp = ctx.kintmp();
+  int const eospce = ctx.eospce();
+  std::string const resodata = ctx.resodata();
+  std::string const fn_freezeout_dat = indir + "/freezeout.dat";
+  std::string const fn_position_dat = indir + "/position.dat";
+
+  ParticleSampleHydrojet* psamp =
+    new ParticleSampleHydrojet(indir, elementOutputFilenames, kintmp, eospce, resodata);
+  psamp->setDtau(ctx.get_config("hydro2jam_deltat", 0.3));
+  psamp->setDx(ctx.get_config("hydro2jam_deltax", 0.3));
+  psamp->setDy(ctx.get_config("hydro2jam_deltay", 0.3));
+  psamp->setDh(ctx.get_config("hydro2jam_deltah", 0.3));
+
+  psamp->setBaryonFree(ctx.get_config("hydrojet_baryonfree", 1));
+  psamp->setHypersurfaceFilenames(fn_freezeout_dat, fn_position_dat);
+  return psamp;
 }
 
 }

@@ -20,6 +20,11 @@ namespace util {
       std::sprintf(buff, "%d", value);
       data[key] = buff;
     }
+    void set_value(const char* key, double value) {
+      char buff[100];
+      std::sprintf(buff, "%.15g", value);
+      data[key] = buff;
+    }
     void set_value(const char* key, bool value) {
       set_value(key, value ? 1 : 0);
     }
@@ -47,6 +52,15 @@ namespace util {
       const char* str= get_value(key);
       if (str && isdigit(*str)) {
         value = std::atoi(str);
+        return true;
+      } else
+        return false;
+    }
+
+    bool read_config(double& value, const char* key) const {
+      const char* str= get_value(key);
+      if (str && std::strchr("+-.0123456789", *str)) {
+        value = std::atof(str);
         return true;
       } else
         return false;
