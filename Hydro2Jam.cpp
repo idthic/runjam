@@ -245,7 +245,6 @@ void Hydro2Jam::initialize(hydro2jam_context const& ctx) {
   //...Initialize jam.
   jam->jamInit(this->nevent, bmin, bmax, dt, nstep, "user", "p ", "p ", "2gev");
 
-  isFile = 0;
   numberTestParticle = 1;
 
   if (dumpPhaseSpaceData) {
@@ -309,10 +308,7 @@ void Hydro2Jam::generateEvent(IParticleSample* psamp) {
     // Sample particles from hydro output.
     for(int i=0;i<numberTestParticle;i++){
       psamp->update();
-      if(psamp->getIsOutput())
-        initJam(psamp->getFileNamePos());
-      else
-        initJam(psamp);
+      initJam(psamp);
     }
 
     if(iev%nprint==0){
@@ -364,11 +360,6 @@ void Hydro2Jam::generateEventFromHypersurfaceFiles(std::string const& fn_freezeo
   psamp->setDy(deltay);
   psamp->setDh(deltah);
   psamp->setBaryonFree(baryonfree);
-
-  if (isFile)
-    psamp->setIsOutput(1);
-  else
-    psamp->setIsOutput(0);
 
   psamp->setHypersurfaceFilenames(fn_freezeout_dat, fn_position_dat);
 
@@ -529,21 +520,6 @@ void Hydro2Jam::initJam(std::string fname)
       exit(1);
     }
     lp++;
-
-    /*
-      std::cout << "px= " << px
-      << " py=" << py
-      << " pz= "<< pz
-      << " e= " << e
-      << " em= " << em
-      << " ir= " << ir
-      << " tau= " << tau
-      << " rx= " << rx
-      << " ry= " << ry
-      << " eta= " << eta
-      << std::endl;
-      cin.get();
-    */
 
     int kf=sampleJamID(ir+1);   // PDG particle code.
     if(kf == 0) continue;

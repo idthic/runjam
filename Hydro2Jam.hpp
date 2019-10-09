@@ -20,7 +20,6 @@ private:
   int eosPCE;
   std::string resodata;
   int nevent;
-  int isFile; // =1:read hydro data from the file.
   int numberTestParticle;
   int nv;
   int nbary;
@@ -40,7 +39,6 @@ public:
   ~Hydro2Jam();
 
   void   setResoData(std::string d) {resodata=d;}
-  void   setIsFile(int i) {isFile=i;}
   void   setNumberOfTestParticle(int i) {numberTestParticle=i;}
   double getIniAverageParticleNumber1() {return aveNumberPart1;}
   double getIniAverageParticleNumber2() {return aveNumberPart2;}

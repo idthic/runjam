@@ -44,19 +44,11 @@ struct Hydro2jamCommandlineArguments {
   InitialType jamInitType;
   std::string fnameInitialPhasespaceData;
 
-  int nev;
-
   double switchingTemperature;
 public:
   Hydro2jamCommandlineArguments(){
-    // default values
-
-    this->jamInitType=InitialType_None;
-
-    // 2014-06-18 KM: changed from 10 to 1 since 1 is more reasonable in the e-by-e picture
-    this->nev=1;
-
-    this->switchingTemperature=-1.0;
+    this->jamInitType = InitialType_None;
+    this->switchingTemperature = -1.0;
   }
 
 private:
@@ -89,6 +81,8 @@ private:
       "      phase:PHASESPACE     load ICs from PHASESPACE (phasespace.dat)\n"
       "      phase1:PHASESPACE    load a single IC from PHASESPACE. This performs an\n"
       "                           additional check that PHASESPACE has only one event.\n"
+      "      psample:FILENAME     read a particle list from\n"
+      "                           hydro2jam \"particlesample_pos.dat\"\n"
       "\n"
       "  --help          show this help\n"
       "  --switching-temperature=TEMP [MeV]\n"
@@ -335,7 +329,6 @@ void hadronicCascade(hydro2jam_context const& ctx) {
 
   Hydro2Jam* jam = new Hydro2Jam(ctx);
   jam->setResoData(ctx.resodata());
-  jam->setIsFile(0);
   jam->setMSTC(156, 1);        // analysis of collision distribution
   jam->setMSTC(161, 0);        // no analysis from jam internal subr.
   jam->setMSTC(162, 1);        // Output collision histroy

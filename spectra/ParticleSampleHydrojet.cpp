@@ -18,17 +18,11 @@ namespace hydro2jam {
 
 static const double FreezeoutSkipTemperature=0.01; // unit: [/fm]
 
-ParticleSampleHydrojet::ParticleSampleHydrojet(std::string const& dir, std::string* outf,int kin, int eos_pce, std::string const& fname)
-  : ElementReso(dir,outf,kin,eos_pce,fname)
+ParticleSampleHydrojet::ParticleSampleHydrojet(std::string const& dir, std::string* outf,int kin, int eos_pce, std::string const& fname):
+  ElementReso(dir, outf, kin, eos_pce, fname)
 {
-	outfilepos = "particlesample_pos.dat";
-	if(dir.size()>0)outfilepos = dir + "/"+ "particlesample_pos.dat";
-	outfileneg = "particlesample_neg.dat";
-	if(dir.size()>0)outfileneg = dir + "/"+ "particlesample_neg.dat";
-
 	//	di = 10;
 	di = 20; // iteration number in bisection method
-	isOutput=1;
 	plist.clear();
 
   mode_delayed_cooperfrye=false;
@@ -40,32 +34,30 @@ ParticleSampleHydrojet::ParticleSampleHydrojet(std::string const& dir, std::stri
 
   // 2013/04/23, KM, reverse z axis
   {
-    const char* env=std::getenv("ParticleSample_ReverseParticleList");
-    this->fReverseParticleList=env&&std::atoi(env);
-    if(this->fReverseParticleList)
-      std::cout<<"ParticleSampleHydrojet: ReverseParticleList mode enabled!"<<std::endl;
+    const char* env = std::getenv("ParticleSample_ReverseParticleList");
+    this->fReverseParticleList = env && std::atoi(env);
+    if (this->fReverseParticleList)
+      std::cout << "ParticleSampleHydrojet: ReverseParticleList mode enabled!" << std::endl;
   }
 
   // 2013/04/30, KM, shuffle the particle list
   {
-    const char* env=std::getenv("ParticleSample_ShuffleParticleList");
-    this->fShuffleParticleList=env&&std::atoi(env);
-    if(this->fShuffleParticleList)
-      std::cout<<"ParticleSampleHydrojet: ShuffleParticleList mode enabled!"<<std::endl;
+    const char* env = std::getenv("ParticleSample_ShuffleParticleList");
+    this->fShuffleParticleList = env && std::atoi(env);
+    if (this->fShuffleParticleList)
+      std::cout << "ParticleSampleHydrojet: ShuffleParticleList mode enabled!" << std::endl;
   }
 }
 
-ParticleSampleHydrojet::~ParticleSampleHydrojet()
-{
-  if(plist.size()>0) {
+ParticleSampleHydrojet::~ParticleSampleHydrojet() {
+  if (plist.size() > 0) {
     std::vector<Particle*>::iterator cp;
-    for(cp = plist.begin(); cp != plist.end();cp++) delete *cp;
+    for (cp = plist.begin(); cp != plist.end();cp++) delete *cp;
     plist.clear();
   }
 }
 
-void ParticleSampleHydrojet::initialize(std::string const& fn_freezeout_dat, std::string const& fn_p)
-{
+void ParticleSampleHydrojet::initialize(std::string const& fn_freezeout_dat, std::string const& fn_p) {
   nreso_loop = ResonanceListPCE::nreso;
   //    if(baryonfree)nreso_loop = 20;
 
@@ -144,24 +136,6 @@ void ParticleSampleHydrojet::initialize(std::string const& fn_freezeout_dat, std
   }
 #endif
 
-  // open files for output.
-  if(isOutput!=0){
-    outdatpos.open(outfilepos.c_str());
-    if (!outdatpos)  {
-      std::cerr << "ParticleSampleHydrojet::initialize! unable to open file " << outfilepos << std::endl;
-      std::exit(1);
-    }
-    outdatpos << "# p_x(GeV) p_y(GeV) p_z(GeV) E(GeV) m(GeV)";
-    outdatpos << " ir tau(fm) x(fm) y(fm) eta"  << std::endl;
-
-    outdatneg.open(outfileneg.c_str());
-    if (!outdatneg)  {
-      std::cerr << "ParticleSampleHydrojet::initialize! unable to open file " << outfileneg << std::endl;
-      std::exit(1);
-    }
-    outdatneg << "# p_x(GeV) p_y(GeV) p_z(GeV) E(GeV) m(GeV)";
-    outdatneg << " ir tau(fm) x(fm) y(fm) eta"  << std::endl;
-  }
 }
 
 //void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string fn_p, std::string fn_ecc)
@@ -406,11 +380,6 @@ void ParticleSampleHydrojet::finish()
   }
 #endif
 
-  if(isOutput) {
-    outdatpos.close();
-    outdatneg.close();
-  }
-
   //**************************
   delete [] resDataPos;
   delete [] resDataNeg;
@@ -537,7 +506,7 @@ getSample(double vx,double vy,double yv,
 
     } while (prds < 0.0);
 
-    if(prds/pu/gamma > ranmax){
+    if (prds / pu / gamma > ranmax) {
       std::cout
         << "Warning: prds/pu/gamma is greater than maximum random number. "
         << "Please increase 'facranmax'"
@@ -545,12 +514,11 @@ getSample(double vx,double vy,double yv,
         << prds/pu/gamma/ranmax*facranmax
         << " [at ParticleSampleHydrojet::getSample]"
         << std::endl;
-      //continue;
     }
 
     ranemis = ranmax*Random::getRand();
 
-  }while (ranemis >  prds/pu/gamma);
+  } while (ranemis >  prds / pu / gamma);
 
   //↓ は bulk emission の時だけしか正しく無い気がする by KM
   //Uniformly distributed in a fluid element in coordinate space
@@ -562,23 +530,23 @@ getSample(double vx,double vy,double yv,
   double eta= eta0+dh*(ran3-0.5);
 
   // 2013/04/23, KM, reverse z axis
-  if(this->fReverseParticleList){
+  if (this->fReverseParticleList) {
     prz=-prz;
     eta=-eta;
   }
 
-  if(isOutput) {
-    outputData(prx,pry,prz,er,mres,ir,tau,xx,yy,eta,ipos);
-  } else {
-    putParticle(prx,pry,prz,er,mres,ir,tau,xx,yy,eta,ipos);
-  }
+  putParticle(prx,pry,prz,er,mres,ir,tau,xx,yy,eta,ipos);
 }
 
 void ParticleSampleHydrojet::putParticle(double px,double py,double pz,
 	double e,double m, int ir, double tau,double x,
 	double y, double eta,int ipos)
 {
+  // Note: ipos=1 の時が positive contribution による粒子。
+  //   ipos=0 の時は negative contribution による粒子。
+  //   元々の hydrojet では ipos=0 の粒子もファイルに出力する機能があった。
   if(!ipos) return;
+
   Particle* jp = new(std::nothrow) Particle(ir);
   if (!jp) {
     std::cerr << "(ParticleSampleHydrojet::putPartile:) No more memory" << std::endl;
@@ -595,39 +563,6 @@ void ParticleSampleHydrojet::putParticle(double px,double py,double pz,
   jp->t = tau * std::cosh(eta);
   jp->z = tau * std::sinh(eta);
   this->plist.push_back(jp);
-}
-
-void ParticleSampleHydrojet::outputData(double prx,double pry,double prz,
-	double er,double mres, int ir, double tau,double xx,
-	double yy, double eta, int ipos)
-{
-
-	if (ipos) {
-	  outdatpos << std::setw(14) << prx*hbarc_GeVfm
-              << std::setw(14) << pry*hbarc_GeVfm
-              << std::setw(14) << prz*hbarc_GeVfm
-              << std::setw(14) << er*hbarc_GeVfm
-              << std::setw(14) << mres*hbarc_GeVfm
-              << std::setw(4)  << ir
-              << std::setw(6)  << tau
-              << std::setw(14) << xx
-              << std::setw(14) << yy
-              << std::setw(14) << eta
-              << std::endl;
-	} else {
-	  outdatneg << std::setw(14) << prx*hbarc_GeVfm
-              << std::setw(14) << pry*hbarc_GeVfm
-              << std::setw(14) << prz*hbarc_GeVfm
-              << std::setw(14) << er*hbarc_GeVfm
-              << std::setw(14) << mres*hbarc_GeVfm
-              << std::setw(4)  << ir
-              << std::setw(6)  << tau
-              << std::setw(14) << xx
-              << std::setw(14) << yy
-              << std::setw(14) << eta
-              << std::endl;
-	}
-
 }
 
 }

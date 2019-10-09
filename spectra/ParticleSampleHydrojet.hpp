@@ -12,13 +12,9 @@ namespace hydro2jam {
 class ParticleSampleHydrojet: public ElementReso, public IParticleSample {
 private:
   std::ifstream *resDataPos;
-  std::string   outfilepos;
-  std::ofstream outdatpos;
   std::ifstream *resDataNeg;
-  std::string   outfileneg;
-  std::ofstream outdatneg;
   int di; // iteration number in bisection method
-  int isOutput;
+
   std::vector<Particle*> plist;
   int    baryonfree;
   double tmpf;
@@ -28,6 +24,7 @@ private:
   bool mode_delayed_cooperfrye;
   bool fReverseParticleList;
   bool fShuffleParticleList;
+
 public:
   ParticleSampleHydrojet(std::string const& dir, std::string* outf, int kin, int eos_pce, std::string const& fname);
   ~ParticleSampleHydrojet();
@@ -46,9 +43,7 @@ public:
   double getDx() {return dx;}
   double getDy() {return dy;}
   double getDh() {return dh;}
-  void setIsOutput(int i){this->isOutput=i;}
-  int getIsOutput() const{return this->isOutput;}
-  std::string const& getFileNamePos() const{return outfilepos;}
+
   std::vector<Particle*> const& getParticleList() const{return plist;}
 
 private:

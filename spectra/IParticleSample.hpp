@@ -53,25 +53,9 @@ public:
 
 };
 
-class IParticleSample{
+class IParticleSample {
 public:
   virtual ~IParticleSample(){}
-
-  /// @fn int getIsOutput() const
-  /// \~en returns if the resonance distributions are output or not.
-  /// - the return value 0 means that the distributions are passed to initJam with IParticleSample::getParticleList().
-  /// - the return value 1 means that the distributions are passed to initJam with a file.
-  ///   The filename to whom the distributions is written is obtained by IParticleSample::getFileNamePos().
-  /// \~ja 粒子分布を出力するかどうかを返します。
-  /// - 0 を返した場合は、 IParticleSample::getParticleList() を使用して粒子分布が initJam に渡されます。
-  /// - 1 を返した場合は、一旦粒子分布をファイルに書き込んだ後 initJam にそのファイル名が渡されます。
-  ///   書き込み先ファイル名は IParticleSample::getFileNamePos() で取得します。
-  virtual int getIsOutput() const=0;
-
-  /// @fn std::string const& getFileNamePos() const;
-  /// \~en returns the filename containing the output resonance distributions when getIsOutput()==1.
-  /// \~ja getIsOutput()==true の時に、粒子分布を格納したファイル名を返します。
-  virtual std::string const& getFileNamePos() const=0;
 
   virtual void setAdviceNumberOfExpectedEvents(int nEvents){}
 
@@ -110,10 +94,7 @@ protected:
 public:
   ParticleSampleBase(){}
   virtual ~ParticleSampleBase(){this->clearParticleList();}
-
-  virtual int getIsOutput() const{return false;}
-  virtual std::string const& getFileNamePos() const{static std::string dummy;return dummy;}
-  virtual std::vector<Particle*> const& getParticleList() const{return this->plist;}
+  virtual std::vector<Particle*> const& getParticleList() const { return this->plist; }
 
 private:
   // コピー禁止
