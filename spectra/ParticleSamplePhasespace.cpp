@@ -101,7 +101,7 @@ namespace {
 
     error_failed_to_open:
       std::cerr
-        << "spectra/ParticleSampleFromOversampledPhasespace.cxx(ParticleSampleFromOversampledPhasespace::update): failed to open the file ("
+        << "spectra/ParticleSamplePhasespace.cpp(ParticleSamplePhasespace::update): failed to open the file ("
         << this->fname_phasespace_dat << ")" << std::endl;
       std::exit(EXIT_FAILURE);
       return; /*NOTREACHED*/

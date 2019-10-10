@@ -135,7 +135,7 @@ void ParticleSampleHydrojet::initialize(std::string const& fn_freezeout_dat, std
   {
     // Try to read ELEMENT.* cache files
     //**************************
-    std::cout<<"ParticleSampleHydrojet.cxx(ParticleSampleHydrojet::initialize): checking Cooper-Frye cache files (.POS/.NEG)... "<<std::flush;
+    std::cout<<"ParticleSampleHydrojet.cpp(ParticleSampleHydrojet::initialize): checking Cooper-Frye cache files (.POS/.NEG)... "<<std::flush;
     resDataPos = new std::ifstream [nreso_loop];
     for(int i=0;i<nreso_loop;i++) {
       std::string fnpos = elemFile[i]+".POS";
@@ -159,7 +159,7 @@ void ParticleSampleHydrojet::initialize(std::string const& fn_freezeout_dat, std
     if(mode_delayed_cooperfrye){
       std::cout
         <<"no(incomplete).\n"
-        <<"ParticleSampleHydrojet.cxx(ParticleSampleHydrojet::initialize): entering delayed Cooper-Frye evaluation mode."<<std::endl;
+        <<"ParticleSampleHydrojet.cpp(ParticleSampleHydrojet::initialize): entering delayed Cooper-Frye evaluation mode."<<std::endl;
 
       // Close files if ELEMENT.* is not a complete set.
       if(resDataPos){
@@ -241,13 +241,13 @@ void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string f
 
 #ifdef CHG20110804
     if(tf == 0.0) {
-      std::cerr << "ParticleSampleHydrojet.cxx(ParticleSampleHydrojet::analyze)! TF=ZERO" << std::endl;
+      std::cerr << "ParticleSampleHydrojet.cpp(ParticleSampleHydrojet::analyze)! TF=ZERO" << std::endl;
       continue;
     }
 
     // 2014-07-30
     if(tf<FreezeoutSkipTemperature){
-      //std::cerr << "ParticleSampleHydrojet.cxx(ParticleSampleHydrojet::analyze): skipped lowT surface." << std::endl;
+      //std::cerr << "ParticleSampleHydrojet.cpp(ParticleSampleHydrojet::analyze): skipped lowT surface." << std::endl;
       continue;
     }
 #endif

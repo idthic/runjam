@@ -16,7 +16,7 @@
 using namespace std;
 using namespace idt::hydro2jam;
 
-void generatePhasespace0(hydro2jam_context const& ctx, std::string const& inputfile);
+void generatePhasespace0(hydro2jam_context const& ctx, std::string const& type, std::string const& inputfile);
 
 //-----------------------------------------------------------------------------
 // parameters
@@ -129,7 +129,7 @@ public:
               std::cerr << "hydro2jam:option(" << argv[i] << "): the argument of the option is empty." << std::endl;
               std::exit(EXIT_SUCCESS);
             }
-            switchingTemperature = std::atof(a.c_str());
+            ctx.set_value("hydro2jam_switching_temperature", std::atof(a.c_str()));
           } else {
             std::cerr << "unknowon option '" << argv[i] << "'" << std::endl;
             std::exit(EXIT_FAILURE);
@@ -217,7 +217,7 @@ public:
           // test 用
           Random* rand = new PyRand(ctx.seed());
           Random::setRandom(rand);
-          generatePhasespace0(ctx, this->fnameInitialPhasespaceData);
+          generatePhasespace0(ctx, "c0lrf", this->fnameInitialPhasespaceData);
           delete rand;
           std::exit(EXIT_SUCCESS);
         }
@@ -303,33 +303,6 @@ void savePhasespaceData(std::string fname, std::vector<Particle*> plist, Particl
   std::fclose(f);
 }
 
-#ifdef USE_JAM
-void hadronicCascadeC0Lrf(hydro2jam_context const& ctx, Hydro2Jam* jam, std::string const& fname) {
-  ResonanceListPCE reso(ctx);
-
-  ParticleSampleViscous* psamp = new ParticleSampleViscous(&reso, fname);
-  if (args.switchingTemperature > 0.0)
-    psamp->setSwitchingTemperature(args.switchingTemperature);
-  jam->generateEvent(psamp);
-  delete psamp;
-}
-
-void hadronicCascadeHydrojet(hydro2jam_context const& ctx, Hydro2Jam* jam, std::string const& dname) {
-  ResonanceListPCE reso(ctx);
-
-  ParticleSampleFromHydrojet* psamp = new ParticleSampleFromHydrojet(&reso, dname);
-  psamp->setDtau(deltat);
-  psamp->setDh(deltah);
-  psamp->setDx(deltax);
-  psamp->setDy(deltay);
-  if (args.switchingTemperature > 0.0)
-    psamp->setSwitchingTemperature(args.switchingTemperature);
-
-  jam->generateEvent(psamp);
-  delete psamp;
-}
-#endif
-
 void hadronicCascade(hydro2jam_context const& ctx) {
   std::cout << "JAM hadronic cascade start" << std::endl;
 
@@ -349,16 +322,16 @@ void hadronicCascade(hydro2jam_context const& ctx) {
 
   switch (args.jamInitType) {
   case InitialType_C0LRF:
-    hadronicCascadeC0Lrf(ctx, jam, args.fnameInitialPhasespaceData);
+    psamp = CreateParticleSample(ctx, "c0lrf", args.fnameInitialPhasespaceData);
     break;
   case InitialType_HYDRO:
-    hadronicCascadeHydrojet(ctx, jam, args.fnameInitialPhasespaceData);
+    psamp = CreateParticleSample(ctx, "hydrojet", args.fnameInitialPhasespaceData);
     break;
   case InitialType_PHASE1:
-    psamp = CreateParticleSample(ctx, "phase1", ctx.indir());
+    psamp = CreateParticleSample(ctx, "phase1", args.fnameInitialPhasespaceData);
     break;
   case InitialType_PHASE:
-    psamp = CreateParticleSample(ctx, "phase", ctx.indir());
+    psamp = CreateParticleSample(ctx, "phase", args.fnameInitialPhasespaceData);
     break;
   case InitialType_PSAMPLE:
     psamp = new ParticleSampleRead(args.fnameInitialPhasespaceData);
@@ -385,17 +358,17 @@ void hadronicCascade(hydro2jam_context const& ctx) {
   delete jam;
 }
 
-void generatePhasespace0(hydro2jam_context const& ctx, std::string const& inputfile) {
+void generatePhasespace0(hydro2jam_context const& ctx, std::string const& type, std::string const& inputfile) {
   int const nevent = ctx.nevent(1000);
   int const ibase = ctx.get_config("hydro2jam_ievent_begin", 0);
+  double const ntest = ctx.get_config("hydro2jam_oversampling_factor", 1.0);
   std::string const outdir = ctx.outdir();
 
-  ResonanceListPCE reso(ctx);
+  hydro2jam_context ctx1(ctx);
+  ctx1.set_value("hydro2jam_nevent", 1);
+  ctx1.set_value("hydro2jam_oversampling_factor", nevent * ntest);
 
-  ParticleSampleViscous* psamp = new ParticleSampleViscous(&reso, inputfile);
-  psamp->setOverSamplingFactor(nevent);
-  if (ctx.get_config("hydro2jam_turnsOffViscousEffect", false))
-    psamp->setTurnsOffViscousEffect(true);
+  IParticleSample* psamp = CreateParticleSample(ctx1, type, inputfile);
   psamp->update();
 
   // 振り分け

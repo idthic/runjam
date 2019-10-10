@@ -325,7 +325,7 @@ namespace {
         const double margin = 1e-10;
         if (tsig < domain_begin - margin || domain_end + margin < tsig) {
           std::fprintf(
-            stderr, "ParticleSampleViscous.cxx(LagrangeInterpolation): out of domain (tsig=%g not in [%g, %g])\n",
+            stderr, "ParticleSampleViscous.cpp(LagrangeInterpolation): out of domain (tsig=%g not in [%g, %g])\n",
             tsig, domain_begin, domain_end);
           std::exit(EXIT_FAILURE);
         }
@@ -539,7 +539,7 @@ namespace {
       LagrangeInterpolation<7> interpL[NINTERP];
       LagrangeInterpolation<7>::interpolation_data dataL[NINTERP][number_of_interpolated_functions];
 #else
-#  error hydrojet: invalid macro value of CFInterpolationType
+#  error hydro2jam: invalid macro value of CFInterpolationType
 #endif
 
     private:
@@ -986,7 +986,7 @@ namespace {
       double const x = IsotropicPartInverseUCDF((1.0 - Random::getRand()) * totalIsotropicPartCDF);
       double const bp = std::sqrt(x * x - bmass * bmass);
       if (!std::isfinite(bp)) {
-        std::cerr << "ParticleSampleViscous.cxx(generateMomentum): beta*p nan/inf" << std::endl;
+        std::cerr << "ParticleSampleViscous.cpp(generateMomentum): beta*p nan/inf" << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -1156,7 +1156,7 @@ namespace {
       }
 
       if (std::isnan(this->totalIntegral)) {
-        std::cerr << "ParticleSampleViscous.cxx: IsotropicPartUCDF([bmass,infty]) is nan" << std::endl;
+        std::cerr << "ParticleSampleViscous.cpp: IsotropicPartUCDF([bmass,infty]) is nan" << std::endl;
         std::fprintf(stderr, "IsotropicPartCDF([bmass,infty])=%g bmass=%g xsig=%g vsig=%g\n", totalIsotropicPartCDF, bmass, xsig, vsig);
         std::fflush(stderr);
         std::exit(1);
@@ -1182,7 +1182,7 @@ namespace {
         this->totalIsotropicPartCDF = base::IsotropicPartTotalCDF();
         prob = totalIsotropicPartCDF / totalIntegral;
         if (prob > 1.0) {
-          std::cerr << "ParticleSmapleViscous.cxx (SampleResonance): BUG the dominating function actually doesn't dominate (prob=" << prob << ")." << std::endl;
+          std::cerr << "ParticleSmapleViscous.cpp (SampleResonance): BUG the dominating function actually doesn't dominate (prob=" << prob << ")." << std::endl;
           std::exit(EXIT_FAILURE);
         }
       } else {
@@ -1201,364 +1201,526 @@ namespace {
     }
   };
 }
-
-//=============================================================================
-// Implementations
-
-void SampleParticlesC0lrf(
-  std::vector<Particle*>& plist,
-  HypersurfaceElementC0Lrf const& surface,
-  IResonanceList const* rlist,
-  double overSamplingFactor,
-  bool turnsOffViscousEffect
-) {
-  SurfaceParticleSampler sampler(&surface);
-  sampler.setOverSamplingFactor(overSamplingFactor);
-  sampler.setTurnsOffViscousEffect(turnsOffViscousEffect);
-
-  int const iresoN = rlist->numberOfResonances();
-  for (int ireso = 0; ireso < iresoN; ireso++)
-    sampler.SampleResonance(plist, rlist, ireso);
-
-  // mass の単位は [/fm] で OK
-  //   mass の単位は 197.32 [MeV fm] で割ってある
-  //   mass [/fm] = M [MeV] / 197.32 [MeV fm] という事。
-  // {
-  //   for (int ireso = 0; ireso < iresoN; ireso++)
-  //     std::cerr << "mass[" << ireso << "]=" << rlist->mass(ireso) * hbarc_MeVfm << std::endl;
-  //   std::exit(2);
-  // }
+}
 }
 
-//=============================================================================
-//  class OversampledParticleSampleBase
-//-----------------------------------------------------------------------------
+namespace idt {
+namespace hydro2jam {
 
-void OversampledParticleSampleBase::update() {
-  // 一括生成済の時
-  if (this->pcache.size() > 0) {
-    if (++this->indexOfCachedEvents < this->pcache.size())
-      return;
-
-    this->pcache.clear();
-    this->indexOfCachedEvents = -1;
-  }
-
-  // 一括生成要求がある時
-  if (this->numberOfExpectedEvents > 0) {
-    double const& ncache = this->numberOfExpectedEvents;
-    this->updateWithOverSampling(this->m_overSamplingFactor * ncache);
-    this->pcache.resize(ncache, std::vector<Particle*>());
-    for (std::vector<Particle*>::const_iterator i = this->base::plist.begin(); i != this->base::plist.end(); ++i)
-      this->pcache[int(Random::getRand() * ncache)].push_back(*i);
-
-    this->numberOfExpectedEvents = 0;
-    this->indexOfCachedEvents = 0;
-    return;
-  }
-
-  this->updateWithOverSampling(this->m_overSamplingFactor);
-}
-
-//=============================================================================
-//  sampling for <rfh hypersurface.txt c0lrf>
-//-----------------------------------------------------------------------------
-
-ParticleSampleViscous::ParticleSampleViscous(IResonanceList* rlist, std::string const& fname_hypersurface)
-  :rlist(rlist),
-   fname_hypersurface(fname_hypersurface),
-   m_turnsOffViscousEffect(false)
-{
-  this->m_switchingTemperature = 155.0;
-}
-
-void ParticleSampleViscous::updateWithOverSampling(double overSamplingFactor) {
-  this->base::clearParticleList();
-
-  std::ifstream ifs(this->fname_hypersurface.c_str());
-  if (!ifs) {
-    std::cerr << "(ParticleSampleViscous::update): failed to open the hypersurface file(" << fname_hypersurface << ")." << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
-
-  std::string line;
-
-  double switchingTemperature = this->m_switchingTemperature / hbarc_MeVfm; // [/fm]
-
-  // 1行目
-  if (std::getline(ifs, line)) {
-    std::istringstream s(line);
-
-    // $1-$2 magic
-    std::string type, coords;
-    s >> type >> coords;
-    if (type != "c0lrf" || (coords != "taueta-tilde" && coords != "taueta")) {
-      std::cerr << "(ParticleSampleViscous::update):" << fname_hypersurface << ": format not supported." << std::endl;
-      std::exit(EXIT_FAILURE);
-    }
-
-    // $3... Tsw=155/197.32 などを読み取る
-    std::string arg;
-    while (s >> arg) {
-      if (arg.compare(0, 4, "Tsw=", 4) == 0) {
-        switchingTemperature = std::atof(arg.c_str() + 4);
-      } else {
-        std::cerr << "(ParticleSampleViscous::update):" << fname_hypersurface << ":1: unknown argument (arg=" << arg << ")" << std::endl;
-        std::exit(EXIT_FAILURE);
-      }
-    }
-  } else {
-    std::cerr << "(ParticleSampleViscous::update):" << fname_hypersurface << ": the file is empty." << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
-
-  double const switchingBeta = 1.0 / switchingTemperature; // [/fm]
-  interpolation::TotalCDFInterpolater interp(rlist, switchingBeta);
-
-  bool completed=false;
-  while (std::getline(ifs, line)) {
-    HypersurfaceElementC0Lrf surface;
-    {
-      std::istringstream s(line);
-      // $1-$13 surface element
-      int normalDirection;
-      s >> normalDirection;
-      if (normalDirection == -1) {
-        completed = true;
-        break;
-      }
-      for (int i = 0; i < 4; i++)
-        s >> surface.m_ds[i];
-      for (int i = 0; i < 4; i++)
-        s >> surface.m_pos[i];
-      for (int i = 0; i < 4; i++)
-        s >> surface.m_dx[i];
-
-      // $14-$18 ideal part
-      s >> surface.m_temperature;
-      for (int i = 0; i < 4; i++)
-        s >> surface.m_velocity[i];
-
-      // $19-$27 stress part
-      s >> surface.m_energy;
-      s >> surface.m_pressure;
-      s >> surface.m_stressMax;
-      for (int i = 0; i < 6; i++)
-        s >> surface.m_stress[i];
-    }
-
-    if (surface.m_temperature < CONST_FreezeoutSkipTemperature) {
-      // skip
-      continue;
-    }
-
-    {
-      SurfaceParticleSampler sampler(&surface);
-      sampler.setOverSamplingFactor(overSamplingFactor);
-      sampler.setTurnsOffViscousEffect(this->m_turnsOffViscousEffect);
-      if (std::abs(surface.m_temperature - switchingTemperature) < 1e-5)
-        sampler.setCDFInterpolater(&interp);
-      else if (surface.m_temperature < switchingTemperature)
-        sampler.setDominatingCDFInterpolater(&interp);
-
-      int const iresoN = rlist->numberOfResonances();
-      for (int ireso = 0; ireso < iresoN; ireso++)
-        sampler.SampleResonance(plist, rlist, ireso);
-    }
-  }
-
-  if (!completed) {
-    std::cerr << "(ParticleSampleViscous::update):" << fname_hypersurface << ": unexpected end of the file." << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
-
-  std::cout << "(ParticleSampleViscous::update):" << fname_hypersurface << ": " << base::plist.size() << " particles were generated," << std::endl;
-}
-
-//=============================================================================
-//  sampling for <hydrojet freezeout.dat/position.dat>
-//-----------------------------------------------------------------------------
-
-ParticleSampleFromHydrojet::ParticleSampleFromHydrojet(
-  IResonanceList* rlist,
-  std::string const& fname_freezeout,
-  std::string const& fname_position
-):
-  rlist(rlist),
-  fname_freezeout(fname_freezeout),
-  fname_position(fname_position),
-  dx(0.3), dy(0.3), dh(0.3), dtau(0.3)
-{
-  this->m_switchingTemperature=155.0;
-}
-ParticleSampleFromHydrojet::ParticleSampleFromHydrojet(
-  IResonanceList* rlist,
-  std::string const& dname_hydro)
-  :rlist(rlist),
-   fname_freezeout(dname_hydro + "/freezeout.dat"),
-   fname_position(dname_hydro + "/position.dat"),
-   dx(0.3), dy(0.3), dh(0.3), dtau(0.3)
-{
-  this->m_switchingTemperature = 155.0;
-}
-
-bool ParticleSampleFromHydrojet::readHypersurfaceElement(HypersurfaceElementC0Lrf& surface, std::ifstream& ifsf, std::ifstream& ifsp) const {
-  // isbulk
-  int isbulk;
-  if (!(ifsf >> isbulk)) {
-    std::cerr << "(ParticleSampleFromHydrojet::update):" << fname_freezeout << ": unexpected end of the file." << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
-
-  if (isbulk < 0) {
-    // end
-    if (!(ifsp >> isbulk)) {
-      std::cerr << "(ParticleSampleFromHydrojet::update):" << fname_position << ": unexpected end of the file." << std::endl;
-      std::exit(EXIT_FAILURE);
-    }
-    if (isbulk >= 0) {
-      std::cerr << "(ParticleSampleFromHydrojet::update):" << fname_position << ": inconsistent number of the entries." << std::endl;
-      std::exit(EXIT_FAILURE);
-    }
-    return false;
-  }
-
-  // m_pos
-  ifsp >> surface.m_pos[0]; // tau
-  ifsp >> surface.m_pos[2]; // x
-  ifsp >> surface.m_pos[3]; // y
-  ifsp >> surface.m_pos[1]; // eta
-
-  // m_ds (ifsf $2-4)
-  {
-    double ds;
-    ifsf >> ds >> surface.m_ds[2] >> surface.m_ds[3];
-    if (isbulk) {
-      surface.m_ds[0] = ds;
-      surface.m_ds[1] = 0.0;
-    } else {
-      surface.m_ds[0] = 0.0;
-      surface.m_ds[1] = -ds;
-    }
-
-    // 基底変換: tilde 座標 → grid 座標
-    double const inverseTau = 1.0 / surface.m_pos[0];
-    surface.m_ds[0] *= inverseTau;
-    surface.m_ds[2] *= inverseTau;
-    surface.m_ds[3] *= inverseTau;
-  }
-
-  // m_dx
-  surface.m_dx[0] = this->dtau;
-  surface.m_dx[1] = this->dh;
-  surface.m_dx[2] = this->dx;
-  surface.m_dx[3] = this->dy;
-  if (isbulk)
-    surface.m_dx[0] = 0.0;
-  else if (surface.m_ds[1])
-    surface.m_dx[1] = 0.0;
-  else if (surface.m_ds[2])
-    surface.m_dx[2] = 0.0;
-  else
-    surface.m_dx[3] = 0.0;
-
-  // (ifsf $5-7)
-  double eta, mu;
-  ifsf >> eta >> surface.m_temperature >> mu;
-  if (mu != 0.0) {
-    std::cout << "ParticleSampleViscous.cxx (ParticleSampleFromHydrojet): a finite baryon chemical potenatial is not supported." << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
-
-  // m_velocity (ifsf $8-10)
-  {
-    double vxp, vyp, yvp;
-    ifsf >> vxp >> vyp >> yvp;
-    double const vzp = std::tanh(yvp);
-    double const u0 = 1.0 / std::sqrt(1.0 - (vxp * vxp + vyp * vyp + vzp * vzp));
-    double const u_lab[4] = {u0, u0 * vzp, u0 * vxp, u0 * vyp};
-
-    double const cosh_ = std::cosh(eta);
-    double const sinh_ = std::sinh(eta);
-    surface.m_velocity[0] =  u_lab[0] * cosh_ - u_lab[1] * sinh_;
-    surface.m_velocity[1] = -u_lab[0] * sinh_ + u_lab[1] * cosh_;
-    surface.m_velocity[2] = u_lab[2];
-    surface.m_velocity[3] = u_lab[3];
-  }
-
-  int iw = 0;
-  ifsf >> iw;
-  if (iw != 8 && iw != 4) {
-    std::cerr << "ParticleSampleViscous.cxx (ParticleSampleFromHydrojet): not supported value: iw=" << iw << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
-
-  return true;
-}
-
-void ParticleSampleFromHydrojet::updateWithOverSampling(double overSamplingFactor) {
-  this->base::clearParticleList();
-
-  std::ifstream ifsf(this->fname_freezeout.c_str());
-  if (!ifsf) {
-    std::cerr << "(ParticleSampleFromHydrojet::update): failed to open the hypersurface element data (" << fname_freezeout << ")." << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
-
-  std::ifstream ifsp(this->fname_position.c_str());
-  if (!ifsp) {
-    std::cerr << "(ParticleSampleFromHydrojet::update): failed to open the hypersurface position data (" << fname_position << ")." << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
-
-  double switchingTemperature = this->m_switchingTemperature / hbarc_MeVfm; // [/fm]
-
-  double const switchingBeta = 1.0 / switchingTemperature; // [/fm]
-  std::cout << "ParticleSampleViscous.cxx (interpolation): initializing table..." << std::endl;
-  interpolation::TotalCDFInterpolater interp(rlist, switchingBeta);
-  std::cout << "ParticleSampleViscous.cxx (interpolation): done" << std::endl;
-
-  HypersurfaceElementC0Lrf surface;
-
-  // dummy values
-  surface.m_energy = 1.0;
-  surface.m_pressure = 1.0;
-  surface.m_stressMax = 0.0;
-  for (int i = 0; i < 6; i++)
-    surface.m_stress[i] = 0.0;
-
-  int c1 = 0, c2 = 0;
-  while (this->readHypersurfaceElement(surface, ifsf, ifsp)) {
-    if (surface.m_temperature < CONST_FreezeoutSkipTemperature) continue;
-
+  void SampleParticlesC0lrf(
+    std::vector<Particle*>& plist,
+    HypersurfaceElementC0Lrf const& surface,
+    IResonanceList const* rlist,
+    double overSamplingFactor,
+    bool turnsOffViscousEffect
+  ) {
     SurfaceParticleSampler sampler(&surface);
     sampler.setOverSamplingFactor(overSamplingFactor);
-    sampler.setTurnsOffViscousEffect(true);
-
-    if (std::abs(surface.m_temperature-switchingTemperature) < 1e-5) {
-      sampler.setCDFInterpolater(&interp);
-      c1++;
-    } else if (surface.m_temperature<switchingTemperature) {
-      sampler.setDominatingCDFInterpolater(&interp);
-      c1++;
-    }
-    c2++;
+    sampler.setTurnsOffViscousEffect(turnsOffViscousEffect);
 
     int const iresoN = rlist->numberOfResonances();
     for (int ireso = 0; ireso < iresoN; ireso++)
       sampler.SampleResonance(plist, rlist, ireso);
+
+    // mass の単位は [/fm] で OK
+    //   mass の単位は 197.32 [MeV fm] で割ってある
+    //   mass [/fm] = M [MeV] / 197.32 [MeV fm] という事。
+    // {
+    //   for (int ireso = 0; ireso < iresoN; ireso++)
+    //     std::cerr << "mass[" << ireso << "]=" << rlist->mass(ireso) * hbarc_MeVfm << std::endl;
+    //   std::exit(2);
+    // }
   }
 
-  std::cout
-    << "ParticleSampleFromHydrojet: done:\n"
-    << "  input = " << fname_freezeout << " " << fname_position << "\n"
-    << "  interpolation = " << c1 << "/" << c2 << " @ T_sw <= " << this->m_switchingTemperature << "MeV\n"
-    << "  number_of_particles = " << base::plist.size() << std::endl;
+}
+}
+
+//=============================================================================
+// Impelmentation of ParticleSample
+
+namespace idt {
+namespace hydro2jam {
+namespace {
+
+  class OversampledParticleSampleBase: public ParticleSampleBase {
+    typedef ParticleSampleBase base;
+
+  private:
+    // default value = 1.0
+    double m_overSamplingFactor;
+  public:
+    void setOverSamplingFactor(double value) {
+      this->m_overSamplingFactor = value;
+    }
+    double getOverSamplingFactor() const {
+      return this->m_overSamplingFactor;
+    }
+
+    // 実装: 複数事象一括生成について。
+    //
+    // 1 numberOfExpectedEvents が有限の値に設定されている時、一括生成が要求されている事を意味する。
+    //   numberOfExpectedEvents は setAdviceNumberOfExpectedEvents を通して設定できる。
+    //   一括生成が要求されている時に update が呼ばれると一括生成が実行され、
+    //   numberOfExpectedEvents は 0 にクリアされる。
+    // 2 一括生成された粒子は base::plist に保持され寿命が管理される。
+    //   同時に、事象 #ievent の粒子一覧は pcache[ievent] に記録される。
+    //   pcache.size()>0 の時、一括生成された事象が未だ残っている事を表す。
+    //   (pcache.size()>0 の間 base::plist には一括生成された全粒子が格納されている事になる。)
+    // 3 pcache の事象を使い切ると pcache はクリアされる。
+    //   この場合は通常の 1 事象の生成が行われる。
+    //   その過程で、今迄一括生成の全粒子 plist も解放・クリアされる。
+    //
+
+  private:
+    int numberOfExpectedEvents;
+    int indexOfCachedEvents;
+    std::vector<std::vector<Particle*> > pcache;
+
+  public:
+    virtual std::vector<Particle*> const& getParticleList() const {
+      if (this->indexOfCachedEvents >= 0)
+        return this->pcache[indexOfCachedEvents];
+      else
+        return this->plist;
+    }
+
+  public:
+    virtual void setAdviceNumberOfExpectedEvents(int nEvents) {
+      this->numberOfExpectedEvents = nEvents;
+      this->indexOfCachedEvents = -1;
+    }
+
+  public:
+    OversampledParticleSampleBase(): m_overSamplingFactor(1.0) {
+      this->setAdviceNumberOfExpectedEvents(0);
+    }
+
+    virtual void updateWithOverSampling(double overSamplingFactor) = 0;
+
+    virtual void update() {
+      // 一括生成済の時
+      if (this->pcache.size() > 0) {
+        if (++this->indexOfCachedEvents < this->pcache.size())
+          return;
+
+        this->pcache.clear();
+        this->indexOfCachedEvents = -1;
+      }
+
+      // 一括生成要求がある時
+      if (this->numberOfExpectedEvents > 0) {
+        double const& ncache = this->numberOfExpectedEvents;
+        this->updateWithOverSampling(this->m_overSamplingFactor * ncache);
+        this->pcache.resize(ncache, std::vector<Particle*>());
+        for (std::vector<Particle*>::const_iterator i = this->base::plist.begin(); i != this->base::plist.end(); ++i)
+          this->pcache[int(Random::getRand() * ncache)].push_back(*i);
+
+        this->numberOfExpectedEvents = 0;
+        this->indexOfCachedEvents = 0;
+        return;
+      }
+
+      this->updateWithOverSampling(this->m_overSamplingFactor);
+    }
+  };
+
+  class ParticleSampleViscous: public OversampledParticleSampleBase {
+    typedef OversampledParticleSampleBase base;
+
+    ResonanceListPCE rlist;
+
+    std::string fname_hypersurface;
+
+  private:
+    bool m_turnsOffViscousEffect;
+  public:
+    bool getTurnsOffViscousEffect() const {
+      return this->m_turnsOffViscousEffect;
+    }
+    void setTurnsOffViscousEffect(bool value) {
+      this->m_turnsOffViscousEffect = value;
+    }
+
+  private:
+    double m_switchingTemperature;
+  public:
+    double getSwitchingTemperature() const {
+      return this->m_switchingTemperature;
+    }
+    void setSwitchingTemperature(double value) {
+      this->m_switchingTemperature = value;
+    }
+
+  public:
+    ParticleSampleViscous(hydro2jam_context const& ctx, std::string const& fname_hypersurface):
+      rlist(ctx), fname_hypersurface(fname_hypersurface), m_turnsOffViscousEffect(false)
+    {
+      this->m_switchingTemperature = 155.0;
+    }
+
+    virtual void updateWithOverSampling(double overSamplingFactor) {
+      this->base::clearParticleList();
+
+      std::ifstream ifs(this->fname_hypersurface.c_str());
+      if (!ifs) {
+        std::cerr << "(ParticleSampleViscous::update): failed to open the hypersurface file(" << fname_hypersurface << ")." << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+
+      std::string line;
+
+      double switchingTemperature = this->m_switchingTemperature / hbarc_MeVfm; // [/fm]
+
+      // 1行目
+      if (std::getline(ifs, line)) {
+        std::istringstream s(line);
+
+        // $1-$2 magic
+        std::string type, coords;
+        s >> type >> coords;
+        if (type != "c0lrf" || (coords != "taueta-tilde" && coords != "taueta")) {
+          std::cerr << "(ParticleSampleViscous::update):" << fname_hypersurface << ": format not supported." << std::endl;
+          std::exit(EXIT_FAILURE);
+        }
+
+        // $3... Tsw=155/197.32 などを読み取る
+        std::string arg;
+        while (s >> arg) {
+          if (arg.compare(0, 4, "Tsw=", 4) == 0) {
+            switchingTemperature = std::atof(arg.c_str() + 4);
+          } else {
+            std::cerr << "(ParticleSampleViscous::update):" << fname_hypersurface << ":1: unknown argument (arg=" << arg << ")" << std::endl;
+            std::exit(EXIT_FAILURE);
+          }
+        }
+      } else {
+        std::cerr << "(ParticleSampleViscous::update):" << fname_hypersurface << ": the file is empty." << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+
+      double const switchingBeta = 1.0 / switchingTemperature; // [/fm]
+      interpolation::TotalCDFInterpolater interp(&rlist, switchingBeta);
+
+      bool completed=false;
+      while (std::getline(ifs, line)) {
+        HypersurfaceElementC0Lrf surface;
+        {
+          std::istringstream s(line);
+          // $1-$13 surface element
+          int normalDirection;
+          s >> normalDirection;
+          if (normalDirection == -1) {
+            completed = true;
+            break;
+          }
+          for (int i = 0; i < 4; i++)
+            s >> surface.m_ds[i];
+          for (int i = 0; i < 4; i++)
+            s >> surface.m_pos[i];
+          for (int i = 0; i < 4; i++)
+            s >> surface.m_dx[i];
+
+          // $14-$18 ideal part
+          s >> surface.m_temperature;
+          for (int i = 0; i < 4; i++)
+            s >> surface.m_velocity[i];
+
+          // $19-$27 stress part
+          s >> surface.m_energy;
+          s >> surface.m_pressure;
+          s >> surface.m_stressMax;
+          for (int i = 0; i < 6; i++)
+            s >> surface.m_stress[i];
+        }
+
+        if (surface.m_temperature < CONST_FreezeoutSkipTemperature) {
+          // skip
+          continue;
+        }
+
+        {
+          SurfaceParticleSampler sampler(&surface);
+          sampler.setOverSamplingFactor(overSamplingFactor);
+          sampler.setTurnsOffViscousEffect(this->m_turnsOffViscousEffect);
+          if (std::abs(surface.m_temperature - switchingTemperature) < 1e-5)
+            sampler.setCDFInterpolater(&interp);
+          else if (surface.m_temperature < switchingTemperature)
+            sampler.setDominatingCDFInterpolater(&interp);
+
+          int const iresoN = rlist.numberOfResonances();
+          for (int ireso = 0; ireso < iresoN; ireso++)
+            sampler.SampleResonance(plist, &rlist, ireso);
+        }
+      }
+
+      if (!completed) {
+        std::cerr << "(ParticleSampleViscous::update):" << fname_hypersurface << ": unexpected end of the file." << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+
+      std::cout << "(ParticleSampleViscous::update):" << fname_hypersurface << ": " << base::plist.size() << " particles were generated," << std::endl;
+    }
+
+  };
+
+  class ParticleSampleFromHydrojet: public OversampledParticleSampleBase {
+    typedef OversampledParticleSampleBase base;
+    ResonanceListPCE rlist;
+    std::string fname_freezeout;
+    std::string fname_position;
+
+  private:
+    double m_switchingTemperature;
+  public:
+    double getSwitchingTemperature() const {
+      return this->m_switchingTemperature;
+    }
+    void setSwitchingTemperature(double value) {
+      this->m_switchingTemperature = value;
+    }
+
+  private:
+    double dx, dy, dh, dtau;
+  public:
+    void setDx(double d) { dx = d; }
+    void setDy(double d) { dy = d; }
+    void setDh(double d) { dh = d; }
+    void setDtau(double d) { dtau = d; }
+    double getDtau() { return dtau; }
+    double getDx() { return dx; }
+    double getDy() { return dy; }
+    double getDh() { return dh; }
+
+  public:
+    ParticleSampleFromHydrojet(
+      hydro2jam_context const& ctx,
+      std::string const& fname_freezeout,
+      std::string const& fname_position
+    ):
+      rlist(ctx),
+      fname_freezeout(fname_freezeout),
+      fname_position(fname_position),
+      dx(0.3), dy(0.3), dh(0.3), dtau(0.3)
+    {
+      this->m_switchingTemperature=155.0;
+    }
+
+    ParticleSampleFromHydrojet(
+      hydro2jam_context const& ctx,
+      std::string const& dname_hydro):
+      rlist(ctx),
+      fname_freezeout(dname_hydro + "/freezeout.dat"),
+      fname_position(dname_hydro + "/position.dat"),
+      dx(0.3), dy(0.3), dh(0.3), dtau(0.3)
+    {
+      this->m_switchingTemperature = 155.0;
+    }
+
+  private:
+    bool readHypersurfaceElement(HypersurfaceElementC0Lrf& surface, std::ifstream& ifsf, std::ifstream& ifsp) const {
+      // isbulk
+      int isbulk;
+      if (!(ifsf >> isbulk)) {
+        std::cerr << "(ParticleSampleFromHydrojet::update):" << fname_freezeout << ": unexpected end of the file." << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+
+      if (isbulk < 0) {
+        // end
+        if (!(ifsp >> isbulk)) {
+          std::cerr << "(ParticleSampleFromHydrojet::update):" << fname_position << ": unexpected end of the file." << std::endl;
+          std::exit(EXIT_FAILURE);
+        }
+        if (isbulk >= 0) {
+          std::cerr << "(ParticleSampleFromHydrojet::update):" << fname_position << ": inconsistent number of the entries." << std::endl;
+          std::exit(EXIT_FAILURE);
+        }
+        return false;
+      }
+
+      // m_pos
+      ifsp >> surface.m_pos[0]; // tau
+      ifsp >> surface.m_pos[2]; // x
+      ifsp >> surface.m_pos[3]; // y
+      ifsp >> surface.m_pos[1]; // eta
+
+      // m_ds (ifsf $2-4)
+      {
+        double ds;
+        ifsf >> ds >> surface.m_ds[2] >> surface.m_ds[3];
+        if (isbulk) {
+          surface.m_ds[0] = ds;
+          surface.m_ds[1] = 0.0;
+        } else {
+          surface.m_ds[0] = 0.0;
+          surface.m_ds[1] = -ds;
+        }
+
+        // 基底変換: tilde 座標 → grid 座標
+        double const inverseTau = 1.0 / surface.m_pos[0];
+        surface.m_ds[0] *= inverseTau;
+        surface.m_ds[2] *= inverseTau;
+        surface.m_ds[3] *= inverseTau;
+      }
+
+      // m_dx
+      surface.m_dx[0] = this->dtau;
+      surface.m_dx[1] = this->dh;
+      surface.m_dx[2] = this->dx;
+      surface.m_dx[3] = this->dy;
+      if (isbulk)
+        surface.m_dx[0] = 0.0;
+      else if (surface.m_ds[1])
+        surface.m_dx[1] = 0.0;
+      else if (surface.m_ds[2])
+        surface.m_dx[2] = 0.0;
+      else
+        surface.m_dx[3] = 0.0;
+
+      // (ifsf $5-7)
+      double eta, mu;
+      ifsf >> eta >> surface.m_temperature >> mu;
+      if (mu != 0.0) {
+        std::cout << "ParticleSampleViscous.cpp (ParticleSampleFromHydrojet): a finite baryon chemical potenatial is not supported." << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+
+      // m_velocity (ifsf $8-10)
+      {
+        double vxp, vyp, yvp;
+        ifsf >> vxp >> vyp >> yvp;
+        double const vzp = std::tanh(yvp);
+        double const u0 = 1.0 / std::sqrt(1.0 - (vxp * vxp + vyp * vyp + vzp * vzp));
+        double const u_lab[4] = {u0, u0 * vzp, u0 * vxp, u0 * vyp};
+
+        double const cosh_ = std::cosh(eta);
+        double const sinh_ = std::sinh(eta);
+        surface.m_velocity[0] =  u_lab[0] * cosh_ - u_lab[1] * sinh_;
+        surface.m_velocity[1] = -u_lab[0] * sinh_ + u_lab[1] * cosh_;
+        surface.m_velocity[2] = u_lab[2];
+        surface.m_velocity[3] = u_lab[3];
+      }
+
+      int iw = 0;
+      ifsf >> iw;
+      if (iw != 8 && iw != 4) {
+        std::cerr << "ParticleSampleViscous.cpp (ParticleSampleFromHydrojet): not supported value: iw=" << iw << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+
+      return true;
+    }
+
+    virtual void updateWithOverSampling(double overSamplingFactor) {
+      this->base::clearParticleList();
+
+      std::ifstream ifsf(this->fname_freezeout.c_str());
+      if (!ifsf) {
+        std::cerr << "(ParticleSampleFromHydrojet::update): failed to open the hypersurface element data (" << fname_freezeout << ")." << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+
+      std::ifstream ifsp(this->fname_position.c_str());
+      if (!ifsp) {
+        std::cerr << "(ParticleSampleFromHydrojet::update): failed to open the hypersurface position data (" << fname_position << ")." << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+
+      double switchingTemperature = this->m_switchingTemperature / hbarc_MeVfm; // [/fm]
+
+      double const switchingBeta = 1.0 / switchingTemperature; // [/fm]
+      std::cout << "ParticleSampleViscous.cpp (interpolation): initializing table..." << std::endl;
+      interpolation::TotalCDFInterpolater interp(&rlist, switchingBeta);
+      std::cout << "ParticleSampleViscous.cpp (interpolation): done" << std::endl;
+
+      HypersurfaceElementC0Lrf surface;
+
+      // dummy values
+      surface.m_energy = 1.0;
+      surface.m_pressure = 1.0;
+      surface.m_stressMax = 0.0;
+      for (int i = 0; i < 6; i++)
+        surface.m_stress[i] = 0.0;
+
+      int c1 = 0, c2 = 0;
+      while (this->readHypersurfaceElement(surface, ifsf, ifsp)) {
+        if (surface.m_temperature < CONST_FreezeoutSkipTemperature) continue;
+
+        SurfaceParticleSampler sampler(&surface);
+        sampler.setOverSamplingFactor(overSamplingFactor);
+        sampler.setTurnsOffViscousEffect(true);
+
+        if (std::abs(surface.m_temperature-switchingTemperature) < 1e-5) {
+          sampler.setCDFInterpolater(&interp);
+          c1++;
+        } else if (surface.m_temperature<switchingTemperature) {
+          sampler.setDominatingCDFInterpolater(&interp);
+          c1++;
+        }
+        c2++;
+
+        int const iresoN = rlist.numberOfResonances();
+        for (int ireso = 0; ireso < iresoN; ireso++)
+          sampler.SampleResonance(plist, &rlist, ireso);
+      }
+
+      std::cout
+        << "ParticleSampleFromHydrojet: done:\n"
+        << "  input = " << fname_freezeout << " " << fname_position << "\n"
+        << "  interpolation = " << c1 << "/" << c2 << " @ T_sw <= " << this->m_switchingTemperature << "MeV\n"
+        << "  number_of_particles = " << base::plist.size() << std::endl;
+    }
+  };
+
+  class ParticleSampleFactory: ParticleSampleFactoryRegistered {
+    virtual IParticleSample* CreateInstance(hydro2jam_context const& ctx, std::string const& type, std::string const& inputfile) {
+      // ResonanceListPCE を移動する
+      if (type == "c0lrf") {
+        double const switchingTemperature = ctx.get_config("hydro2jam_switching_temperature", -1.0);
+        double const ntest = ctx.get_config("hydro2jam_oversampling_factor", 1.0);
+        bool const turnsOffViscousEffect = ctx.get_config("hydro2jam_turnsOffViscousEffect", false);
+
+        ParticleSampleViscous* psamp = new ParticleSampleViscous(ctx, inputfile);
+        if (switchingTemperature > 0.0)
+          psamp->setSwitchingTemperature(switchingTemperature);
+        psamp->setOverSamplingFactor(ntest);
+        psamp->setTurnsOffViscousEffect(turnsOffViscousEffect);
+        return psamp;
+
+      } else if (type == "hydrojet") {
+        double const switchingTemperature = ctx.get_config("hydro2jam_switching_temperature", -1.0);
+        double const ntest = ctx.get_config("hydro2jam_oversampling_factor", 1.0);
+        double const deltat = ctx.get_config("hydro2jam_deltat", 0.3);
+        double const deltah = ctx.get_config("hydro2jam_deltah", 0.3);
+        double const deltax = ctx.get_config("hydro2jam_deltax", 0.3);
+        double const deltay = ctx.get_config("hydro2jam_deltay", 0.3);
+
+        ParticleSampleFromHydrojet* psamp = new ParticleSampleFromHydrojet(ctx, inputfile);
+        psamp->setDtau(deltat);
+        psamp->setDh(deltah);
+        psamp->setDx(deltax);
+        psamp->setDy(deltay);
+        if (switchingTemperature > 0.0)
+          psamp->setSwitchingTemperature(switchingTemperature);
+        psamp->setOverSamplingFactor(ntest);
+        return psamp;
+
+      }
+
+      return 0;
+    }
+  } instance;
+
+
+}
+}
 }
 
 //=============================================================================
 // Check codes
 
+namespace idt {
+namespace hydro2jam {
 namespace {
   class DummyResonanceList: public IResonanceList {
   public:

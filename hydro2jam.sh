@@ -14,6 +14,8 @@ hydro2jam_phasespace_fname0=phasespace0.dat
 
 # Options for Cooper-Frye formula
 hydro2jam_turnsOffViscousEffect=0
+hydro2jam_oversampling_factor=1.0
+hydro2jam_switching_temperature=-1
 
 hydrojet_directory=test
 hydrojet_eospce=6
