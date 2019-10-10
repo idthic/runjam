@@ -11,7 +11,6 @@
 #include "spectra/ParticleSamplePhasespace.hpp"
 #include "spectra/ParticleSampleViscous.hpp"
 #include "spectra/ParticleSampleRead.hpp"
-#include "spectra/ParticleSampleHydrojet.hpp"
 
 #define PACKAGE_VERSION "0.1a"
 
@@ -372,7 +371,11 @@ void hadronicCascade(hydro2jam_context const& ctx) {
     break;
   default: // default dir = "test"
     {
-      IParticleSample* psamp = CreateParticleSampleHydrojet(ctx);
+      IParticleSample* psamp = CreateParticleSample(ctx, "hydrojet", ctx.indir());
+      if (psamp == 0) {
+        std::cerr << "hydro2jam: failed to create ParticleSample instance." <<  std::endl;
+        std::exit(1);
+      }
       jam->generateEvent(psamp);
       delete psamp;
     }

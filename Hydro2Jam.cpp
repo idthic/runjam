@@ -13,7 +13,7 @@
 #include <sstream>
 #include "util/Random.hpp"
 #include "Hydro2Jam.hpp"
-#include "spectra/ParticleSampleHydrojet.hpp"
+#include "spectra/IParticleSample.hpp"
 
 #include "ksh/util.hpp"
 

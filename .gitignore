@@ -3,3 +3,5 @@
 *.o
 *.dep
 hydro2jam.exe
+
+/data

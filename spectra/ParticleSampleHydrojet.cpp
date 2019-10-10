@@ -6,7 +6,7 @@
 #include <util/Constants.hpp>
 #include <util/Random.hpp>
 
-#include "ParticleSampleHydrojet.hpp"
+#include "IParticleSample.hpp"
 #include "IntegratedCooperFrye.hpp"
 #include "ElementReso.hpp"
 
@@ -16,6 +16,7 @@
 
 namespace idt {
 namespace hydro2jam {
+namespace {
 
   static const double FreezeoutSkipTemperature = 0.01; // unit: [/fm]
 
@@ -785,25 +786,30 @@ static std::string elementOutputFilenames[151] = {
   "ELEMENT.XIBAR_2030.PC170",
 };
 
-IParticleSample* CreateParticleSampleHydrojet(hydro2jam_context const& ctx) {
-  std::string const indir = ctx.indir();
-  int const kintmp = ctx.kintmp();
-  int const eospce = ctx.eospce();
-  std::string const resodata = ctx.resodata();
-  std::string const fn_freezeout_dat = indir + "/freezeout.dat";
-  std::string const fn_position_dat = indir + "/position.dat";
+  class ParticleSampleFactory: ParticleSampleFactoryRegistered {
+    virtual IParticleSample* CreateInstance(hydro2jam_context const& ctx, std::string const& type, std::string const& inputfile) {
+      if (type != "hydrojet") return 0;
 
-  ParticleSampleHydrojet* psamp =
-    new ParticleSampleHydrojet(indir, elementOutputFilenames, kintmp, eospce, resodata);
-  psamp->setDtau(ctx.get_config("hydro2jam_deltat", 0.3));
-  psamp->setDx(ctx.get_config("hydro2jam_deltax", 0.3));
-  psamp->setDy(ctx.get_config("hydro2jam_deltay", 0.3));
-  psamp->setDh(ctx.get_config("hydro2jam_deltah", 0.3));
+      std::string const indir = ctx.indir();
+      int const kintmp = ctx.kintmp();
+      int const eospce = ctx.eospce();
+      std::string const resodata = ctx.resodata();
+      std::string const fn_freezeout_dat = inputfile + "/freezeout.dat";
+      std::string const fn_position_dat = inputfile + "/position.dat";
 
-  psamp->setBaryonFree(ctx.get_config("hydrojet_baryonfree", 1));
-  psamp->setHypersurfaceFilenames(fn_freezeout_dat, fn_position_dat);
-  return psamp;
+      ParticleSampleHydrojet* psamp =
+        new ParticleSampleHydrojet(indir, elementOutputFilenames, kintmp, eospce, resodata);
+      psamp->setDtau(ctx.get_config("hydro2jam_deltat", 0.3));
+      psamp->setDx(ctx.get_config("hydro2jam_deltax", 0.3));
+      psamp->setDy(ctx.get_config("hydro2jam_deltay", 0.3));
+      psamp->setDh(ctx.get_config("hydro2jam_deltah", 0.3));
+
+      psamp->setBaryonFree(ctx.get_config("hydrojet_baryonfree", 1));
+      psamp->setHypersurfaceFilenames(fn_freezeout_dat, fn_position_dat);
+      return psamp;
+    }
+  } instance;
+
 }
-
 }
 }

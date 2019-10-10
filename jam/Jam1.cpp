@@ -92,20 +92,51 @@ void Jam1::jamList(int i) {
   jamlist_(&i);
 }
 
+
+static std::size_t fort_strlen(const char* buff, int bufferSize = -1) {
+  std::size_t ret = 0, run = 0;
+  const char* end = buff + bufferSize;
+  for (; buff != end && *buff; buff++) {
+    if (*buff == ' ') {
+      run++;
+    } else {
+      ret += run + 1;
+      run = 0;
+    }
+  }
+  return ret;
+}
+
+static char* strcpy_f2c(char* dst, std::size_t szdst, const char* src, std::size_t szsrc) {
+  std::size_t len = std::min(szdst, fort_strlen(src, szsrc));
+  std::memcpy(dst, src, len);
+  if (len < szdst) dst[len++] = '\0';
+  return dst + len;
+}
+
+static bool strcpy_c2f(char* dst, std::size_t szdst, const char* src) {
+  char* end = dst + szdst;
+  while (dst != end && *src)
+    *dst++ = *src++;
+  while (dst != end)
+    *dst++ = ' ';
+  return !*src;
+}
+
 char* Jam1::getFNAME(int i) const {
-  static char buf[81] = "";
-  strncpy(buf, jamdat3_.FNAME[i-1], 80);
+  static char buf[81];
+  strcpy_f2c(buf, 80, jamdat3_.FNAME[i - 1], 80);
+  //strncpy(buf, jamdat3_.FNAME[i - 1], 80);
   buf[80] = '\0';
   return buf;
 }
 
 void  Jam1::setFNAME(int i, const char* v) {
-  if (std::strlen(v) >= 80) {
+  if (!strcpy_c2f(jamdat3_.FNAME[i - 1], 80, v)) {
     std::cerr << "hydro2jam: filename \"" << v << "\" is too long" << std::endl;
     std::exit(1);
   }
-  strncpy(jamdat3_.FNAME[i - 1], v, 79);
-  jamdat3_.FNAME[i - 1][79] = '\0';
+  //strncpy(jamdat3_.FNAME[i - 1], v, std::strlen(v));
 }
 
 void  Jam1::finalResonanceDecay() {

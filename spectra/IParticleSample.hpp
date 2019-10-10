@@ -11,6 +11,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include "../args.hpp"
 
 namespace idt {
 namespace hydro2jam {
@@ -107,6 +108,21 @@ private:
     std::exit(1);
   }
 };
+
+  class IParticleSampleFactory {
+  public:
+    virtual IParticleSample* CreateInstance(hydro2jam_context const& ctx, std::string const& type, std::string const& inputfile) = 0;
+    virtual ~IParticleSampleFactory() {}
+  protected:
+    void Register(IParticleSampleFactory* factory);
+  };
+
+  class ParticleSampleFactoryRegistered: public IParticleSampleFactory {
+  protected:
+    ParticleSampleFactoryRegistered() { Register(this); }
+  };
+
+  IParticleSample* CreateParticleSample(hydro2jam_context const& ctx, std::string const& type, std::string const& inputfile);
 
 }
 }

@@ -34,5 +34,20 @@ void ParticleSampleBase::clearParticleList() {
   this->plist.clear();
 }
 
+  static std::vector<IParticleSampleFactory*> particleSampleFactories;
+
+  IParticleSample* CreateParticleSample(hydro2jam_context const& ctx, std::string const& type, std::string const& inputfile) {
+    std::size_t n = particleSampleFactories.size();
+    for (std::size_t i = 0; i < n; i++)
+      if (IParticleSample* ret = particleSampleFactories[i]->CreateInstance(ctx, type, inputfile))
+        return ret;
+    return 0;
+  }
+
+  void IParticleSampleFactory::Register(IParticleSampleFactory* factory) {
+    particleSampleFactories.push_back(factory);
+  }
+
+
 }
 }
