@@ -2,14 +2,10 @@
 #include <iostream>
 #include <cstring>
 
-#include "ksh/util.hpp"
-
 #include "util/Random.hpp"
 #include "util/PyRand.hpp"
 #include "Hydro2Jam.hpp"
-
 #include "spectra/ParticleSampleViscous.hpp"
-#include "spectra/ParticleSampleRead.hpp"
 
 #define PACKAGE_VERSION "0.1a"
 
@@ -249,7 +245,7 @@ public:
 #include "jam/Jam1.hpp"
 
 void savePhasespaceData(std::string fname, std::vector<Particle*> plist, ParticleIDType::value_type idtype) {
-  std::FILE* f=std::fopen(fname.c_str(), "w");
+  std::FILE* f = std::fopen(fname.c_str(), "w");
   if (!f) {
     std::cerr << "hydro2jam(savePhasespaceData): failed to open the file '" << fname << "'" << std::endl;
     return;

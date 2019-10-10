@@ -4,10 +4,11 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include "ParticleSampleRead.hpp"
+#include "IParticleSample.hpp"
 
 namespace idt {
 namespace hydro2jam {
+namespace {
 
   static bool is_comment_line(std::string const& line) {
     std::size_t i = 0;
@@ -15,50 +16,67 @@ namespace hydro2jam {
     return line[i] == '#';
   }
 
-  void ParticleSampleRead::readFile() {
-    this->clearParticleList();
+  class ParticleSampleRead: public ParticleSampleBase {
+    std::string fname_particlesample_dat;
+  public:
+    ParticleSampleRead(std::string const& fname_particlesample_dat):
+      fname_particlesample_dat(fname_particlesample_dat)
+    {}
 
-    int iline = 0;
-    {
-      std::ifstream ifs(this->fname_particlesample_dat.c_str());
-      if (!ifs) goto error_failed_to_open;
+  private:
+    void readFile() {
+      this->clearParticleList();
 
-      std::string line;
-      while (std::getline(ifs, line)) {
-        iline++;
-        if (is_comment_line(line)) continue;
+      int iline = 0;
+      {
+        std::ifstream ifs(this->fname_particlesample_dat.c_str());
+        if (!ifs) goto error_failed_to_open;
 
-        std::istringstream is(line);
-        double px,py,pz,e,em;
-        int ir;
-        double tau,rx,ry,eta;
-        if (!(is >> px >> py >> pz >> e >> em >> ir >> tau >> rx >> ry >> eta))
-          goto error_invalid_format;
+        std::string line;
+        while (std::getline(ifs, line)) {
+          iline++;
+          if (is_comment_line(line)) continue;
 
-        this->addParticleTauEta(ir, px, py, pz, em, rx, ry, tau, eta);
+          std::istringstream is(line);
+          double px,py,pz,e,em;
+          int ir;
+          double tau,rx,ry,eta;
+          if (!(is >> px >> py >> pz >> e >> em >> ir >> tau >> rx >> ry >> eta))
+            goto error_invalid_format;
+
+          this->addParticleTauEta(ir, px, py, pz, em, rx, ry, tau, eta);
+        }
+
+        return;
       }
 
-      return;
+    error_failed_to_open:
+      std::cerr
+        << "spectra/ParticleSampleRead: failed to open the file ("
+        << this->fname_particlesample_dat << ")" << std::endl;
+      std::exit(EXIT_FAILURE);
+      return; /*NOTREACHED*/
+
+    error_invalid_format:
+      std::cerr
+        << this->fname_particlesample_dat << ":" << iline << ": invalid format (spectra/ParticleSampleRead)"
+        << std::endl;
+      std::exit(EXIT_FAILURE);
+      return; /*NOTREACHED*/
     }
 
-  error_failed_to_open:
-    std::cerr
-      << "spectra/ParticleSampleRead: failed to open the file ("
-      << this->fname_particlesample_dat << ")" << std::endl;
-    std::exit(EXIT_FAILURE);
-    return; /*NOTREACHED*/
+    virtual void update() {
+      this->readFile();
+    }
+  };
 
-  error_invalid_format:
-    std::cerr
-      << this->fname_particlesample_dat << ":" << iline << ": invalid format (spectra/ParticleSampleRead)"
-      << std::endl;
-    std::exit(EXIT_FAILURE);
-    return; /*NOTREACHED*/
-  }
+  class ParticleSampleFactory: ParticleSampleFactoryRegistered {
+    virtual IParticleSample* CreateInstance(hydro2jam_context const& ctx, std::string const& type, std::string const& inputfile) {
+      if (type != "psample") return 0;
+      return new ParticleSampleRead(inputfile);
+    }
+  } instance;
 
-  void ParticleSampleRead::update() {
-    this->readFile();
-  }
-
+}
 }
 }
