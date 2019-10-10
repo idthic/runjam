@@ -11,11 +11,10 @@
 #include <iomanip>
 #include <fstream>
 #include <sstream>
-#include "util/Random.hpp"
 #include "Hydro2Jam.hpp"
+#include "args.hpp"
+#include "util/Random.hpp"
 #include "spectra/IParticleSample.hpp"
-
-#include "ksh/util.hpp"
 
 namespace idt {
 namespace hydro2jam {
