@@ -21,34 +21,21 @@ void generatePhasespace0(hydro2jam_context const& ctx, std::string const& type, 
 //-----------------------------------------------------------------------------
 // parameters
 
-//int seed = 1921;
-
 int ntest = 1;
 int baryonfree = 1;
 int sw_weakdecay = 0; // this does not work now, sorry. do not put =1.
-double deltat = 0.3;
-double deltax = 0.3;
-double deltay = 0.3;
-double deltah = 0.3;
-
-enum InitialType {
-  InitialType_None = 0,
-  InitialType_PHASE1,
-  InitialType_C0LRF,
-  InitialType_HYDRO,
-  InitialType_PHASE,
-  InitialType_PSAMPLE,
-};
 
 struct Hydro2jamCommandlineArguments {
-  InitialType jamInitType;
-  std::string fnameInitialPhasespaceData;
+  std::string initType;
+  std::string initPath;
 
-  double switchingTemperature;
 public:
   Hydro2jamCommandlineArguments(){
-    this->jamInitType = InitialType_None;
-    this->switchingTemperature = -1.0;
+    this->initType = "c0lrf";
+    this->initPath = "hypersurface_v1.txt";
+
+    // this->initType = "hydrojet.original";
+    // this->initPath = "test";
   }
 
 private:
@@ -99,12 +86,76 @@ private:
     );
   }
 
+private:
+  int argc;
+  char** argv;
+  hydro2jam_context* ctx;
+
+  int i;
+  char* arg;
+  bool flag_error;
+
+  void assign_optarg(const char* key) {
+    if (i < argc) {
+      ctx->set_value(key, argv[i++]);
+    } else {
+      std::cerr << "hydro2jam:arg#" << i << " (" << arg << "): missing optional argument." << std::endl;
+      flag_error = true;
+    }
+  }
+
+  void assign_optarg_double(const char* key) {
+    if (i < argc) {
+      ctx->set_value(key, std::atof(argv[i++]));
+    } else if (!*argv[i]) {
+      std::cerr << "hydro2jam:option(" << arg << "): the argument of the option is empty." << std::endl;
+      flag_error = true;
+    } else {
+      std::cerr << "hydro2jam:arg#" << i << " (" << arg << "): missing optional argument." << std::endl;
+      flag_error = true;
+    }
+  }
+
+  void assign_optarg_int(const char* key) {
+    if (i < argc) {
+      ctx->set_value(key, std::atoi(argv[i++]));
+    } else {
+      std::cerr << "hydro2jam:arg#" << i << " (" << arg << "): missing optional argument." << std::endl;
+      flag_error = true;
+    }
+  }
+
+  void assign_optarg_input() {
+    if (i >= argc) {
+      std::cerr << "hydro2jam:arg#" << i << " (" << arg << "): missing optional argument." << std::endl;
+      flag_error = true;
+      return;
+    }
+
+    std::string spec = argv[i++];
+
+    std::size_t const pos = spec.find(':');
+    if (pos == std::string::npos) {
+      std::cerr << "unrecognized input '-i " << arg << "'" << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+
+    this->initType = spec.substr(0, pos);
+    this->initPath = spec.substr(pos + 1);
+  }
+
 public:
   int read(int argc, char** argv, hydro2jam_context& ctx) {
-    for (int i = 1; i < argc; i++) {
-      if (argv[i][0] == '-') {
-        if (argv[i][1] == '-') {
-          std::string longname = argv[i] + 2;
+    this->argc = argc;
+    this->argv = argv;
+    this->ctx = &ctx;
+
+    this->flag_error = false;
+    for (i = 1; i < argc; ) {
+      arg = argv[i++];
+      if (arg[0] == '-') {
+        if (arg[1] == '-') {
+          std::string longname = arg + 2;
           std::string a;
           std::size_t ia;
           if ((ia = longname.find('=', 0)) != std::string::npos) {
@@ -121,109 +172,72 @@ public:
             cmd_help();
             std::exit(EXIT_SUCCESS);
           } else if (longname == "switching-temperature") {
-            if (ia == std::string::npos) {
-              std::cerr << "hydro2jam:option(" << argv[i] << "): the argument of the option is not specified." << std::endl;
-              std::exit(EXIT_SUCCESS);
-            }
-            if (!a.size()) {
-              std::cerr << "hydro2jam:option(" << argv[i] << "): the argument of the option is empty." << std::endl;
-              std::exit(EXIT_SUCCESS);
-            }
-            ctx.set_value("hydro2jam_switching_temperature", std::atof(a.c_str()));
+            assign_optarg_double("hydro2jam_switching_temperature");
           } else {
-            std::cerr << "unknowon option '" << argv[i] << "'" << std::endl;
+            std::cerr << "unknowon option '" << arg << "'" << std::endl;
             std::exit(EXIT_FAILURE);
           }
         } else {
-          if (!strcmp(argv[i], "-s")) {
-            int const randomSeed = atoi(argv[++i]);
-            ctx.set_value("hydro2jam_seed", randomSeed);
-            std::cout << "hydro2jam: randomSeed is set to '" << randomSeed << "'"
+          if (!std::strcmp(arg, "-s")) {
+            assign_optarg_int("hydro2jam_seed");
+            std::cout << "hydro2jam: randomSeed is set to '" << ctx.get_value("hydro2jam_seed") << "'"
                       << " [hydro2jam version " << PACKAGE_VERSION << "]" << std::endl;
-          } else if (!strcmp(argv[i], "-t")) {
-            ntest = atoi(argv[++i]);
-          } else if (!strcmp(argv[i], "-n")) {
-            ctx.set_value("hydro2jam_nevent", atoi(argv[++i]));
-          } else if (!strcmp(argv[i], "-f")) {
-            ctx.set_value("hydro2jam_phasespace_fname", argv[++i]);
-          } else if (!strcmp(argv[i], "-f0")) {
-            ctx.set_value("hydro2jam_phasespace_fname0", argv[++i]);
-          } else if (!strcmp(argv[i], "-ftemp"))  {
-            ctx.set_value("hydrojet_kintmp", atoi(argv[++i]));
-          } else if (!strcmp(argv[i], "-dir")) {
-            ctx.set_value("hydrojet_directory", argv[++i]);
-          } else if (!strcmp(argv[i], "-dirJAM")) {
-            ctx.set_value("hydrojet_output_directory", argv[++i]);
-          } else if (!strcmp(argv[i], "-d")) {
-            ctx.set_value("hydro2jam_phasespace_enabled", atoi(argv[++i]));
-          } else if (!strcmp(argv[i], "-w")) {
-            sw_weakdecay = atoi(argv[++i]);
-          } else if (!strcmp(argv[i], "-pce")) {
-            ctx.set_value("hydrojet_eospce", atoi(argv[++i]));
-          } else if (!strcmp(argv[i], "-bfree")) {
-            baryonfree = atoi(argv[++i]);
-          } else if (!strcmp(argv[i], "-resodata")) {
-            ctx.set_value("hydrojet_resodata", argv[++i]);
-          } else if (!strcmp(argv[i], "-dx")) {
-            deltax = atof(argv[++i]);
-          } else if (!strcmp(argv[i], "-dy")) {
-            deltay = atof(argv[++i]);
-          } else if (!strcmp(argv[i], "-dh")) {
-            deltah = atof(argv[++i]);
-          } else if (!strcmp(argv[i], "-i")) {
-            if (argv[i + 1] == 0) {
-              std::cerr << "option `-i': missing an argument" << std::endl;
-              std::exit(EXIT_FAILURE);
-            }
-
-            std::string spec = argv[++i];
-
-            std::size_t const pos = spec.find(':');
-            if (pos == std::string::npos) {
-              std::cerr << "unrecognized input '-i " << argv[i] << "'" << std::endl;
-              std::exit(EXIT_FAILURE);
-            }
-
-            std::string type(spec, 0, pos);
-            this->fnameInitialPhasespaceData = spec.substr(pos + 1);
-
-            if (type == "phase" || type == "kawaguchi")
-              this->jamInitType = InitialType_PHASE;
-            else if (type == "phase1")
-              this->jamInitType = InitialType_PHASE1;
-            else if (type == "c0lrf")
-              this->jamInitType = InitialType_C0LRF;
-            else if (type == "hydrojet")
-              this->jamInitType = InitialType_HYDRO;
-            else if (type == "psample")
-              this->jamInitType = InitialType_PSAMPLE;
-            else {
-              std::cerr << "unrecognized input '-i " << argv[i] << "'" << std::endl;
-              std::exit(EXIT_FAILURE);
-            }
-
+          } else if (!std::strcmp(arg, "-t")) {
+            ntest = std::atoi(argv[++i]);
+          } else if (!std::strcmp(arg, "-n")) {
+            assign_optarg_int("hydro2jam_nevent");
+          } else if (!std::strcmp(arg, "-f")) {
+            assign_optarg("hydro2jam_phasespace_fname");
+          } else if (!std::strcmp(arg, "-f0")) {
+            assign_optarg("hydro2jam_phasespace_fname0");
+          } else if (!std::strcmp(arg, "-ftemp"))  {
+            assign_optarg_int("hydrojet_kintmp");
+          } else if (!std::strcmp(arg, "-dir")) {
+            assign_optarg("hydrojet_directory");
+          } else if (!std::strcmp(arg, "-dirJAM")) {
+            assign_optarg("hydrojet_output_directory");
+          } else if (!std::strcmp(arg, "-d")) {
+            assign_optarg_int("hydro2jam_phasespace_enabled");
+          } else if (!std::strcmp(arg, "-w")) {
+            sw_weakdecay = std::atoi(argv[++i]);
+          } else if (!std::strcmp(arg, "-pce")) {
+            assign_optarg_int("hydrojet_eospce");
+          } else if (!std::strcmp(arg, "-bfree")) {
+            baryonfree = std::atoi(argv[++i]);
+          } else if (!std::strcmp(arg, "-resodata")) {
+            assign_optarg("hydrojet_resodata");
+          } else if (!std::strcmp(arg, "-dt")) {
+            assign_optarg_double("hydrojet_deltat");
+          } else if (!std::strcmp(arg, "-dx")) {
+            assign_optarg_double("hydrojet_deltax");
+          } else if (!std::strcmp(arg, "-dy")) {
+            assign_optarg_double("hydrojet_deltay");
+          } else if (!std::strcmp(arg, "-dh")) {
+            assign_optarg_double("hydrojet_deltah");
+          } else if (!std::strcmp(arg, "-i")) {
+            assign_optarg_input();
           } else {
-            if (argv[i][0] == '-')
-              std::cerr << "unknown option '" << argv[i] << "'" << std::endl;
-            else
-              std::cerr << "unknown argument '" << argv[i] << "'" << std::endl;
-            std::exit(EXIT_FAILURE);
+            std::cerr << "hydro2jam:#" << i << ": unknown option '" << arg << "'" << std::endl;
+            flag_error = true;
           }
         }
       } else {
         // option 以外の文字列
-        std::string const arg = argv[i];
         if (arg == "generate-phasespace0") {
           // test 用
           Random* rand = new PyRand(ctx.seed());
           Random::setRandom(rand);
-          generatePhasespace0(ctx, "c0lrf", this->fnameInitialPhasespaceData);
+          generatePhasespace0(ctx, this->initType, this->initPath);
           delete rand;
           std::exit(EXIT_SUCCESS);
+        } else {
+          std::cerr << "hydro2jam:#" << i << ": unknown argument '" << arg << "'" << std::endl;
+          flag_error = true;
         }
       }
     }
 
+    if (flag_error) return 2;
     return 0;
   }
 } args;
@@ -267,13 +281,14 @@ void savePhasespaceData(std::string fname, std::vector<Particle*> plist, Particl
       std::cerr << "hydro2jam.cxx(savePhasespaceData): invalid value of kf (PDG particle code)." << std::endl;
       std::exit(EXIT_FAILURE);
     }
+
     //---------------------------------
     // (2) ks ... 安定粒子なら 1, 不安定粒子なら 2.
     int ks = 2;
     int const kc = Jam1::jamComp(kf); // jam internal particle code.
-    if (
-      Jam1::getPMAS(kc,2) <= 1e-7 || Jam1::getMDCY(kc,1) == 0
+    if (Jam1::getPMAS(kc,2) <= 1e-7 || Jam1::getMDCY(kc,1) == 0
       || Jam1::getMDCY(kc,2) == 0 || Jam1::getMDCY(kc,3) == 0) ks = 1;
+
     //---------------------------------
     // (3) px,py,pz,m
     double const px = particle->px;
@@ -287,14 +302,15 @@ void savePhasespaceData(std::string fname, std::vector<Particle*> plist, Particl
     } else {
       m = std::sqrt(pe*pe-(px*px+py*py+pz*pz));
     }
+
     //---------------------------------
     // (3) x,y,z,t
     double const x = particle->x;
     double const y = particle->y;
     double const z = particle->z;
     double const t = particle->t;
-    //---------------------------------
 
+    //---------------------------------
     std::fprintf(
       f, "%5d %9d %13.6g %13.6g %13.6g %13.6g %13.6g %13.6g %13.6g %13.6g\n",
       ks, kf, px, py, pz, m, x, y, z, t);
@@ -318,36 +334,12 @@ void hadronicCascade(hydro2jam_context const& ctx) {
 
   cout << "jam event generation start" << endl;
 
-  IParticleSample* psamp = 0;
-
-  switch (args.jamInitType) {
-  case InitialType_C0LRF:
-    psamp = CreateParticleSample(ctx, "c0lrf", args.fnameInitialPhasespaceData);
-    break;
-  case InitialType_HYDRO:
-    psamp = CreateParticleSample(ctx, "hydrojet", args.fnameInitialPhasespaceData);
-    break;
-  case InitialType_PHASE1:
-    psamp = CreateParticleSample(ctx, "phase1", args.fnameInitialPhasespaceData);
-    break;
-  case InitialType_PHASE:
-    psamp = CreateParticleSample(ctx, "phase", args.fnameInitialPhasespaceData);
-    break;
-  case InitialType_PSAMPLE:
-    psamp = new ParticleSampleRead(args.fnameInitialPhasespaceData);
-    break;
-  default: // default dir = "test"
-    psamp = CreateParticleSample(ctx, "hydrojet", ctx.indir());
-    if (psamp == 0) {
-      std::cerr << "hydro2jam: failed to create ParticleSample instance." <<  std::endl;
-      std::exit(1);
-    }
-    break;
-  }
-
-  if (psamp) {
+  if (IParticleSample* psamp = CreateParticleSample(ctx, args.initType, args.initPath)) {
     jam->generateEvent(psamp);
     delete psamp;
+  } else {
+    std::cerr << "hydro2jam: failed to initialize ParticleSample of type '" << args.initType << "'." <<  std::endl;
+    std::exit(1);
   }
 
   std::cout << "Average initial particle number from hydrojet:"

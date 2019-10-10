@@ -788,7 +788,7 @@ static std::string elementOutputFilenames[151] = {
 
   class ParticleSampleFactory: ParticleSampleFactoryRegistered {
     virtual IParticleSample* CreateInstance(hydro2jam_context const& ctx, std::string const& type, std::string const& inputfile) {
-      if (type != "hydrojet") return 0;
+      if (type != "hydrojet.original") return 0;
 
       std::string const indir = ctx.indir();
       int const kintmp = ctx.kintmp();

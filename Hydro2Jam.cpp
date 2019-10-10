@@ -38,7 +38,7 @@ void Hydro2Jam::initialize(hydro2jam_context const& ctx) {
   jam = new Jam1();
 
   //....Initialize JAM
-  jam->setMSTC(1, ctx.get_config("hydro2jam_jamseed", seed)); // random seed.
+  jam->setMSTC(1, ctx.get_config("hydro2jam_jamseed", seed)); // int seed = 1921;
   jam->setMSTC(2, this->nevent); // number of event.
   //jam->setMSTC(38,6);          // io number for jamlist.
   jam->setMSTC(8,0);             // job mode.
