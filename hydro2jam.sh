@@ -20,7 +20,7 @@ hydro2jam_switching_temperature=-1
 hydrojet_directory=test
 hydrojet_eospce=6
 hydrojet_kintmp=5
-hydrojet_resodata=dict/ResonanceJam.dat
+hydro2jam_resodata=dict/ResonanceJam.dat
 
 hydro2jam_deltat=0.3
 hydro2jam_deltah=0.3
@@ -29,6 +29,7 @@ hydro2jam_deltay=0.3
 
 # Options for JAM
 hydro2jam_phi_decays=1
+hydro2jam_decay_only=0
 
 export "${!hydro2jam_@}" "${!hydrojet_@}"
 ./hydro2jam.exe

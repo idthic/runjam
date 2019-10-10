@@ -192,7 +192,7 @@ public:
           } else if (!std::strcmp(arg, "-dir")) {
             assign_optarg("hydrojet_directory");
           } else if (!std::strcmp(arg, "-dirJAM")) {
-            assign_optarg("hydrojet_output_directory");
+            assign_optarg("hydro2jam_output_directory");
           } else if (!std::strcmp(arg, "-d")) {
             assign_optarg_int("hydro2jam_phasespace_enabled");
           } else if (!std::strcmp(arg, "-w")) {
@@ -202,7 +202,7 @@ public:
           } else if (!std::strcmp(arg, "-bfree")) {
             baryonfree = std::atoi(argv[++i]);
           } else if (!std::strcmp(arg, "-resodata")) {
-            assign_optarg("hydrojet_resodata");
+            assign_optarg("hydro2jam_resodata");
           } else if (!std::strcmp(arg, "-dt")) {
             assign_optarg_double("hydrojet_deltat");
           } else if (!std::strcmp(arg, "-dx")) {
