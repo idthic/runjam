@@ -1,10 +1,10 @@
-// -*- mode:c++;coding:utf-8;indent-tabs-mode:nil -*-
+// -*- mode: c++ -*-
 //
 // 2015-03-25 KM
 //   * class IResonanceList: moved from ParticleSampleViscous.h
 //
-#ifndef spectra_IResonanceData_h
-#define spectra_IResonanceData_h
+#ifndef hydro2jam_spectra_IResonanceData_hpp
+#define hydro2jam_spectra_IResonanceData_hpp
 #include <vector>
 #include <string>
 #include <util/Constants.hpp>

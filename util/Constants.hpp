@@ -1,5 +1,5 @@
-#ifndef base_Const_h
-#define base_Const_h
+#ifndef hydro2jam_util_Constants_hpp
+#define hydro2jam_util_Constants_hpp
 
 namespace idt {
 namespace hydro2jam {

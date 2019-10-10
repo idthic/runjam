@@ -1,5 +1,5 @@
-#ifndef Jam1Common_h
-#define Jam1Common_h
+#ifndef hydro2jam_jam_Jam1Common_h
+#define hydro2jam_jam_Jam1Common_h
 
 // This number should be the same as "mxv" in jam1.inc
 #ifndef JAM_MXV

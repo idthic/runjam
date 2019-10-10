@@ -1,7 +1,7 @@
-// -*- mode:c++;indent-tabs-mode:nil -*-
+// -*- mode: c++ -*-
 #pragma once
-#ifndef ElementReso_h
-#define ElementReso_h
+#ifndef hydro2jam_spectra_ElementReso_hpp
+#define hydro2jam_spectra_ElementReso_hpp
 #include <vector>
 #include "HydroSpectrum.hpp"
 #include "IResonanceList.hpp"

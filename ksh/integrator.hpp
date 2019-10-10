@@ -1,6 +1,6 @@
 // -*- C++ -*-
-#ifndef KASHIWA_INTEGRATOR_H
-#define KASHIWA_INTEGRATOR_H
+#ifndef kashiwa_integrator_hpp
+#define kashiwa_integrator_hpp
 namespace kashiwa{
 //NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 namespace integrator_detail{

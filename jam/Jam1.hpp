@@ -1,6 +1,6 @@
-// -*- mode:c++ -*-
-#ifndef Jam1_h
-#define Jam1_h
+// -*- mode: c++ -*-
+#ifndef hydro2jam_jam_Jam1_h
+#define hydro2jam_jam_Jam1_h
 #include <cstdlib>
 #include "Jam1Common.hpp"
 

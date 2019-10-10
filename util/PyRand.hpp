@@ -1,5 +1,5 @@
-#ifndef PyRand_h
-#define PyRand_h
+#ifndef hydro2jam_util_PyRand_hpp
+#define hydro2jam_util_PyRand_hpp
 
 #include "Random.hpp"
 
@@ -27,4 +27,4 @@ protected:
 }
 }
 
-#endif /* base_rand_PyRand_h */
+#endif /* hydro2jam_util_PyRand_hpp */

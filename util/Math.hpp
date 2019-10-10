@@ -1,6 +1,6 @@
-// -*- mode:c++;indent-tabs-mode:nil -*-
-#ifndef Math_h
-#define Math_h
+// -*- mode: c++ -*-
+#ifndef hydro2jam_util_Math_hpp
+#define hydro2jam_util_Math_hpp
 #include <cmath>
 #include <cstdlib>
 #include <algorithm>
@@ -49,4 +49,4 @@ template<class T> inline const T& max(const T& a, const T& b, const T& c)
 }
 }
 
-#endif // Math_h
+#endif // hydro2jam_util_Math_hpp

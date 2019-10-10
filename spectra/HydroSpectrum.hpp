@@ -1,6 +1,6 @@
-// -*- mode:c++;indent-tabs-mode:nil -*-
-#ifndef HydroSpectrum_h
-#define HydroSpectrum_h
+// -*- mode: c++ -*-
+#ifndef hydro2jam_spectra_HydroSpectrum_hpp
+#define hydro2jam_spectra_HydroSpectrum_hpp
 
 #include <iostream>
 #include <iomanip>

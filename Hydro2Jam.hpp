@@ -1,6 +1,6 @@
-// -*- mode:c++ -*-
-#ifndef Hydro2Jam_h
-#define Hydro2Jam_h
+// -*- mode: c++ -*-
+#ifndef hydro2jam_Hydro2Jam_hpp
+#define hydro2jam_Hydro2Jam_hpp
 
 #include <string>
 #include <fstream>

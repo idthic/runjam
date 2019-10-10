@@ -1,10 +1,10 @@
-// -*- mode:c++;coding:utf-8;indent-tabs-mode:nil -*-
+// -*- mode: c++ -*-
 //
 // 2014-05-01 KM,
 //   * Created
 //
-#ifndef spectra_ParticleSampleViscous_h
-#define spectra_ParticleSampleViscous_h
+#ifndef hydro2jam_spectra_ParticleSampleViscous_hpp
+#define hydro2jam_spectra_ParticleSampleViscous_hpp
 #include <vector>
 #include <string>
 #include "IParticleSample.hpp"

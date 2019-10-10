@@ -1,6 +1,6 @@
-// -*- mode:c++ -*-
-#ifndef Random_h
-#define Random_h
+// -*- mode: c++ -*-
+#ifndef hydro2jam_util_Random_hpp
+#define hydro2jam_util_Random_hpp
 
 #include <iostream>
 #include <cstdlib>

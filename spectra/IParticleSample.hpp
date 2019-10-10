@@ -1,12 +1,12 @@
-// -*- mode: c++; coding: utf-8; indent-tabs-mode: nil -*-
+// -*- mode: c++ -*-
 //
 // 2014-05-09 KM,
 //   * Created
 //   * class IParticleSample was moved from ParticleSampleHydrojet.h.
 //   * Added comments.
 //
-#ifndef spectra_IParticleSample_h
-#define spectra_IParticleSample_h
+#ifndef hydro2jam_spectra_IParticleSample_hpp
+#define hydro2jam_spectra_IParticleSample_hpp
 #include <cstdlib>
 #include <iostream>
 #include <vector>

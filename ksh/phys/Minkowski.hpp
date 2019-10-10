@@ -1,6 +1,6 @@
 // -*- C++ -*-
-#ifndef KASHIWA_PHYS_MINKOWSKI_H
-#define KASHIWA_PHYS_MINKOWSKI_H
+#ifndef kashiwa_phys_Minkowski_hpp
+#define kashiwa_phys_Minkowski_hpp
 namespace kashiwa{
 namespace phys{
 //NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
