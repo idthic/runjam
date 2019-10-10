@@ -22,7 +22,7 @@ Hydro2Jam::Hydro2Jam(hydro2jam_context const& ctx) {
 
 void Hydro2Jam::initialize(hydro2jam_context const& ctx) {
   this->nevent = ctx.nevent(1);
-  ctx.read_config(this->dumpPhaseSpaceData, "hydro2jam_phasespace_enabled");
+  ctx.read_config(this->dumpPhaseSpaceData, "hydro2jam_phasespace_enabled", 1);
 
   this->flag_decayOnly = ctx.get_config("hydro2jam_decay_only", false);
 
@@ -87,8 +87,8 @@ void Hydro2Jam::initialize(hydro2jam_context const& ctx) {
   if (dumpPhaseSpaceData) {
     std::string fname_phasespace;
     std::string fname_phasespace0;
-    ctx.read_config(fname_phasespace, "hydro2jam_phasespace_fname");
-    ctx.read_config(fname_phasespace0, "hydro2jam_phasespace_fname0");
+    ctx.read_config<std::string>(fname_phasespace, "hydro2jam_phasespace_fname", "phasespace.dat");
+    ctx.read_config<std::string>(fname_phasespace0, "hydro2jam_phasespace_fname0", "phasespace0.dat");
     if (outdir.size() > 0) {
       if (fname_phasespace[0] != '/')
         fname_phasespace = outdir + "/" + fname_phasespace;
@@ -97,7 +97,16 @@ void Hydro2Jam::initialize(hydro2jam_context const& ctx) {
     }
 
     ofs.open(fname_phasespace.c_str());
+    if (!ofs) {
+      std::cerr << "hydro2jam: failed to open '" << fname_phasespace << "' for write." << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+
     ofs0.open(fname_phasespace0.c_str());
+    if (!ofs0) {
+      std::cerr << "hydro2jam: failed to open '" << fname_phasespace0 << "' for write." << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
   }
 
   //jam->setMDCY(jam->jamComp(111) ,1,0);   // no pi0 decay
