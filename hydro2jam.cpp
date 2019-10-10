@@ -8,7 +8,6 @@
 #include "util/PyRand.hpp"
 #include "Hydro2Jam.hpp"
 
-#include "spectra/ParticleSamplePhasespace.hpp"
 #include "spectra/ParticleSampleViscous.hpp"
 #include "spectra/ParticleSampleRead.hpp"
 
@@ -345,6 +344,9 @@ void hadronicCascade(hydro2jam_context const& ctx) {
   if (sw_weakdecay) jam->setWeakDecay(); //allow weak decays
 
   cout << "jam event generation start" << endl;
+
+  IParticleSample* psamp = 0;
+
   switch (args.jamInitType) {
   case InitialType_C0LRF:
     hadronicCascadeC0Lrf(ctx, jam, args.fnameInitialPhasespaceData);
@@ -353,33 +355,26 @@ void hadronicCascade(hydro2jam_context const& ctx) {
     hadronicCascadeHydrojet(ctx, jam, args.fnameInitialPhasespaceData);
     break;
   case InitialType_PHASE1:
+    psamp = CreateParticleSample(ctx, "phase1", ctx.indir());
+    break;
   case InitialType_PHASE:
-    {
-      ParticleSampleFromOversampledPhasespace* psamp = new ParticleSampleFromOversampledPhasespace(args.fnameInitialPhasespaceData);
-      if (args.jamInitType == InitialType_PHASE1)
-        psamp->setOverSamplingFactor(1);
-      jam->generateEvent(psamp);
-      delete psamp;
-    }
+    psamp = CreateParticleSample(ctx, "phase", ctx.indir());
     break;
   case InitialType_PSAMPLE:
-    {
-      ParticleSampleRead* psamp = new ParticleSampleRead(args.fnameInitialPhasespaceData);
-      jam->generateEvent(psamp);
-      delete psamp;
-    }
+    psamp = new ParticleSampleRead(args.fnameInitialPhasespaceData);
     break;
   default: // default dir = "test"
-    {
-      IParticleSample* psamp = CreateParticleSample(ctx, "hydrojet", ctx.indir());
-      if (psamp == 0) {
-        std::cerr << "hydro2jam: failed to create ParticleSample instance." <<  std::endl;
-        std::exit(1);
-      }
-      jam->generateEvent(psamp);
-      delete psamp;
+    psamp = CreateParticleSample(ctx, "hydrojet", ctx.indir());
+    if (psamp == 0) {
+      std::cerr << "hydro2jam: failed to create ParticleSample instance." <<  std::endl;
+      std::exit(1);
     }
     break;
+  }
+
+  if (psamp) {
+    jam->generateEvent(psamp);
+    delete psamp;
   }
 
   std::cout << "Average initial particle number from hydrojet:"

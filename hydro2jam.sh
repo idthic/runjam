@@ -20,6 +20,11 @@ hydrojet_eospce=6
 hydrojet_kintmp=5
 hydrojet_resodata=dict/ResonanceJam.dat
 
+hydro2jam_deltat=0.3
+hydro2jam_deltah=0.3
+hydro2jam_deltax=0.3
+hydro2jam_deltay=0.3
+
 # Options for JAM
 hydro2jam_phi_decays=1
 
