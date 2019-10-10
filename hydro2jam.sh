@@ -11,6 +11,8 @@ hydro2jam_ievent_begin=0
 hydro2jam_phasespace_enabled=1
 hydro2jam_phasespace_fname=phasespace.dat
 hydro2jam_phasespace_fname0=phasespace0.dat
+hydro2jam_output_phbin=false
+hydro2jam_output_phbin0=false
 
 # Options for Cooper-Frye formula
 hydro2jam_turnsOffViscousEffect=0

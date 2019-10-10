@@ -1,6 +1,7 @@
 //...A main program to use the initial condition of hadronic cascade
 //...from hydro
 #include <cmath>
+#include <cstdint>
 #include <vector>
 #include <string>
 #include <iostream>
@@ -109,6 +110,24 @@ void Hydro2Jam::initialize(hydro2jam_context const& ctx) {
     }
   }
 
+  if (ctx.get_config("hydro2jam_output_phbin", false)) {
+    std::string filename = outdir + "/phasespace.bin";
+    ofs_bin.open(filename, std::ios::binary);
+    if (!ofs_bin) {
+      std::cerr << "hydro2jam: failed to open '" << filename << "' for write." << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+  }
+
+  if (ctx.get_config("hydro2jam_output_phbin0", false)) {
+    std::string filename = outdir + "/phasespace0.bin";
+    ofs_bin0.open(filename, std::ios::binary);
+    if (!ofs_bin0) {
+      std::cerr << "hydro2jam: failed to open '" << filename << "' for write." << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+  }
+
   //jam->setMDCY(jam->jamComp(111) ,1,0);   // no pi0 decay
   //jam->setMDCY(jam->jamComp(3122),1,1);   // Lambda decay
   //jam->setMDCY(jam->jamComp(3222),1,1);   // Sigma- decay
@@ -126,7 +145,36 @@ Hydro2Jam::~Hydro2Jam() {
     ofs0 << -999 << std::endl;
     ofs0.close();
   }
+
   delete jam;
+}
+
+void outputPhaseSpaceBinary(Jam1* jam, std::ofstream& ofs) {
+  std::uint32_t const nv = jam->getNV();
+  ofs.write("EvPh", 4);
+  ofs.write((char*) &nv, 4);
+  for (std::uint32_t i = 1; i <= nv; i++) {
+    std::int32_t const ks = jam->getK(1,i);
+    std::int32_t const kf = jam->getK(2,i);
+    float const px = jam->getP(1,i);
+    float const py = jam->getP(2,i);
+    float const pz = jam->getP(3,i);
+    float const m = jam->getP(5,i);
+    float const x = jam->getR(1,i);
+    float const y = jam->getR(2,i);
+    float const z = jam->getR(3,i);
+    float const t = jam->getR(4,i);
+    ofs.write((char*) &ks, 4);
+    ofs.write((char*) &kf, 4);
+    ofs.write((char*) &px, 4);
+    ofs.write((char*) &py, 4);
+    ofs.write((char*) &pz, 4);
+    ofs.write((char*) &m, 4);
+    ofs.write((char*) &x, 4);
+    ofs.write((char*) &y, 4);
+    ofs.write((char*) &z, 4);
+    ofs.write((char*) &t, 4);
+  }
 }
 
 void Hydro2Jam::generateEvent(IParticleSample* psamp) {
@@ -142,10 +190,6 @@ void Hydro2Jam::generateEvent(IParticleSample* psamp) {
 
   //...Simulation start.
   for (int iev = 1; iev <= nevent; iev++) {
-
-    // if(iev%nprint == 0)
-    //   std::cout << "Hydro2Jam.cxx(Hydro2Jam::generateEvent): event=" << iev << std::endl;
-
     //...Set initial particle momentum and coordinate in JAM.
     nv=0;
     nbary=0;
@@ -167,32 +211,29 @@ void Hydro2Jam::generateEvent(IParticleSample* psamp) {
     //...C.M.correction.
     //cmCorrection(nv);
 
-    if (dumpPhaseSpaceData)
+    if (ofs0.is_open())
       printPhaseSpaceData(ofs0); // output the distribution to phasespace0.dat
+    if (ofs_bin0.is_open())
+      outputPhaseSpaceBinary(jam, ofs_bin0);
 
     if (flag_decayOnly) {
-      // perform resonance decay (no rescatterings will be performed.)
       jam->finalResonanceDecay();
-
       std::cout <<"  env(hydro2jam_decay_only): resonance decay is performed without rescattering." << std::endl;
-
     } else {
-      // Simulate one hadronic cascade event.
       jam->jamEvt(iev);
-
       if(iev%nprint==0){
-        std::cout << "Hydro2Jam.cxx(Hydro2Jam::generateEvent):"<< "iev="<<iev<<": "
+        std::cout << "hydro2jam:"<< "ievent="<<iev<<": "
                   << "cascade done. The expected number of collisions is "
                   << (jam->getMSTD(41)+jam->getMSTD(42))/numberTestParticle << "." << std::endl;
       }
     }
 
-    if (dumpPhaseSpaceData)
+    if (ofs.is_open())
       printPhaseSpaceData(ofs); // output the distribution to phasespace0.dat
+    if (ofs_bin.is_open())
+      outputPhaseSpaceBinary(jam, ofs_bin);
+  }
 
-  }  // end event simulation loop.
-
-  //...Final output.
   jam->jamFin();
 }
 

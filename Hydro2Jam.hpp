@@ -14,18 +14,22 @@ namespace hydro2jam {
 class Hydro2Jam {
 private:
   Jam1* jam;
-  double   aveNumberPart1, aveNumberPart2;
+  double aveNumberPart1, aveNumberPart2;
   int nevent;
   int numberTestParticle;
   int nv;
   int nbary;
   int nmeson;
 
+  int dumpPhaseSpaceData;
   std::ofstream ofs;   // file for phase space data output.
   std::ofstream ofs0;   // file for phase space data output before rescattering.
-  int dumpPhaseSpaceData;
+
+  std::ofstream ofs_bin0;
+  std::ofstream ofs_bin;
 
   bool flag_decayOnly;
+
 
 private:
   void initialize(hydro2jam_context const& iparam);
