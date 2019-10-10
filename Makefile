@@ -20,7 +20,7 @@ LIBS     :=
 
 OBJDIR := obj
 
-CPPFLAGS = -DUSE_JAM -DJAM_MXV=$(libjam_MXV) -I . -MD -MP -MF $(@:.o=.dep)
+CPPFLAGS = -DJAM_MXV=$(libjam_MXV) -I . -MD -MP -MF $(@:.o=.dep)
 LDFLAGS += -L $(libjam_LIBDIR) -Wl,-rpath,$(libjam_LIBDIR)
 hydro2jam_OBJS := \
   $(OBJDIR)/hydro2jam.o \

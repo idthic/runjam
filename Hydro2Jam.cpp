@@ -1,9 +1,5 @@
 //...A main program to use the initial condition of hadronic cascade
 //...from hydro
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-#ifdef USE_JAM
 #include <cmath>
 #include <vector>
 #include <string>
@@ -560,5 +556,3 @@ int Hydro2Jam::sampleJamID(int irshift){
 
 }
 }
-
-#endif

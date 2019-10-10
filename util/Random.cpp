@@ -1,9 +1,11 @@
 #define _USE_MATH_DEFINES
-#define _GNU_SOURCE
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
+#include <cmath>
 
 #include "Random.hpp"
 #include "Math.hpp"
-#include <cmath>
 
 namespace idt {
 namespace hydro2jam {
