@@ -1,7 +1,11 @@
+#include <cstdio>
 #include <cstdlib>
-#include <iostream>
 #include <cstring>
 #include <cmath>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <iostream>
 
 #include "util/Random.hpp"
 #include "util/PyRand.hpp"
@@ -165,12 +169,7 @@ private:
       longname = longname.substr(0, ia);
     }
 
-    if (longname == "debug20150102") {
-      std::exit(checkViscousCooperFryeInterpolated(true));
-    } else if (longname == "check") {
-      checkViscousCooperFryeInterpolated(false);
-      std::exit(EXIT_SUCCESS);
-    } else if (longname == "help") {
+    if (longname == "help") {
       cmd_help();
       std::exit(EXIT_SUCCESS);
     } else if (longname == "switching-temperature") {
@@ -185,41 +184,41 @@ private:
   }
 
   void read_option() {
-    if (!std::strcmp(arg, "-s")) {
+    if (std::strcmp(arg, "-s") == 0) {
       assign_optarg_int("hydro2jam_seed");
-    } else if (!std::strcmp(arg, "-n")) {
+    } else if (std::strcmp(arg, "-n") == 0) {
       assign_optarg_int("hydro2jam_nevent");
-    } else if (!std::strcmp(arg, "-t")) {
+    } else if (std::strcmp(arg, "-t") == 0) {
       assign_optarg_int("hydro2jam_oversampling_factor");
-    } else if (!std::strcmp(arg, "-dirJAM")) {
+    } else if (std::strcmp(arg, "-dirJAM") == 0) {
       assign_optarg("hydro2jam_output_directory");
-    } else if (!std::strcmp(arg, "-w")) {
+    } else if (std::strcmp(arg, "-w") == 0) {
       assign_optarg_int("hydro2jam_swtich_weak_decay");
-    } else if (!std::strcmp(arg, "-resodata")) {
+    } else if (std::strcmp(arg, "-resodata") == 0) {
       assign_optarg("hydro2jam_resodata");
-    } else if (!std::strcmp(arg, "-d")) {
+    } else if (std::strcmp(arg, "-d") == 0) {
       assign_optarg_int("hydro2jam_phasespace_enabled");
-    } else if (!std::strcmp(arg, "-f")) {
+    } else if (std::strcmp(arg, "-f") == 0) {
       assign_optarg("hydro2jam_phasespace_fname");
-    } else if (!std::strcmp(arg, "-f0")) {
+    } else if (std::strcmp(arg, "-f0") == 0) {
       assign_optarg("hydro2jam_phasespace_fname0");
-    } else if (!std::strcmp(arg, "-dir")) {
+    } else if (std::strcmp(arg, "-dir") == 0) {
       assign_optarg("hydrojet_directory");
-    } else if (!std::strcmp(arg, "-ftemp"))  {
+    } else if (std::strcmp(arg, "-ftemp") == 0)  {
       assign_optarg_int("hydrojet_kintmp");
-    } else if (!std::strcmp(arg, "-pce")) {
+    } else if (std::strcmp(arg, "-pce") == 0) {
       assign_optarg_int("hydrojet_eospce");
-    } else if (!std::strcmp(arg, "-bfree")) {
+    } else if (std::strcmp(arg, "-bfree") == 0) {
       assign_optarg_int("hydrojet_baryonfree");
-    } else if (!std::strcmp(arg, "-dt")) {
+    } else if (std::strcmp(arg, "-dt") == 0) {
       assign_optarg_double("hydrojet_deltat");
-    } else if (!std::strcmp(arg, "-dx")) {
+    } else if (std::strcmp(arg, "-dx") == 0) {
       assign_optarg_double("hydrojet_deltax");
-    } else if (!std::strcmp(arg, "-dy")) {
+    } else if (std::strcmp(arg, "-dy") == 0) {
       assign_optarg_double("hydrojet_deltay");
-    } else if (!std::strcmp(arg, "-dh")) {
+    } else if (std::strcmp(arg, "-dh") == 0) {
       assign_optarg_double("hydrojet_deltah");
-    } else if (!std::strcmp(arg, "-i")) {
+    } else if (std::strcmp(arg, "-i") == 0) {
       assign_optarg_input();
     } else {
       std::cerr << "hydro2jam:#" << i << ": unknown option '" << arg << "'" << std::endl;
@@ -407,6 +406,8 @@ int main(int argc, char *argv[]) {
   if (args.subcommand == "generate-phasespace0") {
     // test 用
     doGeneratePhasespace0(ctx, args.initType, args.initPath);
+  } else if (args.subcommand == "test-viscous-correction-integration") {
+    return checkViscousCooperFryeInterpolated(true);
   } else if (args.subcommand == "cascade") {
     std::string mode = ctx.get_config<std::string>("hydro2jam_cascade_mode", "cascade");
     if (mode == "cascade" && ctx.get_config("hydro2jam_decay_only", false)) mode = "decay";
