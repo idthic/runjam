@@ -23,7 +23,6 @@ Hydro2Jam::Hydro2Jam(hydro2jam_context const& ctx) {
 
 void Hydro2Jam::initialize(hydro2jam_context const& ctx) {
   this->nevent = ctx.nevent(1);
-  ctx.read_config(this->dumpPhaseSpaceData, "hydro2jam_phasespace_enabled", 1);
 
   std::string const outdir = ctx.outdir();
 
@@ -83,7 +82,7 @@ void Hydro2Jam::initialize(hydro2jam_context const& ctx) {
 
   numberTestParticle = 1;
 
-  if (dumpPhaseSpaceData) {
+  if (ctx.get_config("hydro2jam_phasespace_enabled", true)) {
     std::string fname_phasespace;
     std::string fname_phasespace0;
     ctx.read_config<std::string>(fname_phasespace, "hydro2jam_phasespace_fname", "phasespace.dat");
@@ -137,9 +136,11 @@ void Hydro2Jam::initialize(hydro2jam_context const& ctx) {
 }
 
 Hydro2Jam::~Hydro2Jam() {
-  if (dumpPhaseSpaceData) {
+  if (ofs.is_open()) {
     ofs << -999 << std::endl;
     ofs.close();
+  }
+  if (ofs0.is_open()) {
     ofs0 << -999 << std::endl;
     ofs0.close();
   }
@@ -173,77 +174,6 @@ void outputPhaseSpaceBinary(Jam1* jam, std::ofstream& ofs) {
     ofs.write((char*) &z, 4);
     ofs.write((char*) &t, 4);
   }
-}
-
-void Hydro2Jam::generateEvent(IParticleSample* psamp, std::string const& cascadeMode) {
-  int const nevent = this->nevent;
-  aveNumberPart1 = 0.0;
-  aveNumberPart2 = 0.0;
-  jam->setMSTC(5,numberTestParticle);
-
-  if (nevent * numberTestParticle > 0)
-    psamp->setAdviceNumberOfExpectedEvents(nevent * numberTestParticle);
-
-  bool const flagSampleOnly = cascadeMode == "sample";
-  bool const flagDecayOnly = cascadeMode == "decay";
-
-  int nprint = 1;
-
-  //...Simulation start.
-  for (int iev = 1; iev <= nevent; iev++) {
-    //...Set initial particle momentum and coordinate in JAM.
-    nv=0;
-    nbary=0;
-    nmeson=0;
-
-    // Sample particles from hydro output.
-    for (int i = 0; i < numberTestParticle; i++) {
-      psamp->update();
-      initJam(psamp);
-    }
-
-    if (iev % nprint == 0) {
-      std::cout << "hydro2jam:iev=" << iev << ": "
-                << "sampling done. The number of initial test particles is nv=" << nv << "." << std::endl;
-    }
-
-    aveNumberPart1 += (double)nv/(nevent*numberTestParticle);
-
-    //...C.M.correction.
-    //cmCorrection(nv);
-
-    if (ofs0.is_open())
-      printPhaseSpaceData(ofs0); // output the distribution to phasespace0.dat
-    if (ofs_bin0.is_open())
-      outputPhaseSpaceBinary(jam, ofs_bin0);
-
-    if (flagSampleOnly) continue;
-
-    if (flagDecayOnly) {
-      // perform resonance decay (no rescatterings will be performed.)
-      jam->finalResonanceDecay();
-      if (iev % nprint == 0) {
-        std::cout
-          << "hydro2jam:iev=" << iev << ": "
-          << "decay done." << std::endl;
-      }
-    } else {
-      jam->jamEvt(iev);
-      if (iev % nprint == 0) {
-        std::cout
-          << "hydro2jam:iev=" << iev << ": "
-          << "cascade done. The average number of collisions is "
-          << (jam->getMSTD(41) + jam->getMSTD(42)) / numberTestParticle << "." << std::endl;
-      }
-    }
-
-    if (ofs.is_open())
-      printPhaseSpaceData(ofs); // output the distribution to phasespace0.dat
-    if (ofs_bin.is_open())
-      outputPhaseSpaceBinary(jam, ofs_bin);
-  }
-
-  jam->jamFin();
 }
 
 void Hydro2Jam::printPhaseSpaceData(std::ofstream& output) {
@@ -414,6 +344,78 @@ void Hydro2Jam::cmCorrection() {
     jam->setP(3, i, p3);
     jam->setP(4, i, e);
   }
+}
+
+void Hydro2Jam::generateEvent(IParticleSample* psamp, std::string const& cascadeMode) {
+  int const nevent = this->nevent;
+  aveNumberPart1 = 0.0;
+  aveNumberPart2 = 0.0;
+  jam->setMSTC(5,numberTestParticle);
+
+  if (nevent * numberTestParticle > 0)
+    psamp->setAdviceNumberOfExpectedEvents(nevent * numberTestParticle);
+
+  bool const flagSampleOnly = cascadeMode == "sample";
+  bool const flagDecayOnly = cascadeMode == "decay";
+
+  int nprint = 1;
+
+  //...Simulation start.
+  for (int iev = 1; iev <= nevent; iev++) {
+    //...Set initial particle momentum and coordinate in JAM.
+    nv=0;
+    nbary=0;
+    nmeson=0;
+
+    // Sample particles from hydro output.
+    for (int i = 0; i < numberTestParticle; i++) {
+      psamp->update();
+      initJam(psamp);
+    }
+
+    if (iev % nprint == 0) {
+      std::cout << "hydro2jam:iev=" << iev << ": "
+                << "sampling done. The number of initial test particles is nv=" << nv << "." << std::endl;
+    }
+
+    aveNumberPart1 += (double) nv / (nevent * numberTestParticle);
+
+    //...C.M.correction.
+    //cmCorrection(nv);
+
+    if (ofs0.is_open())
+      printPhaseSpaceData(ofs0); // output the distribution to phasespace0.dat
+    if (ofs_bin0.is_open())
+      outputPhaseSpaceBinary(jam, ofs_bin0);
+
+    if (flagSampleOnly) continue;
+
+    if (flagDecayOnly) {
+      jam->finalResonanceDecay();
+      if (iev % nprint == 0) {
+        std::cout
+          << "hydro2jam:iev=" << iev << ": "
+          << "decay done." << std::endl;
+      }
+    } else {
+      jam->jamEvt(iev);
+      if (iev % nprint == 0) {
+        std::cout
+          << "hydro2jam:iev=" << iev << ": "
+          << "cascade done. The average number of collisions is "
+          << (jam->getMSTD(41) + jam->getMSTD(42)) / numberTestParticle << "." << std::endl;
+      }
+    }
+
+    aveNumberPart1 += (double) jam->getNV() / (nevent * numberTestParticle);
+
+    if (ofs.is_open())
+      printPhaseSpaceData(ofs); // output the distribution to phasespace0.dat
+    if (ofs_bin.is_open())
+      outputPhaseSpaceBinary(jam, ofs_bin);
+  }
+
+  jam->jamFin();
 }
 
 class HydroParticleCodeTable{

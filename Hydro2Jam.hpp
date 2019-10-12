@@ -21,7 +21,6 @@ private:
   int nbary;
   int nmeson;
 
-  int dumpPhaseSpaceData;
   std::ofstream ofs;   // file for phase space data output.
   std::ofstream ofs0;   // file for phase space data output before rescattering.
 
