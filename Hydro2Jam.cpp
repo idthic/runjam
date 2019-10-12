@@ -25,8 +25,6 @@ void Hydro2Jam::initialize(hydro2jam_context const& ctx) {
   this->nevent = ctx.nevent(1);
   ctx.read_config(this->dumpPhaseSpaceData, "hydro2jam_phasespace_enabled", 1);
 
-  this->flag_decayOnly = ctx.get_config("hydro2jam_decay_only", false);
-
   std::string const outdir = ctx.outdir();
 
   int const seed = ctx.seed();
@@ -177,7 +175,7 @@ void outputPhaseSpaceBinary(Jam1* jam, std::ofstream& ofs) {
   }
 }
 
-void Hydro2Jam::generateEvent(IParticleSample* psamp) {
+void Hydro2Jam::generateEvent(IParticleSample* psamp, std::string const& cascadeMode) {
   int const nevent = this->nevent;
   aveNumberPart1 = 0.0;
   aveNumberPart2 = 0.0;
@@ -185,6 +183,9 @@ void Hydro2Jam::generateEvent(IParticleSample* psamp) {
 
   if (nevent * numberTestParticle > 0)
     psamp->setAdviceNumberOfExpectedEvents(nevent * numberTestParticle);
+
+  bool const flagSampleOnly = cascadeMode == "sample";
+  bool const flagDecayOnly = cascadeMode == "decay";
 
   int nprint = 1;
 
@@ -202,7 +203,7 @@ void Hydro2Jam::generateEvent(IParticleSample* psamp) {
     }
 
     if (iev % nprint == 0) {
-      std::cout << "Hydro2Jam.cxx(Hydro2Jam::generateEvent):"<< "iev="<<iev<<": "
+      std::cout << "hydro2jam:iev=" << iev << ": "
                 << "sampling done. The number of initial test particles is nv=" << nv << "." << std::endl;
     }
 
@@ -216,15 +217,23 @@ void Hydro2Jam::generateEvent(IParticleSample* psamp) {
     if (ofs_bin0.is_open())
       outputPhaseSpaceBinary(jam, ofs_bin0);
 
-    if (flag_decayOnly) {
+    if (flagSampleOnly) continue;
+
+    if (flagDecayOnly) {
+      // perform resonance decay (no rescatterings will be performed.)
       jam->finalResonanceDecay();
-      std::cout <<"  env(hydro2jam_decay_only): resonance decay is performed without rescattering." << std::endl;
+      if (iev % nprint == 0) {
+        std::cout
+          << "hydro2jam:iev=" << iev << ": "
+          << "decay done." << std::endl;
+      }
     } else {
       jam->jamEvt(iev);
-      if(iev%nprint==0){
-        std::cout << "hydro2jam:"<< "ievent="<<iev<<": "
-                  << "cascade done. The expected number of collisions is "
-                  << (jam->getMSTD(41)+jam->getMSTD(42))/numberTestParticle << "." << std::endl;
+      if (iev % nprint == 0) {
+        std::cout
+          << "hydro2jam:iev=" << iev << ": "
+          << "cascade done. The average number of collisions is "
+          << (jam->getMSTD(41) + jam->getMSTD(42)) / numberTestParticle << "." << std::endl;
       }
     }
 
@@ -406,8 +415,6 @@ void Hydro2Jam::cmCorrection() {
     jam->setP(4, i, e);
   }
 }
-
-// int Hydro2Jam::sampleJamID(int irshift); alternative implementation, not yet tested
 
 class HydroParticleCodeTable{
   static const int nresonance=151;
