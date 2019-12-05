@@ -113,7 +113,7 @@ private:
     if (i < argc) {
       return argv[i++];
     } else {
-      std::cerr << "hydro2jam:arg#" << i << " (" << arg << "): missing optional argument." << std::endl;
+      std::cerr << "hydro2jam:$" << i-1 << " (" << arg << "): missing optional argument." << std::endl;
       flag_error = true;
       return NULL;
     }
@@ -140,7 +140,7 @@ private:
 
   void assign_optarg_int(const char* key) {
     if (const char* optarg = get_optarg())
-      ctx->set_value(key, std::atoi(argv[i++]));
+      ctx->set_value(key, std::atoi(optarg));
   }
 
   void assign_optarg_input() {
@@ -221,7 +221,7 @@ private:
     } else if (std::strcmp(arg, "-i") == 0) {
       assign_optarg_input();
     } else {
-      std::cerr << "hydro2jam:#" << i << ": unknown option '" << arg << "'" << std::endl;
+      std::cerr << "hydro2jam:$" << i-1 << ": unknown option '" << arg << "'" << std::endl;
       flag_error = true;
     }
   }
@@ -242,10 +242,10 @@ public:
         }
       } else {
         // option 以外の文字列
-        if (i == 1) {
+        if (i-1 == 1) {
           this->subcommand = arg;
         } else {
-          std::cerr << "hydro2jam:#" << i << ": unrecognized argument '" << arg << "'" << std::endl;
+          std::cerr << "hydro2jam:$" << i-1 << ": unrecognized argument '" << arg << "'" << std::endl;
           flag_error = true;
         }
       }
