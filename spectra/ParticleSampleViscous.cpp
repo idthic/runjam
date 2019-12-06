@@ -1677,19 +1677,16 @@ namespace {
       // ResonanceListPCE を移動する
       if (type == "c0lrf") {
         double const switchingTemperature = ctx.get_config("hydro2jam_switching_temperature", -1.0);
-        double const ntest = ctx.get_config("hydro2jam_oversampling_factor", 1.0);
         bool const turnsOffViscousEffect = ctx.get_config("hydro2jam_turnsOffViscousEffect", false);
 
         ParticleSampleViscous* psamp = new ParticleSampleViscous(ctx, inputfile);
         if (switchingTemperature > 0.0)
           psamp->setSwitchingTemperature(switchingTemperature);
-        psamp->setOverSamplingFactor(ntest);
         psamp->setTurnsOffViscousEffect(turnsOffViscousEffect);
         return psamp;
 
       } else if (type == "hydrojet") {
         double const switchingTemperature = ctx.get_config("hydro2jam_switching_temperature", -1.0);
-        double const ntest = ctx.get_config("hydro2jam_oversampling_factor", 1.0);
         double const deltat = ctx.get_config("hydro2jam_deltat", 0.3);
         double const deltah = ctx.get_config("hydro2jam_deltah", 0.3);
         double const deltax = ctx.get_config("hydro2jam_deltax", 0.3);
@@ -1702,7 +1699,6 @@ namespace {
         psamp->setDy(deltay);
         if (switchingTemperature > 0.0)
           psamp->setSwitchingTemperature(switchingTemperature);
-        psamp->setOverSamplingFactor(ntest);
         return psamp;
 
       }
