@@ -23,7 +23,7 @@ OBJDIR := obj
 CPPFLAGS = -DJAM_MXV=$(libjam_MXV) -I . -MD -MP -MF $(@:.o=.dep)
 LDFLAGS += -L $(libjam_LIBDIR) -Wl,-rpath,$(libjam_LIBDIR)
 hydro2jam_OBJS := \
-  $(OBJDIR)/hydro2jam.o \
+  $(OBJDIR)/main.o \
   $(OBJDIR)/jam/Jam1.o \
   $(OBJDIR)/ksh/integrator.o \
   $(OBJDIR)/spectra/ElementReso.o \
