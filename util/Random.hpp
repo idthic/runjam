@@ -14,12 +14,12 @@ class Random{
 protected:
   int seed;
 public:
-  Random()      { seed = ::time(0); /* srand=0; */ }
-  Random(int s) { seed = s;         /* srand=0; */ }
+  Random()      { setSeed(); }
+  Random(int s) { setSeed(s); }
   virtual ~Random() { }
-  virtual void   setSeed()      { seed = ::time(0); srand48(seed);}
-  virtual void   setSeed(int s) { srand48(s); seed=s;}
-  virtual double rand()         { return drand48();}
+  virtual void   setSeed()      { setSeed(::time(0)); }
+  virtual void   setSeed(int s) { srand48(s); seed = s; }
+  virtual double rand()         { return drand48(); }
   virtual unsigned long lrand() { return lrand48(); }
   double Gauss(double mean, double sigma);
 
