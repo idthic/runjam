@@ -214,7 +214,7 @@ void Hydro2Jam::initJam(IParticleSample* psamp) {
     Particle const* const particle = *mp;
 
     int kf; // PDG particle code.
-    switch(psamp->getParticleIdType()){
+    switch(psamp->getParticleIdType()) {
     case ParticleIDType::HydroParticleID:
       kf = sampleJamID(particle->id + 1);
       break;
@@ -418,26 +418,26 @@ void Hydro2Jam::generateEvent(IParticleSample* psamp, std::string const& cascade
   jam->jamFin();
 }
 
-class HydroParticleCodeTable{
-  static const int nresonance=151;
+class HydroParticleCodeTable {
+  static const int nresonance = 151;
   std::vector<int> table[nresonance];
 
-  void registerMapping(int hydroParticleCode, int jamCode1, int jamCode2 = 0, int jamCode3 = 0, int jamCode4 = 0){
-    if (1<=hydroParticleCode&&hydroParticleCode<=nresonance){
-      std::vector<int>& list=table[hydroParticleCode-1];
+  void registerMapping(int hydroParticleCode, int jamCode1, int jamCode2 = 0, int jamCode3 = 0, int jamCode4 = 0) {
+    if (1 <= hydroParticleCode && hydroParticleCode <= nresonance) {
+      std::vector<int>& list = table[hydroParticleCode - 1];
       list.clear();
       list.push_back(jamCode1);
-      if (jamCode2)list.push_back(jamCode2);
-      if (jamCode3)list.push_back(jamCode3);
-      if (jamCode4)list.push_back(jamCode4);
-    }else{
-      std::cerr<<"Hydro2Jam.cxx(HydroParticleCodeTable::registerMapping): invalid initialization"<<std::endl;
+      if (jamCode2) list.push_back(jamCode2);
+      if (jamCode3) list.push_back(jamCode3);
+      if (jamCode4) list.push_back(jamCode4);
+    } else {
+      std::cerr << "Hydro2Jam.cxx(HydroParticleCodeTable::registerMapping): invalid initialization" << std::endl;
       std::exit(1);
     }
   }
 
 public:
-  HydroParticleCodeTable(){
+  HydroParticleCodeTable() {
     this->registerMapping(  1, 10111, 10211,-10211);           // a0
     this->registerMapping(  2,  1114,  2114,  2214,  2224);    // Delta
     this->registerMapping(  3, -1114, -2114, -2214, -2224);    // Delta-bar
@@ -591,7 +591,7 @@ public:
     this->registerMapping(151, -3316, -3326);                  // X(2030)_bar
   }
 
-  int generateJamID(int hydroParticleCode){
+  int generateJamID(int hydroParticleCode) {
     if (1 <= hydroParticleCode && hydroParticleCode <= nresonance) {
       std::vector<int>& list = table[hydroParticleCode - 1];
       if (list.size() == 1)
@@ -608,7 +608,7 @@ public:
   }
 };
 
-int Hydro2Jam::sampleJamID(int irshift){
+int Hydro2Jam::sampleJamID(int irshift) {
   static HydroParticleCodeTable table;
   return table.generateJamID(irshift);
 }

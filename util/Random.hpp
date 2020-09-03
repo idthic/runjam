@@ -10,7 +10,7 @@
 namespace idt {
 namespace hydro2jam {
 
-class Random{
+class Random {
 protected:
   int seed;
 public:
@@ -37,11 +37,11 @@ public:
     srand = r;
   }
 
-  static Random* getRandom(){return srand;}
+  static Random* getRandom() { return srand; }
 
   /// @fn getRand
   /// generates a random number following an uniform distribution with the interval [0,1).
-  static double getRand(){return srand->rand();}
+  static double getRand() { return srand->rand(); }
 
   // ToDo: this not efficient. improve the implementation (KM)
   /// @fn getRandomPoisson

@@ -16,8 +16,8 @@
 namespace idt {
 namespace hydro2jam {
 
-struct ParticleIDType{
-  enum value_type{
+struct ParticleIDType {
+  enum value_type {
     HydroParticleID, // usually denoted as id
     PDGCode,         // usually denoted as kf
     JamInternalCode, // usually denoted as kc
@@ -56,7 +56,7 @@ public:
 
 class IParticleSample {
 public:
-  virtual ~IParticleSample(){}
+  virtual ~IParticleSample() {}
 
   virtual void setAdviceNumberOfExpectedEvents(int nEvents) {}
 
@@ -99,12 +99,12 @@ public:
 
 private:
   // コピー禁止
-  ParticleSampleBase(ParticleSampleBase const&){
-    std::cerr<<"ParticleSampleBase(copy ctor): copy not supported!"<<std::endl;
+  ParticleSampleBase(ParticleSampleBase const&) {
+    std::cerr << "ParticleSampleBase(copy ctor): copy not supported!" << std::endl;
     std::exit(1);
   }
-  ParticleSampleBase& operator=(ParticleSampleBase const&){
-    std::cerr<<"ParticleSampleBase(copy assign): copy not supported!"<<std::endl;
+  ParticleSampleBase& operator=(ParticleSampleBase const&) {
+    std::cerr << "ParticleSampleBase(copy assign): copy not supported!" << std::endl;
     std::exit(1);
   }
 };

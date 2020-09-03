@@ -26,7 +26,7 @@ struct Hydro2jamCommandlineArguments {
   std::string initPath;
 
 public:
-  Hydro2jamCommandlineArguments(){
+  Hydro2jamCommandlineArguments() {
     this->subcommand = "cascade";
     this->initType = "c0lrf";
     this->initPath = "hypersurface_v1.txt";
@@ -36,7 +36,7 @@ public:
   }
 
 private:
-  static void cmd_help(){
+  static void cmd_help() {
     std::printf(
       "usage: hydro2jam [subcommand] [options]\n"
       "\n"

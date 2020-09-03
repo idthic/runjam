@@ -51,7 +51,7 @@ extern "C" double  pjmass_(int *kf);
 #  define jydat4_   jydat4
 #endif
 
-struct Jamevnt1{
+struct Jamevnt1 {
   double R[JAM_MXV][5];
   double P[JAM_MXV][5];
   double V[JAM_MXV][5];
@@ -59,7 +59,7 @@ struct Jamevnt1{
 };
 extern "C" Jamevnt1 jamevnt1_;
 
-struct Jamevnt2{
+struct Jamevnt2 {
     int NV;
     int NBARY;
     int NMESON;

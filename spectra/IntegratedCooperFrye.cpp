@@ -20,114 +20,113 @@ namespace hydro2jam {
   static double const sqrtTangentUpperBound = std::sqrt(M_PI/2);
 
   template<int BF>
-  struct BFTraits{
+  struct BFTraits {
 #ifdef MWG_STD_LAMBDA
 #ifdef DBG20110803
-    static double Integral0(double xsig,double bmu){
-      return ksh::IntegrateByGaussLegendre<100>(sqrtTangentLowerBound,sqrtTangentUpperBound,[=](double t) -> double{
-        double tantt=std::tan(t*t);
-        double jacob=2*t*(tantt*tantt+1);
-        double x=tantt+xsig;
-        double fE0=1/(std::exp(x-bmu)-BF);
-        return jacob*fE0;
+    static double Integral0(double xsig, double bmu) {
+      return ksh::IntegrateByGaussLegendre<100>(sqrtTangentLowerBound, sqrtTangentUpperBound, [=](double t) -> double {
+        double tantt = std::tan(t*t);
+        double jacob = 2 * t * (tantt * tantt + 1);
+        double x = tantt + xsig;
+        double fE0 = 1 / (std::exp(x - bmu) - BF);
+        return jacob * fE0;
       });
     }
 #endif
-    static double Integral2(double xsig,double bmu){
-      return ksh::IntegrateByGaussLegendre<100>(sqrtTangentLowerBound,sqrtTangentUpperBound,[=](double t) -> double{
-        double tantt=std::tan(t*t);
-        double jacob=2*t*(tantt*tantt+1);
-        double x=tantt+xsig;
-        double fE2=x*x/(std::exp(x-bmu)-BF);
-        return jacob*fE2;
+    static double Integral2(double xsig, double bmu) {
+      return ksh::IntegrateByGaussLegendre<100>(sqrtTangentLowerBound, sqrtTangentUpperBound, [=](double t) -> double {
+        double tantt = std::tan(t * t);
+        double jacob = 2*t*(tantt * tantt + 1);
+        double x = tantt + xsig;
+        double fE2 = x * x / (std::exp(x - bmu) - BF);
+        return jacob * fE2;
       });
     }
-    static double IntegralP(double xsig,double bmu,double bmass){
-      return ksh::IntegrateByGaussLegendre<100>(sqrtTangentLowerBound,sqrtTangentUpperBound,[=](double t) -> double{
-        double tantt=std::tan(t*t);
-        double jacob=2*t*(tantt*tantt+1);
-        double x=tantt+xsig;
-        double fEP=x*std::sqrt(x*x-bmass*bmass)/(std::exp(x-bmu)-BF);
-        return jacob*fEP;
+    static double IntegralP(double xsig, double bmu, double bmass) {
+      return ksh::IntegrateByGaussLegendre<100>(sqrtTangentLowerBound, sqrtTangentUpperBound, [=](double t) -> double {
+        double tantt = std::tan(t * t);
+        double jacob = 2 * t * (tantt * tantt + 1);
+        double x = tantt + xsig;
+        double fEP = x * std::sqrt(x * x - bmass * bmass) / (std::exp(x - bmu) - BF);
+        return jacob * fEP;
       });
     }
 #else
-    struct LambdaIntegral2{
+    struct LambdaIntegral2 {
       double const& xsig;
       double const& bmu;
-      LambdaIntegral2(const double& xsig,const double& bmu):xsig(xsig),bmu(bmu){}
-      double operator()(double t) const{
-        double tantt=std::tan(t*t);
-        double jacob=2*t*(tantt*tantt+1);
-        double x=tantt+xsig;
-        double fE2=x*x/(std::exp(x-bmu)-BF);
-        return jacob*fE2;
+      LambdaIntegral2(const double& xsig, const double& bmu): xsig(xsig), bmu(bmu) {}
+      double operator()(double t) const {
+        double tantt = std::tan(t * t);
+        double jacob = 2 * t * (tantt * tantt + 1);
+        double x = tantt + xsig;
+        double fE2 = x * x / (std::exp(x - bmu) - BF);
+        return jacob * fE2;
       }
     };
-    static double Integral2(double xsig,double bmu){
-      return ksh::IntegrateByGaussLegendre<100>(sqrtTangentLowerBound,sqrtTangentUpperBound,LambdaIntegral2(xsig,bmu));
+    static double Integral2(double xsig, double bmu) {
+      return ksh::IntegrateByGaussLegendre<100>(sqrtTangentLowerBound, sqrtTangentUpperBound, LambdaIntegral2(xsig, bmu));
     }
-    struct LambdaIntegralP{
+    struct LambdaIntegralP {
       double const& xsig;
       double const& bmu;
       double const& bmass;
-      LambdaIntegralP(const double& xsig,const double& bmu,const double& bmass):xsig(xsig),bmu(bmu),bmass(bmass){}
-      double operator()(double t) const{
-        double tantt=std::tan(t*t);
-        double jacob=2*t*(tantt*tantt+1);
-        double x=tantt+xsig;
-        double fEP=x*std::sqrt(x*x-bmass*bmass)/(std::exp(x-bmu)-BF);
-        return jacob*fEP;
+      LambdaIntegralP(const double& xsig, const double& bmu, const double& bmass): xsig(xsig), bmu(bmu), bmass(bmass) {}
+      double operator()(double t) const {
+        double tantt = std::tan(t * t);
+        double jacob = 2 * t * (tantt * tantt + 1);
+        double x = tantt + xsig;
+        double fEP = x * std::sqrt(x * x - bmass * bmass) / (std::exp(x - bmu) - BF);
+        return jacob * fEP;
       }
     };
-    static double IntegralP(double xsig,double bmu,double bmass){
-      return ksh::IntegrateByGaussLegendre<100>(sqrtTangentLowerBound,sqrtTangentUpperBound,LambdaIntegralP(xsig,bmu,bmass));
+    static double IntegralP(double xsig, double bmu, double bmass) {
+      return ksh::IntegrateByGaussLegendre<100>(sqrtTangentLowerBound, sqrtTangentUpperBound, LambdaIntegralP(xsig, bmu, bmass));
     }
 #endif
-    static double Integral0(double xsig,double bmu){
-      return -BF*std::log(1-BF*std::exp(bmu-xsig));
+    static double Integral0(double xsig, double bmu) {
+      return -BF * std::log(1 - BF * std::exp(bmu - xsig));
     }
   };
 
   template<typename BFTr>
-  void IntegrateCooperFrye(double& dNPos,double& dNNeg,const vector4& u,const vector4& ds,double beta,double mass,double mu){
-    dNPos=0;
-    dNNeg=0;
+  void IntegrateCooperFrye(double& dNPos, double& dNNeg, const vector4& u, const vector4& ds, double beta, double mass, double mu) {
+    dNPos = 0;
+    dNNeg = 0;
 
-    double const pi_beta3=M_PI/(beta*beta*beta)/(8.0*M_PI*M_PI*M_PI);
-    double const bmu=beta*mu;
-    double const bmass=beta*mass;
-    double const dS0_=u*ds;
-    double const dS0=std::abs(dS0_);
-    (dS0_>=0?dNPos:dNNeg)=4*pi_beta3*dS0*BFTr::IntegralP(bmass,bmu,bmass);
+    double const pi_beta3 = M_PI / (beta * beta * beta) / (8.0 * M_PI * M_PI * M_PI);
+    double const bmu = beta * mu;
+    double const bmass = beta * mass;
+    double const dS0_ = u * ds;
+    double const dS0 = std::abs(dS0_);
+    (dS0_ >= 0 ? dNPos : dNNeg) = 4 * pi_beta3 * dS0 * BFTr::IntegralP(bmass, bmu, bmass);
 
-    double const dsds=ds*ds;
-    if(dsds>=0)return; // if(timelike)return;
-    double const dSz=std::sqrt(dS0*dS0-dsds);
-    double const vsig=dS0/dSz;
-    double const xsig=bmass/std::sqrt(1-vsig*vsig);
-    double const dNSec=pi_beta3*(
-      dSz*((vsig*vsig+1)*BFTr::Integral2(xsig,bmu)-bmass*bmass*BFTr::Integral0(xsig,bmu))
-      -2*dS0*BFTr::IntegralP(xsig,bmu,bmass)
-      );
+    double const dsds = ds * ds;
+    if (dsds >= 0) return; // if(timelike)return;
+    double const dSz = std::sqrt(dS0 * dS0 - dsds);
+    double const vsig = dS0/dSz;
+    double const xsig = bmass / std::sqrt(1 - vsig * vsig);
+    double const dNSec = pi_beta3 * (
+      dSz * ((vsig * vsig + 1) * BFTr::Integral2(xsig, bmu) - bmass * bmass * BFTr::Integral0(xsig, bmu))
+      - 2 * dS0 * BFTr::IntegralP(xsig, bmu, bmass));
 
-    dNPos+=dNSec;
-    dNNeg+=dNSec;
+    dNPos += dNSec;
+    dNNeg += dNSec;
   }
 
-  void IntegrateBosonCooperFrye(double& dNPos,double& dNNeg,const vector4& u,const vector4& ds,double beta,double mass,double mu){
+  void IntegrateBosonCooperFrye(double& dNPos, double& dNNeg, const vector4& u, const vector4& ds, double beta, double mass, double mu) {
     //mwg_assert(mu<mass);
-    return IntegrateCooperFrye<BFTraits<1> >(dNPos,dNNeg,u,ds,beta,mass,mu);
+    return IntegrateCooperFrye<BFTraits<1> >(dNPos, dNNeg, u, ds, beta, mass, mu);
   }
-  void IntegrateFermionCooperFrye(double& dNPos,double& dNNeg,const vector4& u,const vector4& ds,double beta,double mass,double mu){
-    return IntegrateCooperFrye<BFTraits<-1> >(dNPos,dNNeg,u,ds,beta,mass,mu);
+  void IntegrateFermionCooperFrye(double& dNPos, double& dNNeg, const vector4& u, const vector4& ds, double beta, double mass, double mu) {
+    return IntegrateCooperFrye<BFTraits<-1> >(dNPos, dNNeg, u, ds, beta, mass, mu);
   }
 
-  double IntegrateCFMomentum(int sign,double xsig,double bmu,double bmass){
-    if(sign==-1)
-      return BFTraits<-1>::IntegralP(xsig,bmu,bmass);
+  double IntegrateCFMomentum(int sign, double xsig, double bmu, double bmass) {
+    if (sign == -1)
+      return BFTraits<-1>::IntegralP(xsig, bmu, bmass);
     else
-      return BFTraits<+1>::IntegralP(xsig,bmu,bmass);
+      return BFTraits<+1>::IntegralP(xsig, bmu, bmass);
   }
 
 //NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN

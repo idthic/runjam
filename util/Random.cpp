@@ -45,7 +45,7 @@ int Random::getRandPoisson(double lambda) {
     double const k        = std::log(c * ibeta) - lambda;
     double const lnLambda = std::log(lambda);
 
-    for(;;){
+    for (;;) {
       double const u = Random::getRand();
       double const y = std::log(1.0 / u - 1.0);
       int    const n = (int) std::floor(lambda - y*ibeta + 0.5);

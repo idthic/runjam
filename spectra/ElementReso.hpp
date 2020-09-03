@@ -9,7 +9,7 @@
 namespace idt {
 namespace hydro2jam {
 
-class ElementReso : public HydroSpectrum{
+class ElementReso: public HydroSpectrum {
 protected:
   ResonanceListPCE rlist;
   //double  *mass, *deg, *degeff, *mu,  *anti;
@@ -35,10 +35,10 @@ public:
   ElementReso(std::string dir, std::string* fname, int kint, int eos_pce, std::string fname2);
   //    ElementReso(std::string dir, std::string* fname, int kint);
   ~ElementReso();
-  void setBaryonFree(int i) {baryonfree=i;}
-  //    void setNresoLoop(int i) {nreso_loop=i;}
-  void setTMPF(double t) {tmpf=t / hbarc_MeVfm * 1000.0;}
-  void setMUBF(double m) {mubf=m / hbarc_MeVfm * 1000.0;}
+  void setBaryonFree(int i) { baryonfree = i; }
+  //    void setNresoLoop(int i) { nreso_loop = i;}
+  void setTMPF(double t) { tmpf = t / hbarc_MeVfm * 1000.0; }
+  void setMUBF(double m) { mubf = m / hbarc_MeVfm * 1000.0; }
   void initialize();
   void analyze(std::string fn);
 private:

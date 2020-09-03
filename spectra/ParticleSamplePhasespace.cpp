@@ -11,11 +11,11 @@ namespace idt {
 namespace hydro2jam {
 namespace {
 
-  class ParticleSampleReadPhasespaceData:public ParticleSampleBase{
+  class ParticleSampleReadPhasespaceData: public ParticleSampleBase {
     std::string fname_phasespace_dat;
   public:
-    ParticleSampleReadPhasespaceData(std::string const& fname_phasespace_dat)
-      :fname_phasespace_dat(fname_phasespace_dat)
+    ParticleSampleReadPhasespaceData(std::string const& fname_phasespace_dat):
+      fname_phasespace_dat(fname_phasespace_dat)
     {
       this->m_currentSampleIndex = -1;
       this->m_numberOfSamples = -1;
@@ -36,7 +36,7 @@ namespace {
   private:
     virtual ParticleIDType::value_type getParticleIdType() const { return ParticleIDType::PDGCode; }
 
-    virtual std::vector<Particle*> const& getParticleList() const{
+    virtual std::vector<Particle*> const& getParticleList() const {
       if (m_currentSampleIndex < 0) {
         std::cerr << "ParticleSampleReadPhasespaceData: A phasespace file has not been read." << std::endl;
         std::exit(EXIT_FAILURE);
@@ -126,11 +126,11 @@ namespace {
     }
   };
 
-  class ParticleSampleReadPhasespaceBinary:public ParticleSampleBase{
+  class ParticleSampleReadPhasespaceBinary: public ParticleSampleBase {
     std::string fname_phasespace_bin;
   public:
-    ParticleSampleReadPhasespaceBinary(std::string const& fname_phasespace_bin)
-      :fname_phasespace_bin(fname_phasespace_bin)
+    ParticleSampleReadPhasespaceBinary(std::string const& fname_phasespace_bin):
+      fname_phasespace_bin(fname_phasespace_bin)
     {
       this->m_currentSampleIndex = -1;
       this->m_numberOfSamples = 1000;
@@ -151,7 +151,7 @@ namespace {
   private:
     virtual ParticleIDType::value_type getParticleIdType() const { return ParticleIDType::PDGCode; }
 
-    virtual std::vector<Particle*> const& getParticleList() const{
+    virtual std::vector<Particle*> const& getParticleList() const {
       if (m_currentSampleIndex < 0) {
         std::cerr << "ParticleSampleReadPhasespaceBinary: A phasespace file has not been read." << std::endl;
         std::exit(EXIT_FAILURE);
