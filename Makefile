@@ -32,6 +32,7 @@ OBJDIR := obj
 
 hydro2jam_OBJS := \
   $(OBJDIR)/main.o \
+  $(OBJDIR)/args.o \
   $(OBJDIR)/jam/Jam1.o \
   $(OBJDIR)/ksh/integrator.o \
   $(OBJDIR)/spectra/ElementReso.o \
@@ -53,12 +54,31 @@ directories += $(OBJDIR) $(OBJDIR)/util $(OBJDIR)/spectra $(OBJDIR)/jam $(OBJDIR
 $(OBJDIR)/%.o: %.cpp | $(OBJDIR) $(OBJDIR)/util $(OBJDIR)/spectra $(OBJDIR)/jam $(OBJDIR)/ksh
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
-$(directories):
-	mkdir -p $@
-
 all: hydro2jam.exe
 hydro2jam.exe: $(hydro2jam_OBJS)
 	$(CXX) $(LDFLAGS) -o $@ $^ $(hydro2jam_LIBS)
 
+
+#---------------------------------------
+# Install
+
+$(INSDIR)/bin/hydro2jam.exe: hydro2jam.exe | $(INSDIR)/bin
+	cp $< $@
+$(INSDIR)/share/hydro2jam/%: data/% | $(INSDIR)/share/hydro2jam
+	cp $< $@
+directories += $(INSDIR)/bin $(INSDIR)/share/hydro2jam
+install-files += \
+  $(INSDIR)/bin/hydro2jam.exe \
+  $(INSDIR)/share/hydro2jam/ResonanceEosqJam.dat \
+  $(INSDIR)/share/hydro2jam/ResonanceJam.dat
+install: $(install-files)
+.PHONY: install
+
+#---------------------------------------
+# Clean
+
 clean:
 	-rm -rvf obj
+
+$(directories):
+	mkdir -p $@

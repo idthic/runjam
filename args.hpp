@@ -116,9 +116,7 @@ namespace hydro2jam {
     int kintmp() const {
       return this->get_config("hydrojet_kintmp", 5);
     }
-    std::string resodata() const {
-      return this->get_config<std::string>("hydro2jam_resodata", "data/ResonanceJam.dat");
-    }
+    std::string resodata() const;
     std::string indir() const {
       return this->get_config<std::string>("hydrojet_directory", "test");
     }

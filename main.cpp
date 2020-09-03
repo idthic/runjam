@@ -52,7 +52,7 @@ private:
       "  -w, hydro2jam_switch_weak_decay=INT [0]   sw_weakdecay {0 | 1}\n"
       "      hydro2jam_phi_decays=BOOL [true]\n"
       "      hydro2jam_decay_only=BOOL [false]\n"
-      "  -resodata, hydro2jam_resodata=FILE [data/ResonanceJam.dat] resodata\n"
+      "  -resodata, hydro2jam_resodata=FILE [ResonanceJam.dat] resodata\n"
       "\n"
       " Output options\n"
       "  -dirJAM, hydro2jam_output_directory=DIR [out] directory of output files\n"

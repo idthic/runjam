@@ -19,7 +19,7 @@ hydro2jam_output_phbin0=false
 hydro2jam_turnsOffViscousEffect=0
 hydro2jam_oversampling_factor=1.0
 hydro2jam_switching_temperature=-1
-hydro2jam_resodata=dict/ResonanceJam.dat
+hydro2jam_resodata=ResonanceJam.dat
 
 # Note: currently this should be 0
 hydro2jam_switch_weak_decay=0
