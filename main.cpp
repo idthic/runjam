@@ -37,7 +37,7 @@ public:
 private:
   static void cmd_help() {
     std::printf(
-      "usage: hydro2jam [subcommand] [options]\n"
+      "usage: hydro2jam [SUBCOMMAND] [OPTIONS|VAR=VALUE]\n"
       "\n"
       "SUBCOMMAND\n"
       "  cascade (default)\n"
@@ -52,15 +52,15 @@ private:
       "  -w, hydro2jam_switch_weak_decay=INT [0]   sw_weakdecay {0 | 1}\n"
       "      hydro2jam_phi_decays=BOOL [true]\n"
       "      hydro2jam_decay_only=BOOL [false]\n"
-      "  -resodata, hydro2jam_resodata=FILE [ResonanceJam.dat] resodata\n"
+      "  --resodata, hydro2jam_resodata=FILE [ResonanceJam.dat] resodata\n"
       "\n"
       " Output options\n"
-      "  -dirJAM, hydro2jam_output_directory=DIR [out] directory of output files\n"
-      "  -d,  hydro2jam_phasespace_enabled=INT   [1] dump phasespace\n"
-      "  -f,  hydro2jam_phasespace_fname=FILE    [phasespace.dat] output filename\n"
-      "  -f0, hydro2jam_phasespace_fname0=FILE   [phasespace0.dat] output filename\n"
-      "       hydro2jam_output_phbin=BOOL        [false] output binary phasespace\n"
-      "       hydro2jam_output_phbin0=BOOL       [false] output binary phasespace0\n"
+      "  -o,        hydro2jam_output_directory=DIR [out]   directory of output files\n"
+      "  -d,        hydro2jam_phasespace_enabled=INT [1]   dump phasespace\n"
+      "  --fphase,  hydro2jam_phasespace_fname=FILE [phasespace.dat]   output filename\n"
+      "  --fphase0, hydro2jam_phasespace_fname0=FILE [phasespace0.dat] output filename\n"
+      "             hydro2jam_output_phbin=BOOL [false]    output binary phasespace\n"
+      "             hydro2jam_output_phbin0=BOOL [false]   output binary phasespace0\n"
       "\n"
       " Initialiation options\n"
       "  -i ICSPEC       specify initial condition\n"
@@ -76,14 +76,14 @@ private:
       "                  hydro2jam \"particlesample_pos.dat\"\n"
       "\n"
       " Options for hydrojet hypersurface\n"
-      "  -ftemp, hydrojet_kintmp=INT     [5] freezeout temperature type\n"
-      "  -pce,   hydrojet_eospce=INT     [6] eos_pce\n"
-      "  -bfree, hydrojet_baryonfree=INT [1] baryonfree\n"
-      "  -dir,   hydrojet_directory=DIR  [test] directory of freezeout.dat\n"
-      "  -dt,    hydrojet_deltat=NUM     [0.3] delta tau\n"
-      "  -dx,    hydrojet_deltax=NUM     [0.3] delta x\n"
-      "  -dy,    hydrojet_deltay=NUM     [0.3] delta y\n"
-      "  -dh,    hydrojet_deltah=NUM     [0.3] delta eta\n"
+      "  --hydrojet-ftemp, hydrojet_kintmp=INT [5]       freezeout temperature type\n"
+      "  --hydrojet-pce,   hydrojet_eospce=INT [6]       eos_pce\n"
+      "  --hydrojet-bfree, hydrojet_baryonfree=INT [1]   baryonfree\n"
+      "  --hydrojet-dir,   hydrojet_directory=DIR [test] directory of freezeout.dat\n"
+      "  --hydrojet-dt,    hydrojet_deltat=NUM [0.3]     delta tau\n"
+      "  --hydrojet-dx,    hydrojet_deltax=NUM [0.3]     delta x\n"
+      "  --hydrojet-dy,    hydrojet_deltay=NUM [0.3]     delta y\n"
+      "  --hydrojet-dh,    hydrojet_deltah=NUM [0.3]     delta eta\n"
       "\n"
       " Options for c0lrf sampler\n"
       "  --switching-temperature, hydro2jam_switching_temperature=TEMP [155]\n"
@@ -95,9 +95,9 @@ private:
       "\n"
       "SAMPLE\n"
       "\n"
-      "$ ./hydro2jam -s 12345 -dir hydro -dirJAM jam\n"
-      "$ ./hydro2jam -s 12345 -i phase:phasespace0.in -dirJAM jam\n"
-      "$ ./hydro2jam decay -s 12345 -i phase:phasespace0.in -dirJAM jam\n"
+      "$ ./hydro2jam cascade -s 12345 -o jam --hydrojet-dir hydro\n"
+      "$ ./hydro2jam cascade -s 12345 -o jam -i phase:phasespace0.in\n"
+      "$ ./hydro2jam decay -s 12345 -o jam -i phase:phasespace0.in\n"
       "\n"
     );
   }
@@ -108,14 +108,18 @@ private:
   hydro2jam_context* ctx;
 
   int i;
-  char* arg;
+  const char* arg;
+  int arg_index;
+  const char* arg_optarg;
   bool flag_error;
 
   const char* get_optarg() {
-    if (i < argc) {
+    if (arg_optarg) {
+      return arg_optarg;
+    } else if (i < argc) {
       return argv[i++];
     } else {
-      std::cerr << "hydro2jam:$" << i-1 << " (" << arg << "): missing optional argument." << std::endl;
+      std::cerr << "hydro2jam:$" << arg_index << " (" << arg << "): missing optional argument." << std::endl;
       flag_error = true;
       return NULL;
     }
@@ -126,18 +130,15 @@ private:
       ctx->set_value(key, optarg);
   }
 
-  void assign_optarg_double(const char* key, const char* value) {
-    if (*value) {
-      ctx->set_value(key, std::atof(value));
-    } else {
-      std::cerr << "hydro2jam:option(" << arg << "): the argument of the option is empty." << std::endl;
-      flag_error = true;
-    }
-  }
-
   void assign_optarg_double(const char* key) {
-    if (const char* optarg = get_optarg())
-      assign_optarg_double(key, optarg);
+    if (const char* optarg = get_optarg()) {
+      if (*optarg) {
+        ctx->set_value(key, std::atof(optarg));
+      } else {
+        std::cerr << "hydro2jam:option(" << arg << "): the argument of the option is empty." << std::endl;
+        flag_error = true;
+      }
+    }
   }
 
   void assign_optarg_int(const char* key) {
@@ -164,21 +165,41 @@ private:
 private:
   void read_longname_option() {
     std::string longname = arg + 2;
-    std::string a;
     std::size_t ia;
     if ((ia = longname.find('=', 0)) != std::string::npos) {
-      a = longname.substr(ia + 1);
+      arg_optarg = &arg[2 + ia + 1]; // = の右辺
       longname = longname.substr(0, ia);
     }
 
     if (longname == "help") {
       cmd_help();
       std::exit(EXIT_SUCCESS);
+    } else if (longname == "resodata") {
+      assign_optarg("hydro2jam_resodata");
+    } else if (longname == "fphase") {
+      assign_optarg("hydro2jam_phasespace_fname");
+    } else if (longname == "fphase0") {
+      assign_optarg("hydro2jam_phasespace_fname0");
+
+    } else if (longname == "hydrojet-dir") {
+      assign_optarg("hydrojet_directory");
+    } else if (longname == "hydrojet-ftemp")  {
+      assign_optarg_int("hydrojet_kintmp");
+    } else if (longname == "hydrojet-pce") {
+      assign_optarg_int("hydrojet_eospce");
+    } else if (longname == "hydrojet-bfree") {
+      assign_optarg_int("hydrojet_baryonfree");
+    } else if (longname == "hydrojet-dt") {
+      assign_optarg_double("hydrojet_deltat");
+    } else if (longname == "hydrojet-dx") {
+      assign_optarg_double("hydrojet_deltax");
+    } else if (longname == "hydrojet-dy") {
+      assign_optarg_double("hydrojet_deltay");
+    } else if (longname == "hydrojet-dh") {
+      assign_optarg_double("hydrojet_deltah");
+
     } else if (longname == "switching-temperature") {
-      if (ia != std::string::npos)
-        assign_optarg_double("hydro2jam_switching_temperature", a.c_str());
-      else
-        assign_optarg_double("hydro2jam_switching_temperature");
+      assign_optarg_double("hydro2jam_switching_temperature");
     } else {
       std::cerr << "unknown option '" << arg << "'" << std::endl;
       flag_error = true;
@@ -192,40 +213,33 @@ private:
       assign_optarg_int("hydro2jam_nevent");
     } else if (std::strcmp(arg, "-t") == 0) {
       assign_optarg_int("hydro2jam_oversampling_factor");
-    } else if (std::strcmp(arg, "-dirJAM") == 0) {
+    } else if (std::strcmp(arg, "-o") == 0) {
       assign_optarg("hydro2jam_output_directory");
-    } else if (std::strcmp(arg, "-w") == 0) {
-      assign_optarg_int("hydro2jam_swtich_weak_decay");
-    } else if (std::strcmp(arg, "-resodata") == 0) {
-      assign_optarg("hydro2jam_resodata");
     } else if (std::strcmp(arg, "-d") == 0) {
       assign_optarg_int("hydro2jam_phasespace_enabled");
-    } else if (std::strcmp(arg, "-f") == 0) {
-      assign_optarg("hydro2jam_phasespace_fname");
-    } else if (std::strcmp(arg, "-f0") == 0) {
-      assign_optarg("hydro2jam_phasespace_fname0");
-    } else if (std::strcmp(arg, "-dir") == 0) {
-      assign_optarg("hydrojet_directory");
-    } else if (std::strcmp(arg, "-ftemp") == 0)  {
-      assign_optarg_int("hydrojet_kintmp");
-    } else if (std::strcmp(arg, "-pce") == 0) {
-      assign_optarg_int("hydrojet_eospce");
-    } else if (std::strcmp(arg, "-bfree") == 0) {
-      assign_optarg_int("hydrojet_baryonfree");
-    } else if (std::strcmp(arg, "-dt") == 0) {
-      assign_optarg_double("hydrojet_deltat");
-    } else if (std::strcmp(arg, "-dx") == 0) {
-      assign_optarg_double("hydrojet_deltax");
-    } else if (std::strcmp(arg, "-dy") == 0) {
-      assign_optarg_double("hydrojet_deltay");
-    } else if (std::strcmp(arg, "-dh") == 0) {
-      assign_optarg_double("hydrojet_deltah");
+    } else if (std::strcmp(arg, "-w") == 0) {
+      assign_optarg_int("hydro2jam_swtich_weak_decay");
     } else if (std::strcmp(arg, "-i") == 0) {
       assign_optarg_input();
     } else {
-      std::cerr << "hydro2jam:$" << i-1 << ": unknown option '" << arg << "'" << std::endl;
+      std::cerr << "hydro2jam:$" << arg_index << ": unknown option '" << arg << "'" << std::endl;
       flag_error = true;
     }
+  }
+
+  static bool is_varname(const char* begin, const char* end, const char* needle) {
+    while (*begin != *end && *begin == *needle) begin++, needle++;
+    return begin == end && *needle == '\0';
+  }
+  bool read_assign() {
+    const char* p = arg;
+    while (std::isalnum(*p) && *p == '_') p++;
+    if (p == arg || *p != '=') return false;
+
+    std::string const name(arg, p);
+    const char* const value = p + 1;
+    ctx->set_value(name.c_str(), value);
+    return true;
   }
 public:
   int read(int argc, char** argv, hydro2jam_context& ctx) {
@@ -235,7 +249,8 @@ public:
     this->flag_error = false;
 
     for (i = 1; i < argc; ) {
-      arg = argv[i++];
+      arg = argv[arg_index = i++];
+      arg_optarg = nullptr;
       if (arg[0] == '-') {
         if (arg[1] == '-') {
           this->read_longname_option();
@@ -244,10 +259,10 @@ public:
         }
       } else {
         // option 以外の文字列
-        if (i-1 == 1) {
+        if (arg_index == 1) {
           this->subcommand = arg;
-        } else {
-          std::cerr << "hydro2jam:$" << i-1 << ": unrecognized argument '" << arg << "'" << std::endl;
+        } else if (!read_assign()) {
+          std::cerr << "hydro2jam:$" << arg_index << ": unrecognized argument '" << arg << "'" << std::endl;
           flag_error = true;
         }
       }
