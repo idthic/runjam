@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+PACKAGE_VERSION=0.1a
+libjam_PREFIX=~/opt/jam/1.820
+libjam_MXV=200000
+CXX=g++
+
 function readargs/option:with-jam {
   if [[ -f $1/lib/libjam.a || -f $f/lib/libjam.so ]]; then
     libjam_PREFIX=$1
@@ -33,8 +38,8 @@ function readargs {
         printf -v "${arg%%=*}" %s "${arg#*=}"
       elif [[ $arg == -* ]]; then
         case $arg in
-        (--prefix=*) prefix=${arg#*=} ;;
-        (--prefix)   prefix=$1; shift ;;
+        (--prefix=*) PREFIX=${arg#*=} ;;
+        (--prefix)   PREFIX=$1; shift ;;
         (--with-jam=*) readargs/option:with-jam "${arg#*=}" ;;
         (--with-jam)   readargs/option:with-jam "$1"; shift ;;
         (--help) readargs/option:help
@@ -68,13 +73,25 @@ function main {
     {
       echo "configure := ./configure $*"
       echo "PREFIX    := $PREFIX"
+      echo "CXX       := $CXX"
       echo "CPPFLAGS  := $CPPFLAGS"
       echo "CXXFLAGS  := $CXXFLAGS"
       echo "LDFLAGS   := $LDFLAGS"
       echo "LIBS      := $LIBS"
       echo "libjam_PREFIX := $libjam_PREFIX"
+      echo "libjam_MXV    := $libjam_MXV"
     } | tee /dev/tty
   } > config.mk
+
+  {
+    echo "#ifndef CONFIG_HPP"
+    echo "#define CONFIG_HPP"
+    echo "#define PACKAGE_VERSION \"$PACKAGE_VERSION\""
+    echo "#define PACKAGE_PREFIX  \"$PREFIX\""
+    echo "#define PACKAGE_BUILD   \"$PWD\""
+    echo "#define CONFIG_JAM_MXV  $libjam_MXV"
+    echo "#endif"
+  } > config.hpp
   echo ---------------------------------------
 }
 

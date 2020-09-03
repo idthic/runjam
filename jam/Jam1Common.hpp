@@ -1,12 +1,13 @@
 #ifndef hydro2jam_jam_Jam1Common_h
 #define hydro2jam_jam_Jam1Common_h
 
+#include "../config.hpp"
 // This number should be the same as "mxv" in jam1.inc
-#ifndef JAM_MXV
-# define JAM_MXV  200000
-//#define JAM_MXV  100000
-//#define JAM_MXV  50000
-//#define JAM_MXV  30000
+#ifndef CONFIG_JAM_MXV
+# define CONFIG_JAM_MXV  200000
+//#define CONFIG_JAM_MXV  100000
+//#define CONFIG_JAM_MXV  50000
+//#define CONFIG_JAM_MXV  30000
 #endif
 
 namespace idt {
@@ -52,10 +53,10 @@ extern "C" double  pjmass_(int *kf);
 #endif
 
 struct Jamevnt1 {
-  double R[JAM_MXV][5];
-  double P[JAM_MXV][5];
-  double V[JAM_MXV][5];
-  int    K[JAM_MXV][11];
+  double R[CONFIG_JAM_MXV][5];
+  double P[CONFIG_JAM_MXV][5];
+  double V[CONFIG_JAM_MXV][5];
+  int    K[CONFIG_JAM_MXV][11];
 };
 extern "C" Jamevnt1 jamevnt1_;
 

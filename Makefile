@@ -4,23 +4,25 @@ all:
 .PHONY: all clean
 
 #------------------------------------------------------------------------------
-# Configuration
-
-CXX      := g++
-CXXFLAGS :=
-LDFLAGS  :=
-LIBS     :=
-libjam_PREFIX := $(HOME)/opt/jam/1.820
-libjam_MXV    := 200000
+# Compile config
 
 configure := ./configure
-
--include config.mk
 config.mk: configure
 	$(configure)
 
+-include config.mk
+user_CPPFLAGS := $(CPPFLAGS)
+user_CXXFLAGS := $(CXXFLAGS)
+user_LDFLAGS  := $(LDFLAGS)
+user_LIBS     := $(LIBS)
+
+INSDIR := $(DESTDIR)$(PREFIX)
 libjam_LIBDIR := $(libjam_PREFIX)/lib
-CXXFLAGS += -march=native -O3
+
+CXXFLAGS := $(user_CXXFLAGS) -march=native -O3
+CPPFLAGS =  $(user_CPPFLAGS) -I . -MD -MP -MF $(@:.o=.dep)
+LDFLAGS  := $(user_LDFLAGS)  -L $(libjam_LIBDIR) -Wl,-rpath,$(libjam_LIBDIR)
+LIBS     := $(user_LIBS)
 
 #------------------------------------------------------------------------------
 
@@ -28,8 +30,6 @@ CXXFLAGS += -march=native -O3
 
 OBJDIR := obj
 
-CPPFLAGS = -DJAM_MXV=$(libjam_MXV) -I . -MD -MP -MF $(@:.o=.dep)
-LDFLAGS += -L $(libjam_LIBDIR) -Wl,-rpath,$(libjam_LIBDIR)
 hydro2jam_OBJS := \
   $(OBJDIR)/main.o \
   $(OBJDIR)/jam/Jam1.o \

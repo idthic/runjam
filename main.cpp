@@ -7,13 +7,12 @@
 #include <algorithm>
 #include <iostream>
 
+#include "config.hpp"
 #include "util/Random.hpp"
 #include "util/PyRand.hpp"
 #include "Hydro2Jam.hpp"
 #include "spectra/ParticleSampleViscous.hpp"
 #include "jam/Jam1.hpp"
-
-#define PACKAGE_VERSION "0.1a"
 
 using namespace idt::hydro2jam;
 
