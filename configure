@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+
+function readargs/option:with-jam {
+  if [[ -f $1/lib/libjam.a || -f $f/lib/libjam.so ]]; then
+    libjam_PREFIX=$1
+  else
+    echo "configure: jam not fond at '$1'" >&2
+    flags=E$flags
+  fi
+}
+function readargs/option:help {
+  printf '%s\n' \
+         'usage: configure [OPTION|VAR=VAL]...' \
+         '' \
+         'OPTION' \
+         '  --prefix=DIR' \
+         '  --with-jam=DIR' \
+         ''
+}
+
+## @fn readargs
+##   @var[out] flags
+##   @var[out] PREFIX
+##   @var[out] libjam_PREFIX
+function readargs {
+  flags=
+  PREFIX=
+  libjam_PREFIX=
+  while (($#)); do
+    local arg=$1; shift
+    if [[ $flags != *R* ]]; then
+      if local rex='^[[:alnum:]_]+='; [[ $arg =~ $rex ]]; then
+        printf -v "${arg%%=*}" %s "${arg#*=}"
+      elif [[ $arg == -* ]]; then
+        case $arg in
+        (--prefix=*) prefix=${arg#*=} ;;
+        (--prefix)   prefix=$1; shift ;;
+        (--with-jam=*) readargs/option:with-jam "${arg#*=}" ;;
+        (--with-jam)   readargs/option:with-jam "$1"; shift ;;
+        (--help) readargs/option:help
+        (*)
+          echo "configure: unknown option '$arg'" >&2
+          flags=E$flags ;;
+        esac
+      else
+        echo "configure: unrecognized argument '$arg'" >&2
+        flags=E$flags
+      fi
+    fi
+  done
+
+  [[ $libjam_PREFIX ]] ||
+    readargs/option:with-jam $HOME/opt/jam/1.820 ||
+    readargs/option:with-jam $HOME/opt/jam-1.820 ||
+    flags=E$flags
+
+  : "${PREFIX:-/usr}"
+  [[ $flags != *E* ]]
+}
+
+function main {
+  local flags= libjam_PREFIX=
+  readargs "$@" || return 1
+  echo ---------------------------------------
+  {
+    echo '# -*- mode: makefile-gmake -*-'
+    echo
+    {
+      echo "configure := ./configure $*"
+      echo "PREFIX    := $PREFIX"
+      echo "CPPFLAGS  := $CPPFLAGS"
+      echo "CXXFLAGS  := $CXXFLAGS"
+      echo "LDFLAGS   := $LDFLAGS"
+      echo "LIBS      := $LIBS"
+      echo "libjam_PREFIX := $libjam_PREFIX"
+    } | tee /dev/tty
+  } > config.mk
+  echo ---------------------------------------
+}
+
+main "$@"

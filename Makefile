@@ -6,13 +6,21 @@ all:
 #------------------------------------------------------------------------------
 # Configuration
 
-libjam_LIBDIR := $(HOME)/opt/jam-1.820/lib
-libjam_MXV    := 200000
-
-#CXX      := g++
-CXXFLAGS := -march=native -O3
+CXX      := g++
+CXXFLAGS :=
 LDFLAGS  :=
 LIBS     :=
+libjam_PREFIX := $(HOME)/opt/jam/1.820
+libjam_MXV    := 200000
+
+configure := ./configure
+
+-include config.mk
+config.mk: configure
+	$(configure)
+
+libjam_LIBDIR := $(libjam_PREFIX)/lib
+CXXFLAGS += -march=native -O3
 
 #------------------------------------------------------------------------------
 

@@ -4,5 +4,6 @@
 *.dep
 *~
 
-hydro2jam.exe
-
+/config.mk
+/hydro2jam.exe
+/dist
