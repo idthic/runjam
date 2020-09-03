@@ -107,7 +107,7 @@ namespace hydro2jam {
       return this->get_config("hydro2jam_nevent", defaultValue);
     }
     std::string outdir() const {
-      return this->get_config<std::string>("hydro2jam_output_directory", "jam");
+      return this->get_config<std::string>("hydro2jam_output_directory", "out");
     }
 
     int eospce() const {

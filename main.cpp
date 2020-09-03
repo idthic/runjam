@@ -56,7 +56,7 @@ private:
       "  -resodata, hydro2jam_resodata=FILE [data/ResonanceJam.dat] resodata\n"
       "\n"
       " Output options\n"
-      "  -dirJAM, hydro2jam_output_directory=DIR [jam] directory of output files\n"
+      "  -dirJAM, hydro2jam_output_directory=DIR [out] directory of output files\n"
       "  -d,  hydro2jam_phasespace_enabled=INT   [1] dump phasespace\n"
       "  -f,  hydro2jam_phasespace_fname=FILE    [phasespace.dat] output filename\n"
       "  -f0, hydro2jam_phasespace_fname0=FILE   [phasespace0.dat] output filename\n"
