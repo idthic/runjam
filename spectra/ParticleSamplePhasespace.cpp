@@ -182,7 +182,7 @@ namespace {
 
           char magic[4];
           if (!ifs.read(magic, sizeof magic)) {
-            if (pos_start == ifs.tellg()) break;
+            if (ifs.tellg() == pos_start || ifs.tellg() == (std::ifstream::pos_type) -1) break;
             goto error_invalid_format;
           } else if (std::memcmp(magic, "EvPh", sizeof magic) != 0) {
             goto error_invalid_format;
