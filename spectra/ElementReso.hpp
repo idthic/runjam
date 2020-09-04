@@ -12,11 +12,7 @@ namespace hydro2jam {
 class ElementReso: public HydroSpectrum {
 protected:
   ResonanceListPCE rlist;
-  //double  *mass, *deg, *degeff, *mu,  *anti;
-  //int bf[151];
 
-  double  phi[12], phiw[12], y[38], yw[38];
-  double  pt[58], ptw[58];
   std::ifstream fdata;
   std::ifstream edata;
   std::vector<std::string>   elemFile;
@@ -32,10 +28,8 @@ protected:
 public:
   double ymin, ymax;
   ElementReso(std::string dir, std::string* fname, int kint, int eos_pce, std::string fname2);
-  //    ElementReso(std::string dir, std::string* fname, int kint);
   ~ElementReso();
   void setBaryonFree(int i) { baryonfree = i; }
-  //    void setNresoLoop(int i) { nreso_loop = i;}
   void setTMPF(double t) { tmpf = t / hbarc_MeVfm * 1000.0; }
   void setMUBF(double m) { mubf = m / hbarc_MeVfm * 1000.0; }
   void initialize();

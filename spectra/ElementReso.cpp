@@ -62,16 +62,6 @@ void ElementReso::initialize()
       std::exit(1);
     }
   }
-
-  //...integral region
-  //    double ymin = -6.0;
-  //    double ymax = 6.0;
-  double ptmin = 1e3 / hbarc_MeVfm;
-
-  // numerical integral
-  Gauss12(0.0, 2. * pi, phi, phiw);
-  //    Gauss38(ymin, ymax, y, yw);
-  GauLag(0.0, ptmin, pt, ptw);
 }
 
 void ElementReso::analyze(std::string fnameFreezeoutDat) {

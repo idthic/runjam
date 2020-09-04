@@ -57,9 +57,6 @@ public:
   int  readEData();
 
   void setCoef(int c) {co = c;}
-  static void Gauss12(double xini, double xfin, double* xn, double* wn);
-  static void Gauss38(double xini, double xfin, double* xn, double* wn);
-  static void GauLag(double xini, double xmid, double* xn, double* wn);
 
 protected:
   double pti, cosp, sinp, gam;

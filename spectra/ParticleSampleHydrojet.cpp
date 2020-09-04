@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <new>
 #include <algorithm>
+#include <ksh/integrator.hpp>
 #include <ksh/phys/Minkowski.hpp>
 #include <util/Constants.hpp>
 #include <util/Random.hpp>
@@ -369,31 +370,30 @@ getSample(double vx, double vy, double yv,
 {
 
   double p[58], pw[58];
-  double p1[12], pw1[12];
-  // double  p1[38], pw1[38];
 
-  double ptmid=1e3 / hbarc_MeVfm;
-  double dx = getDx();
-  double dy = getDy();
-  double dh = getDh();
-  double dtau = getDtau();
-  double vz = tanh(yv);
-  double gamma =  cosh(yv) / sqrt(1.0 - (vx * vx + vy * vy) * cosh(yv) * cosh(yv));
-  double beta= 1./tf;
-  double mres = rlist[ir].mass;
-  double mres2 = mres*mres;
+  double const ptmid = 1e3 / hbarc_MeVfm;
+  double const dx = getDx();
+  double const dy = getDy();
+  double const dh = getDh();
+  double const dtau = getDtau();
+  double const vz = tanh(yv);
+  double const gamma =  cosh(yv) / sqrt(1.0 - (vx * vx + vy * vy) * cosh(yv) * cosh(yv));
+  double const beta= 1./tf;
+  double const mres = rlist[ir].mass;
+  double const mres2 = mres*mres;
   double prds, prx, pry, prz, er, pu;
 
-  GauLag(0.0, ptmid, p, pw);
-  double fm = 0.0;
-  for (int ip = 0; ip < 58; ip++) {
-    double eee = sqrt(p[ip] * p[ip] + mres2);
-    double aaa = (eee - rlist[ir].mu) * beta;
-    if (aaa < 30.0) {
-      aaa = exp(aaa);
-      fm += p[ip] * p [ip] * pw[ip] / (aaa + rlist[ir].bf);
-    }
-  }
+  double const mu = rlist[ir].mu;
+  double const sgn = rlist[ir].bf;
+  auto integrand = [mres2, beta, mu, sgn] (double const p) {
+    double const energy = std::sqrt(p * p + mres2);
+    double const x = (energy - mu) * beta;
+    if (x >= 30.0) return 0.0;
+    return p * p / (std::exp(x) + sgn);
+  };
+  double const fm
+    = kashiwa::IntegrateByGaussLegendre<38>(0.0, ptmid, integrand)
+    + kashiwa::IntegrateByGaussLaguerre<20>(ptmid, 1.0, integrand);
 
   double ranemis;
   // double facranmax = 1.6;
@@ -409,47 +409,35 @@ getSample(double vx, double vy, double yv,
   if (bulk == 0) {
     if (dsx != 0.0 || dsy != 0.0) {
       ranmax = dx * dh * tau * dtau * facranmax;
-      // Assuming dx = dy
-      //	ranmax = dx*dx*dx*2.0*tau*facranmax;
-      //                ^^^Coming from MABIKI/3
-      //                      in FreezeOutHyperSurface.cxx
-
     } else {
       ranmax = dtau * dx * dy * facranmax;
-      //	ranmax = dx*dx*dx*2.0*facranmax;
-      //                ^^^Coming from MABIKI/3
-      //                      in FreezeOutHyperSurface.cxx
     }
   }
   do {
     do {
-      //Generate momentum [0:6GeV/c]
-      //according to Bose/Fermi distribution
-      //in local rest frame
-      //using bisection method
+      // Generate momentum [0:6GeV/c] according to Bose/Fermi
+      // distribution in local rest frame using bisection method
       double r1 = Random::getRand() * fm;
       double pmax = 6000.0 / hbarc_MeVfm;
       double pmin = 0.0;
       double ppp = (pmax + pmin) * 0.5;
 
+      double const mu = rlist[ir].mu;
+      double const sgn = rlist[ir].bf;
       for (int id = 0; id < di; id++) {
         ppp = (pmax + pmin) * 0.5;
-        Gauss12(0.0, ppp, p1, pw1);
-        //	    Gauss38(0.0, ppp, p1, pw1);
-        double fp = 0.0;
-        for (int ip = 0; ip < 12;ip++) {
-          // for(int ip=0;ip<38;ip++) {
-          double eee = sqrt(p1[ip] * p1[ip] + mres2);
-          double aaa = (eee - rlist[ir].mu) * beta;
-          if (aaa < 100.0) {
-            aaa = exp(aaa);
-            fp += p1[ip] * p1[ip] * pw1[ip]/(aaa + rlist[ir].bf);
-          }
-        }
-        double f = fp - r1;
-        if (f > 0.0) pmax = ppp;
-        else pmin = ppp;
+        double const fp = kashiwa::IntegrateByGaussLegendre<12>(0.0, ppp,
+          [beta, mu, mres2, sgn] (double p) {
+            double energy = std::sqrt(p * p + mres2);
+            double aaa = (energy - mu) * beta;
+            return aaa < 100.0 ? p * p / (std::exp(aaa) + sgn) : 0.0;
+          });
+        if (fp > r1)
+          pmax = ppp;
+        else
+          pmin = ppp;
       }
+
       // random variable on unit sphere
       double r2 = -2 * Random::getRand() + 1;
       double theta = acos(r2);

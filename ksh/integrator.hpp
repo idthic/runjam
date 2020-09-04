@@ -1,22 +1,28 @@
 // -*- C++ -*-
 #ifndef kashiwa_integrator_hpp
 #define kashiwa_integrator_hpp
+#include <cstddef>
 namespace kashiwa {
-//NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 namespace integrator_detail {
   struct point_weight_pair {
     double t;
     double w;
   };
 
-  template<int I>
+  template<std::size_t I>
   struct GaussLegendre {
-    static const int order = I;
-    static const int data_size = (I + 1) / 2;
+    static const std::size_t order = I;
+    static const std::size_t data_size = (I + 1) / 2;
     static point_weight_pair data[data_size];
   };
+
+  template<std::size_t I>
+  struct GaussLaguerre {
+    static const std::size_t order = I;
+    static const std::size_t data_size = I;
+    static point_weight_pair data[I];
+  };
 }
-//NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 
   template<typename F>
   double IntegrateByTrapezoid(const double lower, const double upper, const int iN, const F& f) {
@@ -29,13 +35,13 @@ namespace integrator_detail {
     return s * dx;
   }
 
-  template<int I, typename F>
+  template<std::size_t I, typename F>
   double IntegrateByGaussLegendre(const double lower, const double upper, const F& f) {
     typedef integrator_detail::GaussLegendre<I> traits_t;
     double const center = 0.5 * (upper + lower);
     double const dxdt   = 0.5 * (upper - lower);
 
-    double s = 0;
+    double s = 0.0;
     for (int i = 0; i < I / 2; i++) {
       double const t = traits_t::data[i].t;
       double const w = traits_t::data[i].w;
@@ -45,7 +51,19 @@ namespace integrator_detail {
     return s * dxdt;
   }
 
-  template<int I>
+  template<std::size_t I, typename F>
+  double IntegrateByGaussLaguerre(const double lower, const double scale, F f) {
+    typedef integrator_detail::GaussLaguerre<I> traits_t;
+    double s = 0.0;
+    for (int i = 0; i < traits_t::data_size; i++) {
+      double const t = traits_t::data[i].t;
+      double const w = traits_t::data[i].w;
+      s += w * f(lower + scale * t);
+    }
+    return s * scale;
+  }
+
+  template<std::size_t I>
   class GaussLegendreIntegrator {
     double const xmin;
     double const xmax;
