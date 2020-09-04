@@ -5,15 +5,31 @@
 #include <util/Constants.hpp>
 
 #ifdef ALPHA
-# define abs  fabs
-inline double max(double a, double b) { return a >= b ? a : b; }
-inline double min(double a, double b) { return a <= b ? a : b; }
 # include <strstream>
 #else
 # include <sstream>
 #endif
 
 #include <iostream>
+
+#ifdef ALPHA
+inline double clamp(double value, double lower, double upper) {
+  return value < lower ? lower : value > uppper ? upper : value;
+}
+
+// 1 / (exp(x) + sgn)
+inline double thermal_distribution(double x, double sgn) {
+  double const value = 1.0 / (std::exp(clamp(x, -50.0, 50.0)) + sgn);
+  return value < 0.0 ? 0.0 : value;
+}
+#else
+// 1 / (exp(x) + sgn)
+inline double thermal_distribution(double x, double sgn) {
+  double const value = x < 30.0 ? 1.0 / (std::exp(x) + sgn) : 0.0;
+  return value < 0.0 ? 0.0 : value;
+}
+#endif
+
 
 namespace idt {
 namespace hydro2jam {
@@ -126,10 +142,14 @@ HydroSpectrum::HydroSpectrum(int kint, int eos_pce) {
 }
 
 //**********************************************************************
-//...sgn=1: fermion  -1:boson
-
+/// @fn double HydroSpectrum::thermaldist(double ee, double pz, double mu, int iw, int sgn);
+/// @param[in] ee
+/// @param[in] pz
+/// @param[in] mu
+/// @param[in] iw
+/// @param[in] sgn 1: fermion  -1:boson
 double HydroSpectrum::thermaldist(double ee, double pz, double mu, int iw, int sgn) {
-  if ((iw == 1) || (iw == 5)) {
+  if (iw == 1 || iw == 5) {
     double pds1 = ee * ds0 + pti * cosp * dsx + pti * sinp * dsy + pz * dsz;
     double pds4 = ee * ds0 + pti * cosp * dsx - pti * sinp * dsy + pz * dsz;
     double pds6 = ee * ds0 - pti * cosp * dsx + pti * sinp * dsy - pz * dsz;
@@ -138,88 +158,32 @@ double HydroSpectrum::thermaldist(double ee, double pz, double mu, int iw, int s
     double pu4 = gam * (ee - pti * cosp * vx + pti * sinp * vy - pz * vz);
     double pu6 = gam * (ee + pti * cosp * vx - pti * sinp * vy + pz * vz);
     double pu7 = gam * (ee + pti * cosp * vx + pti * sinp * vy + pz * vz);
-#ifdef ALPHA
-    double bose1 = exp(max(-50.0, min(50.0,(pu1 - mu) / tf)));
-    double bose4 = exp(max(-50.0, min(50.0,(pu4 - mu) / tf)));
-    double bose6 = exp(max(-50.0, min(50.0,(pu6 - mu) / tf)));
-    double bose7 = exp(max(-50.0, min(50.0,(pu7 - mu) / tf)));
-    bose1 = pds1 / (bose1 + sgn);
-    bose4 = pds4 / (bose4 + sgn);
-    bose6 = pds6 / (bose6 + sgn);
-    bose7 = pds7 / (bose7 + sgn);
-#else
-    double bose1 = 0.0;
-    double bose4 = 0.0;
-    double bose6 = 0.0;
-    double bose7 = 0.0;
-    double bse1 = beta * (pu1 - mu);
-    double bse4 = beta * (pu4 - mu);
-    double bse6 = beta * (pu6 - mu);
-    double bse7 = beta * (pu7 - mu);
-    if (bse1 < 30.0) bose1 = pds1 / (exp(bse1) + sgn);
-    if (bse4 < 30.0) bose4 = pds4 / (exp(bse4) + sgn);
-    if (bse6 < 30.0) bose6 = pds6 / (exp(bse6) + sgn);
-    if (bse7 < 30.0) bose7 = pds7 / (exp(bse7) + sgn);
-#endif
+    double bose1 = pds1 * thermal_distribution(beta * (pu1 - mu), sgn);
+    double bose4 = pds4 * thermal_distribution(beta * (pu4 - mu), sgn);
+    double bose6 = pds6 * thermal_distribution(beta * (pu6 - mu), sgn);
+    double bose7 = pds7 * thermal_distribution(beta * (pu7 - mu), sgn);
     return bose1 + bose4 + bose6 + bose7;
-    // return (bose1 + abs(bose1) + bose4 + abs(bose4)
-    //   +bose6 + abs(bose6) + bose7 + abs(bose7)) / 2.0;
-
-  } else if ((iw == 3) || (iw == 7)) {
+  } else if (iw == 3 || iw == 7) {
     double pds1 = ee * ds0 + pti * cosp * dsx + pti * sinp * dsy + pz * dsz;
     double pds6 = ee * ds0 - pti * cosp * dsx + pti * sinp * dsy - pz * dsz;
     double pu1 = gam * (ee - pti * cosp * vx - pti * sinp * vy - pz * vz);
     double pu6 = gam * (ee + pti * cosp * vx - pti * sinp * vy + pz * vz);
-#ifdef ALPHA
-    double bose1 = exp(max(-50.0, min(50.0,(pu1 - mu) / tf)));
-    double bose6 = exp(max(-50.0, min(50.0,(pu6 - mu) / tf)));
-    bose1 = pds1 / (bose1 + sgn);
-    bose6 = pds6 / (bose6 + sgn);
-#else
-    double bose1 = 0.0;
-    double bose6 = 0.0;
-    double bse1 = beta * (pu1 - mu);
-    double bse6 = beta * (pu6 - mu);
-    if (bse1 < 30.0) bose1 = pds1 / (exp(bse1) + sgn);
-    if (bse6 < 30.0) bose6 = pds6 / (exp(bse6) + sgn);
-#endif
+    double bose1 = pds1 * thermal_distribution(beta * (pu1 - mu), sgn);
+    double bose6 = pds6 * thermal_distribution(beta * (pu6 - mu), sgn);
     return bose1 + bose6;
-    //	return (bose1 + abs(bose1) + bose6 + abs(bose6)) / 2.0;
-
-  } else if ((iw == 2) || (iw == 6)) {
+  } else if (iw == 2 || iw == 6) {
     double pds1 = ee * ds0 + pti * cosp * dsx + pti * sinp * dsy + pz * dsz;
     double pds4 = ee * ds0 + pti * cosp * dsx - pti * sinp * dsy + pz * dsz;
     double pu1 = gam * (ee - pti * cosp * vx - pti * sinp * vy - pz * vz);
     double pu4 = gam * (ee - pti * cosp * vx + pti * sinp * vy - pz * vz);
-#ifdef ALPHA
-    double bose1 = exp(max(-50.0, min(50.0,(pu1 - mu) / tf)));
-    double bose4 = exp(max(-50.0, min(50.0,(pu4 - mu) / tf)));
-    bose1 = pds1 / (bose1 + sgn);
-    bose4 = pds4 / (bose4 + sgn);
-#else
-    double bose1 = 0.0;
-    double bose4 = 0.0;
-    double bse1 = beta * (pu1 - mu);
-    double bse4 = beta * (pu4 - mu);
-    if (bse1 < 30.0) bose1 = pds1 / (exp(bse1) + sgn);
-    if (bse4 < 30.0) bose4 = pds4 / (exp(bse4) + sgn);
-#endif
+    double bose1 = pds1 * thermal_distribution(beta * (pu1 - mu), sgn);
+    double bose4 = pds4 * thermal_distribution(beta * (pu4 - mu), sgn);
     return bose1 + bose4;
-    //	return (bose1 + abs(bose1) + bose4 + abs(bose4)) / 2.0;
-
-  } else if ((iw == 4) || (iw == 8)) {
+  } else if (iw == 4 || iw == 8) {
     double pds1 = ee * ds0 + pti * cosp * dsx + pti * sinp * dsy + pz * dsz;
     double pu1 = gam * (ee - pti * cosp * vx - pti * sinp * vy - pz * vz);
-#ifdef ALPHA
-    double bose1 = exp(max(-50.0, min(50.0,(pu1 - mu) / tf)));
-    bose1 = pds1 / (bose1 + sgn);
-#else
-    double bose1 = 0.0;
-    double bse1 = beta * (pu1 - mu);
-    if (bse1 < 30.0) bose1 = pds1 / (exp(bse1) + sgn);
-#endif
+    double bose1 = pds1 * thermal_distribution(beta * (pu1 - mu), sgn);
     return bose1;
-    //	return (bose1 + abs(bose1)) / 2.0;
   } else {
     std::cerr << "HydroSpec::thermaldist funny iw " << iw << std::endl;
     std::exit(1);
