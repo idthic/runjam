@@ -6,8 +6,8 @@
 
 #ifdef ALPHA
 # define abs  fabs
-inline double max(double a, double b) { return a>=b ? a:b;}
-inline double min(double a, double b) { return a<=b ? a:b;}
+inline double max(double a, double b) { return a >= b ? a : b; }
+inline double min(double a, double b) { return a <= b ? a : b; }
 # include <strstream>
 #else
 # include <sstream>
@@ -27,8 +27,7 @@ const double HydroSpectrum::mKaon    = 493.6;
 const double HydroSpectrum::mProton  = 939.0;
 
 //HydroSpectrum::HydroSpectrum(int kint)
-HydroSpectrum::HydroSpectrum(int kint, int eos_pce)
-{
+HydroSpectrum::HydroSpectrum(int kint, int eos_pce) {
   kineticTemp = kint;
 
   pi   = 3.1415926;
@@ -47,32 +46,24 @@ HydroSpectrum::HydroSpectrum(int kint, int eos_pce)
 	mpi   = 0.0;
 	mk    = 0.0;
 	mpro  = 0.0;
-
-  if (eos_pce !=10) {
+  if (eos_pce != 10) {
     mpi   = mPion / hbarc_MeVfm;
     mk    = mKaon / hbarc_MeVfm;
     mpro  = mProton / hbarc_MeVfm;
   }
-  //
-	mupi = 0.0;
-	muk = 0.0;
-	mup = 0.0;
-  //                                       chemical potential at f.o.(pion)
-  //                                        from pi to delta(1232)
-  //                                       chemical potential at f.o.(kaon)
-  //                                       from pi to delta(1232)
-  //                                       chemical potential at f.o.
-  //                                       from pi to delta(1232)
+
+	mupi = 0.0; //!< chemical potential at f.o. (pion)   from pi to delta(1232)
+	muk = 0.0;  //!< chemical potential at f.o. (kaon)   from pi to delta(1232)
+	mup = 0.0;  //!< chemical potential at f.o. (proton) from pi to delta(1232)
 
   if (eos_pce == 1) {
     switch (kineticTemp) {
-
       //   (tf=80mev)
     case 1:
       mupi = 0.951925e+02 / hbarc_MeVfm;
       muk = 0.233670e+03 / hbarc_MeVfm;
       mup = 0.456089e+03 / hbarc_MeVfm;
-      cout << "HydroSpectrum Tf=80MeV" << endl;
+      cout << "HydroSpectrum Tf=80MeV" << std::endl;
       break;
 
       //     (tf=100mev)
@@ -82,16 +73,15 @@ HydroSpectrum::HydroSpectrum(int kint, int eos_pce)
       //	  mupi = 0.0 / hbarc_MeVfm;//For J/psi
       muk = 0.180805e+03 / hbarc_MeVfm;
       mup = 0.348810e+03 / hbarc_MeVfm;
-      cout << "HydroSpectrum Tf=100MeV" << endl;
+      cout << "HydroSpectrum Tf=100MeV" << std::endl;
       break;
-
 
       //     (tf=120mev)
     case 3:
       mupi = 0.646814e+02 / hbarc_MeVfm;
       muk = 0.128598e+03 / hbarc_MeVfm;
       mup = 0.245865e+03 / hbarc_MeVfm;
-      cout << "HydroSpectrum Tf=120MeV" << endl;
+      cout << "HydroSpectrum Tf=120MeV" << std::endl;
       break;
 
       //     (tf=140mev)
@@ -99,7 +89,7 @@ HydroSpectrum::HydroSpectrum(int kint, int eos_pce)
       mupi = 0.406648e+02 / hbarc_MeVfm;
       muk = 0.633578e+02 / hbarc_MeVfm;
       mup = 0.145518e+03 / hbarc_MeVfm;
-      cout << "HydroSpectrum Tf=140MeV" << endl;
+      cout << "HydroSpectrum Tf=140MeV" << std::endl;
       break;
 
       //     (tf=160mev)
@@ -107,17 +97,15 @@ HydroSpectrum::HydroSpectrum(int kint, int eos_pce)
       mupi = 0.137867e+02 / hbarc_MeVfm;
       muk = 0.249125e+02 / hbarc_MeVfm;
       mup = 0.476744e+02 / hbarc_MeVfm;
-      cout << "HydroSpectrum Tf=160MeV" << endl;
+      cout << "HydroSpectrum Tf=160MeV" << std::endl;
       break;
 
     default:
-      cerr << "HydroSpectrum::  Not avaiable sorry" << endl;
-      cerr << " kinetic temperature = " << kineticTemp << endl;
-      exit(1);
+      std::cerr << "HydroSpectrum::  Not avaiable sorry" << std::endl;
+      std::cerr << " kinetic temperature = " << kineticTemp << std::endl;
+      std::exit(1);
     }
   }
-
-
 
   //      co = 1;
   //     ^^^^^^^---> V1
@@ -127,7 +115,6 @@ HydroSpectrum::HydroSpectrum(int kint, int eos_pce)
   //     ^^^^^^^---> V3
   //      co = 4;
   //     ^^^^^^^---> V3
-
 
   // KM, 2013/04/20, initializes the flag to rotate the data in freezeout.dat
   {
@@ -140,143 +127,6 @@ HydroSpectrum::HydroSpectrum(int kint, int eos_pce)
 
 //**********************************************************************
 //...sgn=1: fermion  -1:boson
-/*
-double HydroSpectrum::thermaldist(double mt, double yy, double mu, int iw, int sgn)
-{
-  double pds1, pds4, pds6, pds7;
-  double coshhhp = cosh(yy + hh);
-  double coshhhm = cosh(yy - hh);
-  double sinhhhp = sinh(hh + yy);
-  double sinhhhm = sinh(hh - yy);
-  double coshyvp = cosh(yy + yv);
-  double coshyvm = cosh(yy - yv);
-  double invcoshyv  = 1.0 / cosh(yv);
-  double beta = 1.0 / tf;
-
-  if ((iw == 1) || (iw == 5)) {
-    if (bulk == 1) {
-      pds1 = mt * dss * coshhhm + pti * cosp * dsx + pti * sinp * dsy;
-      pds4 = mt * dss * coshhhm + pti * cosp * dsx - pti * sinp * dsy;
-      pds6 = mt * dss * coshhhp - pti * cosp * dsx + pti * sinp * dsy;
-      pds7 = mt * dss * coshhhp - pti * cosp * dsx - pti * sinp * dsy;
-    } else {
-      pds1 = mt * dss * sinhhhm + pti * cosp * dsx + pti * sinp * dsy;
-      pds4 = mt * dss * sinhhhm + pti * cosp * dsx - pti * sinp * dsy;
-      pds6 = mt * dss * sinhhhp - pti * cosp * dsx + pti * sinp * dsy;
-      pds7 = mt * dss * sinhhhp - pti * cosp * dsx - pti * sinp * dsy;
-    }
-    double pu1 = gam * (mt * coshyvm * invcoshyv - pti * cosp * vx - pti * sinp * vy);
-    double pu4 = gam * (mt * coshyvm * invcoshyv - pti * cosp * vx + pti * sinp * vy);
-    double pu6 = gam * (mt * coshyvp * invcoshyv + pti * cosp * vx - pti * sinp * vy);
-    double pu7 = gam * (mt * coshyvp * invcoshyv + pti * cosp * vx + pti * sinp * vy);
-
-#ifdef ALPHA
-    double bose1 = exp(max(-50.0, min(50.0,(pu1 - mu) / tf)));
-    double bose4 = exp(max(-50.0, min(50.0,(pu4 - mu) / tf)));
-    double bose6 = exp(max(-50.0, min(50.0,(pu6 - mu) / tf)));
-    double bose7 = exp(max(-50.0, min(50.0,(pu7 - mu) / tf)));
-    bose1 = pds1 / (bose1 + sgn);
-    bose4 = pds4 / (bose4 + sgn);
-    bose6 = pds6 / (bose6 + sgn);
-    bose7 = pds7 / (bose7 + sgn);
-#else
-    double bose1 = 0.0;
-    double bose4 = 0.0;
-    double bose6 = 0.0;
-    double bose7 = 0.0;
-    double bse1 = beta * (pu1 - mu);
-    double bse4 = beta * (pu4 - mu);
-    double bse6 = beta * (pu6 - mu);
-    double bse7 = beta * (pu7 - mu);
-    if (bse1 < 30.0) bose1 = pds1 / (exp(bse1) + sgn);
-    if (bse4 < 30.0) bose4 = pds4 / (exp(bse4) + sgn);
-    if (bse6 < 30.0) bose6 = pds6 / (exp(bse6) + sgn);
-    if (bse7 < 30.0) bose7 = pds7 / (exp(bse7) + sgn);
-#endif
-    return bose1 + bose4 + bose6 + bose7;
-
-
-  } else if ((iw == 3) || (iw == 7)) {
-    if (bulk == 1) {
-      pds1 = mt * dss * coshhhm + pti * cosp * dsx + pti * sinp * dsy;
-      pds6 = mt * dss * coshhhp - pti * cosp * dsx + pti * sinp * dsy;
-    } else  {
-      pds1 = mt * dss * sinhhhm + pti * cosp * dsx + pti * sinp * dsy;
-      pds6 = mt * dss * sinhhhp - pti * cosp * dsx + pti * sinp * dsy;
-    }
-    //  double pds1 = ee * ds0 + pti * cosp * dsx + pti * sinp * dsy + pz * dsz;
-    //  double pds6 = ee * ds0 - pti * cosp * dsx + pti * sinp * dsy - pz * dsz;
-    double pu1 = gam * (mt * coshyvm * invcoshyv - pti * cosp * vx - pti * sinp * vy);
-    double pu6 = gam * (mt * coshyvp * invcoshyv + pti * cosp * vx - pti * sinp * vy);
-#ifdef ALPHA
-    double bose1 = exp(max(-50.0, min(50.0,(pu1 - mu) / tf)));
-    double bose6 = exp(max(-50.0, min(50.0,(pu6 - mu) / tf)));
-    bose1 = pds1 / (bose1 + sgn);
-    bose6 = pds6 / (bose6 + sgn);
-#else
-    double bose1 = 0.0;
-    double bose6 = 0.0;
-    double bse1 = beta * (pu1 - mu);
-    double bse6 = beta * (pu6 - mu);
-
-    if (bse1 < 30.0) bose1 = pds1 / (exp(bse1) + sgn);
-    if (bse6 < 30.0) bose6 = pds6 / (exp(bse6) + sgn);
-#endif
-    return bose1 + bose6;
-
-  } else if ((iw == 2) || (iw == 6)) {
-    if (bulk == 1) {
-      pds1 = mt * dss * coshhhm + pti * cosp * dsx + pti * sinp * dsy;
-      pds4 = mt * dss * coshhhm + pti * cosp * dsx - pti * sinp * dsy;
-    } else  {
-      pds1 = mt * dss * sinhhhm + pti * cosp * dsx + pti * sinp * dsy;
-      pds4 = mt * dss * sinhhhm + pti * cosp * dsx - pti * sinp * dsy;
-    }
-    //  double pds1 = ee * ds0 + pti * cosp * dsx + pti * sinp * dsy + pz * dsz;
-    //  double pds4 = ee * ds0 + pti * cosp * dsx - pti * sinp * dsy + pz * dsz;
-    double pu1 = gam * (mt * coshyvm * invcoshyv - pti * cosp * vx - pti * sinp * vy);
-    double pu4 = gam * (mt * coshyvp * invcoshyv - pti * cosp * vx + pti * sinp * vy);
-#ifdef ALPHA
-    double bose1 = exp(max(-50.0, min(50.0,(pu1 - mu) / tf)));
-    double bose4 = exp(max(-50.0, min(50.0,(pu4 - mu) / tf)));
-    bose1 = pds1 / (bose1 + sgn);
-    bose4 = pds4 / (bose4 + sgn);
-#else
-    double bose1 = 0.0;
-    double bose4 = 0.0;
-    double bse1 = beta * (pu1 - mu);
-    double bse4 = beta * (pu4 - mu);
-
-    if (bse1 < 30.0) bose1 = pds1 / (exp(bse1) + sgn);
-    if (bse4 < 30.0) bose4 = pds4 / (exp(bse4) + sgn);
-#endif
-    return bose1 + bose4;
-
-
-  } else if((iw == 4) || (iw == 8)) {
-    if (bulk == 1) {
-      pds1 = mt * dss * coshhhm + pti * cosp * dsx + pti * sinp * dsy;
-    } else {
-      pds1 = mt * dss * sinhhhm + pti * cosp * dsx + pti * sinp * dsy;
-    }
-    // double pds1 = ee * ds0 + pti * cosp * dsx + pti * sinp * dsy + pz * dsz;
-    double pu1 = gam * (mt * coshyvm * invcoshyv - pti * cosp * vx - pti * sinp * vy);
-#ifdef ALPHA
-    double bose1 = exp(max(-50.0, min(50.0,(pu1 - mu) / tf)));
-    bose1 = pds1 / (bose1 + sgn);
-#else
-    double bose1 = 0.0;
-    double bse1 = beta * (pu1 - mu);
-    if (bse1 < 30.0) bose1 = pds1 / (exp(bse1) + sgn);
-#endif
-    return bose1;
-
-  } else {
-    cerr << "HydroSpec::thermaldist funny iw " << iw << endl;
-    exit(1);
-  }
-}
-*/
 
 double HydroSpectrum::thermaldist(double ee, double pz, double mu, int iw, int sgn) {
   if ((iw == 1) || (iw == 5)) {
@@ -371,118 +221,111 @@ double HydroSpectrum::thermaldist(double ee, double pz, double mu, int iw, int s
     return bose1;
     //	return (bose1 + abs(bose1)) / 2.0;
   } else {
-    cerr << "HydroSpec::thermaldist funny iw " << iw << endl;
-    exit(1);
+    std::cerr << "HydroSpec::thermaldist funny iw " << iw << std::endl;
+    std::exit(1);
   }
 }
 
-void HydroSpectrum::openDataFile(string fname)
-{
-  //fdata.open(unit=20, file='../src/25/freezeout.dat', status='OLD')
-  fdata.open(fname.c_str(), ios::in);
+void HydroSpectrum::openDataFile(string fname) {
+  fdata_fname = fname;
+  fdata.open(fname.c_str());
   if (!fdata) {
-    cerr << "HydroSpectrum::openDataFile(fn)! unable to open file " << fname << endl;
-    exit(1);
+    std::cerr << "HydroSpectrum::openDataFile(fn)! unable to open file " << fname << std::endl;
+    std::exit(1);
   }
 }
-void HydroSpectrum::openDataFile(string fname, string fname_ecc)
-{
-
+void HydroSpectrum::openDataFile(string fname, string fname_ecc) {
   if (fdata.is_open()) {
-    cerr << "HydroSpectrum::openDataFile(fn,fnEcc)! file already opened "
-         << fname << endl;
-    exit(1);
+    std::cerr << "HydroSpectrum::openDataFile(fn,fnEcc)! file already opened "
+         << fname << std::endl;
+    std::exit(1);
   }
   if (eccdata.is_open()) {
-    cerr << "HydroSpectrum::openDataFile(fn,fnEcc)! file already opened "
-         << fname_ecc << endl;
-    exit(1);
+    std::cerr << "HydroSpectrum::openDataFile(fn,fnEcc)! file already opened "
+         << fname_ecc << std::endl;
+    std::exit(1);
   }
 
-  //fdata.open(unit=20, file='../src/25/freezeout.dat', status='OLD')
-  fdata.open(fname.c_str(), ios::in);
+  fdata_fname = fname;
+  fdata.open(fname.c_str());
   if (!fdata)  {
-    cerr << "HydroSpectrum::openDataFile(fn,fnEcc)! unable to open file " << fname << endl;
-    exit(1);
+    std::cerr << "HydroSpectrum::openDataFile(fn,fnEcc)! unable to open file " << fname << std::endl;
+    std::exit(1);
   }
 
-  //eccdata.open(fname_ecc.c_str(), ios::in);
-  eccdata.open(fname_ecc.c_str(), ifstream::in);
+  eccdata_fname = fname_ecc;
+  eccdata.open(fname_ecc.c_str());
   if (!eccdata)  {
-    cerr << "HydroSpectrum::openDataFile(fn,fnEcc)! unable to open file <" << fname_ecc
-	       << ">" << endl;
-    exit(1);
+    std::cerr << "HydroSpectrum::openDataFile(fn,fnEcc)! unable to open file <" << fname_ecc
+	       << ">" << std::endl;
+    std::exit(1);
   }
-
 }
 
-void HydroSpectrum::openDataFile2(string fname1, string fname2)
-{
+void HydroSpectrum::openDataFile2(string fname1, string fname2) {
   if (fdata.is_open()) {
-    cerr << "HydroSpectrum::openDataFile2! file already opened"
-         << fname1 << endl;
-    exit(1);
+    std::cerr << "HydroSpectrum::openDataFile2! file already opened" << fname1 << std::endl;
+    std::exit(1);
   }
   if (pdata.is_open()) {
-    cerr << "HydroSpectrum::openDataFile2! file already opened"
-         << fname2 << endl;
-    exit(1);
+    std::cerr << "HydroSpectrum::openDataFile2! file already opened" << fname2 << std::endl;
+    std::exit(1);
   }
 
+  fdata_fname = fname1;
   fdata.open(fname1.c_str(), ios::in);
   if (!fdata)  {
-    cerr << "HydroSpectrum::openDataFile2! unable to open file " << fname1 << endl;
-    exit(1);
+    std::cerr << "HydroSpectrum::openDataFile2! unable to open file " << fname1 << std::endl;
+    std::exit(1);
   }
+  pdata_fname = fname2;
   pdata.open(fname2.c_str(), ios::in);
   if (!pdata)  {
-    cerr << "HydroSpectrum::openDataFile2! unable to open file " << fname2 << endl;
-    exit(1);
+    std::cerr << "HydroSpectrum::openDataFile2! unable to open file " << fname2 << std::endl;
+    std::exit(1);
   }
-
 }
-void HydroSpectrum::openDataFile(string fname1, string fname2, string fname_ecc)
-{
 
+void HydroSpectrum::openDataFile(string fname1, string fname2, string fname_ecc) {
   if (fdata.is_open()) {
-    cerr << "HydroSpectrum::openDataFile(fn1,fn2,fnEcc)! file already opened"
-         << fname1 << endl;
-    exit(1);
+    std::cerr << "HydroSpectrum::openDataFile(fn1,fn2,fnEcc)! file already opened"
+         << fname1 << std::endl;
+    std::exit(1);
   }
   if (pdata.is_open()) {
-    cerr << "HydroSpectrum::openDataFile(fn1,fn2,fnEcc)! file already opened"
-         << fname2 << endl;
-    exit(1);
+    std::cerr << "HydroSpectrum::openDataFile(fn1,fn2,fnEcc)! file already opened"
+         << fname2 << std::endl;
+    std::exit(1);
   }
   if (eccdata.is_open()) {
-    cerr << "HydroSpectrum::openDataFile(fn1,fn2,fnEcc)! file already opened"
-         << fname_ecc << endl;
-    exit(1);
+    std::cerr << "HydroSpectrum::openDataFile(fn1,fn2,fnEcc)! file already opened"
+         << fname_ecc << std::endl;
+    std::exit(1);
   }
 
+  fdata_fname = fname1;
   fdata.open(fname1.c_str(), ios::in);
   if (!fdata) {
-    cerr << "HydroSpectrum::openDataFile(fn1,fn2,fnEcc)! unable to open file " << fname1 << endl;
-    exit(1);
+    std::cerr << "HydroSpectrum::openDataFile(fn1,fn2,fnEcc)! unable to open file " << fname1 << std::endl;
+    std::exit(1);
   }
+  pdata_fname = fname2;
   pdata.open(fname2.c_str(), ios::in);
   if (!pdata) {
-    cerr << "HydroSpectrum::openDataFile(fn1,fn2,fnEcc)! unable to open file " << fname2 << endl;
-    exit(1);
+    std::cerr << "HydroSpectrum::openDataFile(fn1,fn2,fnEcc)! unable to open file " << fname2 << std::endl;
+    std::exit(1);
   }
-
+  eccdata_fname = fname_ecc;
   eccdata.open(fname_ecc.c_str(), ifstream::in);
   if (!eccdata) {
-    cerr << "HydroSpectrum::openDataFile(fn1,fn2,fnEcc)! unable to open file <" << fname_ecc
-	       << ">" << endl;
-    exit(1);
+    std::cerr << "HydroSpectrum::openDataFile(fn1,fn2,fnEcc)! unable to open file <" << fname_ecc
+	       << ">" << std::endl;
+    std::exit(1);
   }
-
 }
 
 // input data of hydrodynamic flow
-int HydroSpectrum::readData()
-{
+int HydroSpectrum::readData() {
   if (!fdata) {
     std::cerr << "HydroSpectrum::readData: unexpected end of freezeout.dat file" << std::endl;
     std::exit(1);
@@ -521,7 +364,7 @@ int HydroSpectrum::readData()
     }
   }
 
-  // if (tf * 197.32 > 100.0) cout << tf * 197.32 << endl;
+  // if (tf * 197.32 > 100.0) cout << tf * 197.32 << std::endl;
 
   beta = 1.0 / tf;
 
@@ -537,9 +380,7 @@ int HydroSpectrum::readData()
 
   return 0;
 }
-int HydroSpectrum::readPData()
-{
-
+int HydroSpectrum::readPData() {
 	pdata >> tau;
 	pdata >> xx;
 	pdata >> yy;
@@ -552,50 +393,34 @@ int HydroSpectrum::readPData()
 
 	return 0;
 }
-int HydroSpectrum::readEData()
-{
-
-  int nlines = 0;
-
+int HydroSpectrum::readEData() {
   char buffer[1280];
-  while (!eccdata.eof()) {
-    eccdata.getline(buffer, sizeof(buffer),'\n');
-    //	if (eccdata.eof() || strlen(buffer) == 0 ) break;
-    if (nlines >= 100) {
-	    cerr << " too many data " << endl;
-	    exit(1);
+  std::string line;
+  std::size_t index = 0, iline = 0;
+  while (std::getline(eccdata, line)) {
+    iline++;
+    if (index >= 100) {
+	    std::cerr << eccdata_fname << ":" << iline << ":"
+                << " too many data" << std::endl;
+	    std::exit(1);
     }
-    //sscanf(buffer,"%lf %lf %lf %lf %lf",&hh_ecc[nlines],&coe_ecc[nlines],
-    //       &ecc_ecc[nlines],&area_ecc[nlines],&aveene_ecc[nlines]);
-    sscanf(buffer,"%lf %lf %lf %lf %lf %lf",&hh_ecc[nlines],
-    &coe_ecc[nlines],&ecc_ecc[nlines],&area_ecc[nlines],
-    &aveene_ecc[nlines],&eccp_ecc[nlines]);
 
-    nlines++;
+    int r = sscanf(line.c_str(), "%lf %lf %lf %lf %lf %lf",
+      &hh_ecc[index],
+      &coe_ecc[index],
+      &ecc_ecc[index],
+      &area_ecc[index],
+      &aveene_ecc[index],
+      &eccp_ecc[index]);
+    if (r != 6) {
+	    std::cerr << eccdata_fname << ":" << iline << ":"
+                << " invalid format" << std::endl;
+      std::exit(1);
+    }
+    index++;
   }
 
-/* //
-  string templine;
-  while(eccdata) {
-    getline(eccdata, templine);
-    if(templine.substr(0, 1) == "#") continue;
-    if(eccdata.eof() || templine.size() == 0 ) break;
-
-    if(nlines >= 50) {
-      cerr << " too many data " << endl;
-      exit(1);
-    }
-    istringstream ist(templine);
-    ist >> hh_ecc[nlines] >> coe_ecc[nlines] >> ecc_ecc[nlines];
-    if(ist.fail()) {
-      cerr << "funny " << endl;
-      exit(1);
-    }
-    nlines++;
-  }
-// */
-
-  return nlines;
+  return index;
 }
 /**********************************************************
 C

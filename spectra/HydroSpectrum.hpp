@@ -26,9 +26,13 @@ protected:
   double hh_ecc[100], coe_ecc[100], ecc_ecc[100];
   double area_ecc[100], aveene_ecc[100], eccp_ecc[100];
   int fin, bulk, iw;
+
   std::ifstream fdata;
   std::ifstream pdata;
   std::ifstream eccdata;
+  std::string fdata_fname;
+  std::string pdata_fname;
+  std::string eccdata_fname;
 
 private:
   bool fRotateFreezeoutData;

@@ -422,7 +422,6 @@ getSample(double vx, double vy, double yv,
   }
   do {
     do {
-
       //Generate momentum [0:6GeV/c]
       //according to Bose/Fermi distribution
       //in local rest frame

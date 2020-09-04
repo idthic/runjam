@@ -11,6 +11,14 @@ The list of particles
 - Column 5: Statistics (1: boson, 2: fermion)
 - Column 6: Is antiparticle
 
+### Option `--hydrojet-ftemp, hydrojet_kintmp=INT`
+
+- 1 = 80 MeV
+- 2 = 100 MeV
+- 3 = 120 MeV
+- 4 = 140 MeV
+- 5 = 160 MeV [default]
+
 ## Change 0.1..0.2
 
 - General options:
