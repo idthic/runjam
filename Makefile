@@ -62,6 +62,8 @@ hydro2jam.exe: $(hydro2jam_OBJS)
 #---------------------------------------
 # Install
 
+ifneq ($(INSDIR),)
+
 $(INSDIR)/bin/hydro2jam.exe: hydro2jam.exe | $(INSDIR)/bin
 	cp $< $@
 $(INSDIR)/share/hydro2jam/%: data/% | $(INSDIR)/share/hydro2jam
@@ -73,6 +75,8 @@ install-files += \
   $(INSDIR)/share/hydro2jam/ResonanceJam.dat
 install: $(install-files)
 .PHONY: install
+
+endif
 
 #---------------------------------------
 # Clean

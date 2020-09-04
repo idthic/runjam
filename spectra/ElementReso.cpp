@@ -22,9 +22,6 @@ ElementReso::ElementReso(std::string dir, std::string* outf, int kint, int eos_p
 
   int const nreso_loop = this->rlist.numberOfResonances();
   this->elemFile.resize(nreso_loop);
-  this->outdat.resize(nreso_loop);
-  this->outdatPos.resize(nreso_loop);
-  this->outdatNeg.resize(nreso_loop);
 
   for (int i = 0; i < nreso_loop; i++) {
     if (dir.size() >0)
@@ -34,13 +31,7 @@ ElementReso::ElementReso(std::string dir, std::string* outf, int kint, int eos_p
   }
 }
 
-ElementReso::~ElementReso()
-{
-    // delete [] mass;
-    // delete [] deg;
-    // delete [] degeff;
-    // delete [] mu;
-}
+ElementReso::~ElementReso() {}
 
 void ElementReso::initialize()
 {
@@ -48,13 +39,16 @@ void ElementReso::initialize()
   //    nreso_loop = nreso;
   //    if(baryonfree)nreso_loop = 20;
 
-  // Open output files.
+  // Open output files
+  outdat.clear();
+  outdatPos.clear();
+  outdatNeg.clear();
   for (int i = 0; i < nreso_loop; i++) {
-    if (i < 21)	outdat[i].open(elemFile[i].c_str());
+    if (i < 21)	outdat.emplace_back(elemFile[i].c_str());
     std::string elemFilepos = elemFile[i] + ".POS";
-    outdatPos[i].open(elemFilepos.c_str());
+    outdatPos.emplace_back(elemFilepos.c_str());
     std::string elemFileneg = elemFile[i] + ".NEG";
-    outdatNeg[i].open(elemFileneg.c_str());
+    outdatNeg.emplace_back(elemFileneg.c_str());
     if (!outdat[i]) {
       // ??? outdat[i] is not opened if(i>=21).
       std::cerr << "Error: unable to open file"
