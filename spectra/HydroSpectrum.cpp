@@ -142,12 +142,6 @@ HydroSpectrum::HydroSpectrum(int kint, int eos_pce) {
 }
 
 //**********************************************************************
-/// @fn double HydroSpectrum::thermaldist(double ee, double pz, double mu, int iw, int sgn);
-/// @param[in] ee
-/// @param[in] pz
-/// @param[in] mu
-/// @param[in] iw
-/// @param[in] sgn 1: fermion  -1:boson
 double HydroSpectrum::thermaldist(double ee, double pz, double mu, int iw, int sgn) {
   if (iw == 1 || iw == 5) {
     double pds1 = ee * ds0 + pti * cosp * dsx + pti * sinp * dsy + pz * dsz;
@@ -190,108 +184,48 @@ double HydroSpectrum::thermaldist(double ee, double pz, double mu, int iw, int s
   }
 }
 
-void HydroSpectrum::openDataFile(string fname) {
+void HydroSpectrum::openFDataFile(string fname) {
+  if (fdata.is_open()) {
+    std::cerr << "HydroSpectrum::openDataFile! file already opened '" << fname << "'" << std::endl;
+    std::exit(1);
+  }
   fdata_fname = fname;
   fdata.open(fname.c_str());
   if (!fdata) {
-    std::cerr << "HydroSpectrum::openDataFile(fn)! unable to open file " << fname << std::endl;
+    std::cerr << "HydroSpectrum::openDataFile! unable to open file '" << fname << "'" << std::endl;
     std::exit(1);
   }
 }
-void HydroSpectrum::openDataFile(string fname, string fname_ecc) {
-  if (fdata.is_open()) {
-    std::cerr << "HydroSpectrum::openDataFile(fn,fnEcc)! file already opened "
-         << fname << std::endl;
-    std::exit(1);
-  }
-  if (eccdata.is_open()) {
-    std::cerr << "HydroSpectrum::openDataFile(fn,fnEcc)! file already opened "
-         << fname_ecc << std::endl;
-    std::exit(1);
-  }
-
-  fdata_fname = fname;
-  fdata.open(fname.c_str());
-  if (!fdata)  {
-    std::cerr << "HydroSpectrum::openDataFile(fn,fnEcc)! unable to open file " << fname << std::endl;
-    std::exit(1);
-  }
-
-  eccdata_fname = fname_ecc;
-  eccdata.open(fname_ecc.c_str());
-  if (!eccdata)  {
-    std::cerr << "HydroSpectrum::openDataFile(fn,fnEcc)! unable to open file <" << fname_ecc
-	       << ">" << std::endl;
-    std::exit(1);
-  }
-}
-
-void HydroSpectrum::openDataFile2(string fname1, string fname2) {
-  if (fdata.is_open()) {
-    std::cerr << "HydroSpectrum::openDataFile2! file already opened" << fname1 << std::endl;
-    std::exit(1);
-  }
+void HydroSpectrum::openPDataFile(string fname2) {
   if (pdata.is_open()) {
-    std::cerr << "HydroSpectrum::openDataFile2! file already opened" << fname2 << std::endl;
-    std::exit(1);
-  }
-
-  fdata_fname = fname1;
-  fdata.open(fname1.c_str(), ios::in);
-  if (!fdata)  {
-    std::cerr << "HydroSpectrum::openDataFile2! unable to open file " << fname1 << std::endl;
+    std::cerr << "HydroSpectrum::openDataFile2! file already opened '" << fname2 << "'" << std::endl;
     std::exit(1);
   }
   pdata_fname = fname2;
   pdata.open(fname2.c_str(), ios::in);
   if (!pdata)  {
-    std::cerr << "HydroSpectrum::openDataFile2! unable to open file " << fname2 << std::endl;
+    std::cerr << "HydroSpectrum::openDataFile2! unable to open file '" << fname2 << "'" << std::endl;
     std::exit(1);
   }
 }
 
-void HydroSpectrum::openDataFile(string fname1, string fname2, string fname_ecc) {
-  if (fdata.is_open()) {
-    std::cerr << "HydroSpectrum::openDataFile(fn1,fn2,fnEcc)! file already opened"
-         << fname1 << std::endl;
-    std::exit(1);
-  }
-  if (pdata.is_open()) {
-    std::cerr << "HydroSpectrum::openDataFile(fn1,fn2,fnEcc)! file already opened"
-         << fname2 << std::endl;
-    std::exit(1);
-  }
+void HydroSpectrum::openEDataFile(string fname_ecc) {
   if (eccdata.is_open()) {
-    std::cerr << "HydroSpectrum::openDataFile(fn1,fn2,fnEcc)! file already opened"
-         << fname_ecc << std::endl;
-    std::exit(1);
-  }
-
-  fdata_fname = fname1;
-  fdata.open(fname1.c_str(), ios::in);
-  if (!fdata) {
-    std::cerr << "HydroSpectrum::openDataFile(fn1,fn2,fnEcc)! unable to open file " << fname1 << std::endl;
-    std::exit(1);
-  }
-  pdata_fname = fname2;
-  pdata.open(fname2.c_str(), ios::in);
-  if (!pdata) {
-    std::cerr << "HydroSpectrum::openDataFile(fn1,fn2,fnEcc)! unable to open file " << fname2 << std::endl;
+    std::cerr << "HydroSpectrum::openDataFile(fn,fnEcc)! file already opened '" << fname_ecc << "'" << std::endl;
     std::exit(1);
   }
   eccdata_fname = fname_ecc;
-  eccdata.open(fname_ecc.c_str(), ifstream::in);
-  if (!eccdata) {
-    std::cerr << "HydroSpectrum::openDataFile(fn1,fn2,fnEcc)! unable to open file <" << fname_ecc
-	       << ">" << std::endl;
+  eccdata.open(fname_ecc.c_str());
+  if (!eccdata)  {
+    std::cerr << "HydroSpectrum::openDataFile(fn,fnEcc)! unable to open file '" << fname_ecc << "'" << std::endl;
     std::exit(1);
   }
 }
 
 // input data of hydrodynamic flow
-int HydroSpectrum::readData() {
+int HydroSpectrum::readFData() {
   if (!fdata) {
-    std::cerr << "HydroSpectrum::readData: unexpected end of freezeout.dat file" << std::endl;
+    std::cerr << "HydroSpectrum::readFData: unexpected end of freezeout.dat file" << std::endl;
     std::exit(1);
   }
 
@@ -329,7 +263,6 @@ int HydroSpectrum::readData() {
   }
 
   // if (tf * 197.32 > 100.0) cout << tf * 197.32 << std::endl;
-
   beta = 1.0 / tf;
 
   vz = tanh(yv);

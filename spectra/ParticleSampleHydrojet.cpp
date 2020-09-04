@@ -152,9 +152,10 @@ failed:
   return false;
 }
 
-void ParticleSampleHydrojet::initialize(std::string const& fn_freezeout_dat, std::string const& fn_p) {
+void ParticleSampleHydrojet::initialize(std::string const& fn_freezeout_dat, std::string const& fn_position_dat) {
   // Open files for input.
-  openDataFile2(fn_freezeout_dat, fn_p);
+  openFDataFile(fn_freezeout_dat);
+  openPDataFile(fn_position_dat);
 
   std::cout << "ParticleSampleHydrojet.cpp(ParticleSampleHydrojet::initialize): checking Cooper-Frye cache files (.POS/.NEG)... " << std::flush;
   if (this->tryOpenCooperFryeCache()) {
@@ -168,12 +169,12 @@ void ParticleSampleHydrojet::initialize(std::string const& fn_freezeout_dat, std
   mode_delayed_cooperfrye = true;
 }
 
-//void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string fn_p, std::string fn_ecc)
-void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string fn_p) {
+//void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string fn_position_dat, std::string fn_ecc)
+void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string fn_position_dat) {
   int const nreso_loop = rlist.numberOfResonances();
 
   // Open files.
-  initialize(fn_freezeout_dat, fn_p);
+  initialize(fn_freezeout_dat, fn_position_dat);
 
   if (plist.size() > 0) {
     std::vector<Particle*>::iterator cp;
@@ -187,7 +188,7 @@ void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string f
   double numResPos;
   double numResNeg;
 
-  while (!readData()) {
+  while (!readFData()) {
     if (!baryonfree) {
       for (int i = 0; i < nreso_loop; i++) {
         rlist[i].mu = 0.0;
@@ -353,7 +354,7 @@ void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string f
 
 void ParticleSampleHydrojet::finish()
 {
-  closeDataFile();
+  closeFDataFile();
   closePDataFile();
   if (!mode_delayed_cooperfrye) {
     resDataPos.clear();

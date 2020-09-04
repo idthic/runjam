@@ -106,10 +106,10 @@ void ElementReso::integrateForResonance(std::string const& fnameFreezeoutDat, in
 
   ResonanceListPCE::resonance& recreso = this->rlist[ireso];
 
-  openDataFile(fnameFreezeoutDat);
+  openFDataFile(fnameFreezeoutDat);
 
   //---------------------------------------------------------------------------
-  while (!readData()) {
+  while (!readFData()) {
     if (!baryonfree) {
       recreso.mu = 0.0;
       if (recreso.bf == 1) recreso.mu = mubf * sqrt(1.0 - tf * tf / tmpf / tmpf) - meanf * nbf;
@@ -157,7 +157,7 @@ void ElementReso::integrateForResonance(std::string const& fnameFreezeoutDat, in
   ostr_pos.close();
   ostr_neg.close();
 
-  closeDataFile();
+  closeFDataFile();
 }
 
 }
