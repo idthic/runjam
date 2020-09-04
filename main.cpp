@@ -115,7 +115,9 @@ private:
 
   const char* get_optarg() {
     if (arg_optarg) {
-      return arg_optarg;
+      const char* ret = arg_optarg;
+      arg_optarg = nullptr;
+      return ret;
     } else if (i < argc) {
       return argv[i++];
     } else {
@@ -206,31 +208,30 @@ private:
     }
   }
 
+  bool process_option(int optchar) {
+    switch (optchar) {
+    case 's': assign_optarg_int("hydro2jam_seed"); break;
+    case 'n': assign_optarg_int("hydro2jam_nevent"); break;
+    case 't': assign_optarg_int("hydro2jam_oversampling_factor"); break;
+    case 'o': assign_optarg("hydro2jam_output_directory"); break;
+    case 'd': assign_optarg_int("hydro2jam_phasespace_enabled"); break;
+    case 'w': assign_optarg_int("hydro2jam_swtich_weak_decay"); break;
+    case 'i': assign_optarg_input(); break;
+    default: return false;
+    }
+    return true;
+  }
   void read_option() {
-    if (std::strcmp(arg, "-s") == 0) {
-      assign_optarg_int("hydro2jam_seed");
-    } else if (std::strcmp(arg, "-n") == 0) {
-      assign_optarg_int("hydro2jam_nevent");
-    } else if (std::strcmp(arg, "-t") == 0) {
-      assign_optarg_int("hydro2jam_oversampling_factor");
-    } else if (std::strcmp(arg, "-o") == 0) {
-      assign_optarg("hydro2jam_output_directory");
-    } else if (std::strcmp(arg, "-d") == 0) {
-      assign_optarg_int("hydro2jam_phasespace_enabled");
-    } else if (std::strcmp(arg, "-w") == 0) {
-      assign_optarg_int("hydro2jam_swtich_weak_decay");
-    } else if (std::strcmp(arg, "-i") == 0) {
-      assign_optarg_input();
-    } else {
-      std::cerr << "hydro2jam:$" << arg_index << ": unknown option '" << arg << "'" << std::endl;
-      flag_error = true;
+    arg_optarg = arg + 1;
+    char c;
+    while (arg_optarg && (c = *arg_optarg++)) {
+      if (!process_option(c)) {
+        std::cerr << "hydro2jam:$" << arg_index << ": unknown option '-" << c << "'" << std::endl;
+        flag_error = true;
+      }
     }
   }
 
-  static bool is_varname(const char* begin, const char* end, const char* needle) {
-    while (*begin != *end && *begin == *needle) begin++, needle++;
-    return begin == end && *needle == '\0';
-  }
   bool read_assign() {
     const char* p = arg;
     while (std::isalnum(*p) && *p == '_') p++;
