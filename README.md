@@ -1,5 +1,16 @@
 # hydro2jam
 
+### Option `--resodata, hydro2jam_resodata=FILE`
+
+The list of particles
+
+- Column 1: Mass
+- Column 2: Degeneracy
+- Column 3: Effective degeneracy (average number of pions after decays)
+- Column 4: Chemical potential
+- Column 5: Statistics (1: boson, 2: fermion)
+- Column 6: Is antiparticle
+
 ## Change 0.1..0.2
 
 - General options:

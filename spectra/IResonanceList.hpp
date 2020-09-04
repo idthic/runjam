@@ -45,10 +45,6 @@ public:
     int    anti;
   };
 
-  int m_numberOfResonances;
-
-  static int nreso;
-
 private:
   static resonance resT[5][21];
 
@@ -71,7 +67,7 @@ public:
   double statisticsSign   (int ireso) const { return -this->data[ireso].bf; } // +1 for boson, -1 for fermion
   double chemicalPotential(int ireso) const { return this->data[ireso].mu; }
   int numberOfDegrees  (int ireso) const { return this->data[ireso].deg; }
-  int numberOfResonances() const { return this->m_numberOfResonances; }
+  int numberOfResonances() const { return this->data.size(); }
 };
 
 }

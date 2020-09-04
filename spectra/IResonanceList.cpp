@@ -2,14 +2,12 @@
 #include <iostream>
 #include <cstdlib>
 #include <fstream>
+#include <sstream>
 #include "IResonanceList.hpp"
 #include "../args.hpp"
 
 namespace idt {
 namespace hydro2jam {
-
-//int ResonanceListPCE::nreso=75;
-int ResonanceListPCE::nreso=151;
 
 ResonanceListPCE::resonance ResonanceListPCE::resT[5][21] = {
   //degeff is "effective degree of freedom" which means
@@ -154,15 +152,16 @@ ResonanceListPCE::ResonanceListPCE(int kineticTemp, int eos_pce, std::string con
 }
 
 void ResonanceListPCE::initialize(int kineticTemp, int eos_pce, std::string const& fname_rlist) {
-  //temporal modification
-  m_numberOfResonances = ResonanceListPCE::nreso;
-  if (eos_pce < 2 || eos_pce == 5) {
-    m_numberOfResonances = 21;
-  } else if (eos_pce == 4) {
-    m_numberOfResonances = 75;
+  int nreso_check;
+  switch (eos_pce) {
+  case 0: nreso_check = 21; break;
+  case 1: nreso_check = 21; break;
+  case 2: nreso_check = 151; break;
+  case 3: nreso_check = 151; break;
+  case 4: nreso_check = 75; break; // EOS-Q
+  case 5: nreso_check = 21; break;
+  case 6: nreso_check = -1; break; // no-check
   }
-
-  this->data.resize(m_numberOfResonances);
 
   if (fname_rlist.size() <= 0) {
     std::cerr << "ResonanceListPCE::.ctor! something is wrong: Resonance table not available " << std::endl;
@@ -174,22 +173,53 @@ void ResonanceListPCE::initialize(int kineticTemp, int eos_pce, std::string cons
     std::cerr << "ResonanceListPCE::.ctor! unable to open file " << fname_rlist << std::endl;
     std::exit(1);
   }
-  for (int i = 0; i < m_numberOfResonances; i++) {
-    resonance& record=data[i];
+
+  this->data.clear();
+  this->data.reserve(151);
+
+  std::string line;
+  int iline = 0;
+  while (std::getline(fdata, line)) {
+    iline++;
+
+    // 空行・コメント行はスキップ
+    std::size_t pos = line.find_first_not_of(" \t");
+    if (pos == std::string::npos || line[pos] == '#') continue;
+
+    std::istringstream istr(line);
+    resonance record;
     int bftype;
-    fdata >> record.mass >> record.deg >> record.degeff
-          >>  record.mu >> bftype >> record.anti;
-    record.mass /= hbarc_MeVfm;
-    record.mu /= hbarc_MeVfm;
-    record.bf = bftype==1?-1: bftype==2?1: bftype;
+    istr >> record.mass
+         >> record.deg
+         >> record.degeff
+         >> record.mu
+         >> bftype
+         >> record.anti;
+    if (!istr) {
+      std::cerr << fname_rlist << ":" << iline << ": invalid format." << std::endl;
+      std::exit(1);
+    }
+    record.mass /= hbarc_MeVfm; // fm^{-1}
+    record.mu   /= hbarc_MeVfm; // fm^{-1}
+    record.bf   = bftype == 1 ? -1: bftype == 2 ? 1 : bftype;
+    data.emplace_back(record);
+  }
+  if (data.empty()) {
+    std::cerr << fname_rlist << ": empty." << std::endl;
+    std::exit(1);
+  } else if (nreso_check >= 0 && data.size() != nreso_check) {
+    std::cerr << fname_rlist << ": unexpected number of resonances"
+              << " [" << data.size() << ", expected: " << nreso_check << ", eospce = " << eos_pce << "]."
+              << std::endl;
+    std::exit(1);
   }
 
 	if (eos_pce == 1) {
-    int const ir = kineticTemp - 1;
-	  if (ir >= 0 && ir < 5) {
-	    for (int i = 0; i < m_numberOfResonances; i++) {
+    int const itemp = kineticTemp - 1;
+	  if (itemp >= 0 && itemp < 5) {
+	    for (int i = 0; i < data.size(); i++) {
         resonance& recdst = data[i];
-        resonance& recsrc = resT[ir][i];
+        resonance& recsrc = resT[itemp][i];
 
 	      recdst.mu = recsrc.mu;
         // recdst.mass = recsrc.mass;

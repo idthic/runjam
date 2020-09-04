@@ -20,7 +20,11 @@ ElementReso::ElementReso(std::string dir, std::string* outf, int kint, int eos_p
   mubf = 1.6 / hbarc_MeVfm * 1000.0;
   meanf = 0.45 / hbarc_MeVfm * 1000.0;
 
-  this->nreso_loop = this->rlist.m_numberOfResonances;
+  int const nreso_loop = this->rlist.numberOfResonances();
+  this->elemFile.resize(nreso_loop);
+  this->outdat.resize(nreso_loop);
+  this->outdatPos.resize(nreso_loop);
+  this->outdatNeg.resize(nreso_loop);
 
   for (int i = 0; i < nreso_loop; i++) {
     if (dir.size() >0)
@@ -40,6 +44,7 @@ ElementReso::~ElementReso()
 
 void ElementReso::initialize()
 {
+  int const nreso_loop = this->rlist.numberOfResonances();
   //    nreso_loop = nreso;
   //    if(baryonfree)nreso_loop = 20;
 
@@ -70,6 +75,7 @@ void ElementReso::initialize()
 }
 
 void ElementReso::analyze(std::string fnameFreezeoutDat) {
+  int const nreso_loop = this->rlist.numberOfResonances();
   for(int ireso = 0; ireso < nreso_loop; ireso++)
     ElementReso::integrateForResonance(fnameFreezeoutDat, ireso);
 }

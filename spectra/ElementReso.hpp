@@ -17,18 +17,17 @@ protected:
 
   double  phi[12], phiw[12], y[38], yw[38];
   double  pt[58], ptw[58];
-  std::string elemFile[151];
   std::ifstream fdata;
   std::ifstream edata;
-  std::ofstream outdat[151];
-  std::ofstream outdatPos[151];
-  std::ofstream outdatNeg[151];
+  std::vector<std::string>   elemFile;
+  std::vector<std::ofstream> outdat;
+  std::vector<std::ofstream> outdatPos;
+  std::vector<std::ofstream> outdatNeg;
 
   int    baryonfree;
   double tmpf;
   double mubf;
   double meanf;
-  int    nreso_loop;
 
 public:
   double ymin, ymax;

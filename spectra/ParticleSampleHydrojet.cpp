@@ -125,7 +125,7 @@ ParticleSampleHydrojet::~ParticleSampleHydrojet() {
 }
 
 void ParticleSampleHydrojet::initialize(std::string const& fn_freezeout_dat, std::string const& fn_p) {
-  nreso_loop = ResonanceListPCE::nreso;
+  int const nreso_loop = rlist.numberOfResonances();
   //    if(baryonfree)nreso_loop = 20;
 
   // Open files for input.
@@ -207,7 +207,7 @@ void ParticleSampleHydrojet::initialize(std::string const& fn_freezeout_dat, std
 
 //void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string fn_p, std::string fn_ecc)
 void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string fn_p) {
-  nreso_loop = ResonanceListPCE::nreso;
+  int const nreso_loop = rlist.numberOfResonances();
 
   // Open files.
   initialize(fn_freezeout_dat, fn_p);
@@ -428,6 +428,7 @@ void ParticleSampleHydrojet::finish()
   closeDataFile();
   closePDataFile();
 
+  int const nreso_loop = rlist.numberOfResonances();
 #ifdef CHG20110804
   if (!mode_delayed_cooperfrye) {
     for(int i = 0; i < nreso_loop; i++) {
