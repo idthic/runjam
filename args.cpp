@@ -25,7 +25,7 @@ std::string idt::hydro2jam::hydro2jam_context::resodata() const {
 
     if (std::strlen(PACKAGE_PREFIX)) {
       path = PACKAGE_PREFIX;
-      path += "/";
+      path += "/data/";
       path += file;
       if (fsys::is_file(path.c_str())) return path;
     }

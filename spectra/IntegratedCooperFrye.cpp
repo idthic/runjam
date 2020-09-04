@@ -7,8 +7,6 @@
 #include <ksh/phys/Minkowski.hpp>
 #include "IntegratedCooperFrye.hpp"
 
-//#define MWG_STD_LAMBDA
-
 namespace ksh = kashiwa;
 
 namespace idt {
@@ -21,18 +19,6 @@ namespace hydro2jam {
 
   template<int BF>
   struct BFTraits {
-#ifdef MWG_STD_LAMBDA
-#ifdef DBG20110803
-    static double Integral0(double xsig, double bmu) {
-      return ksh::IntegrateByGaussLegendre<100>(sqrtTangentLowerBound, sqrtTangentUpperBound, [=](double t) -> double {
-        double tantt = std::tan(t*t);
-        double jacob = 2 * t * (tantt * tantt + 1);
-        double x = tantt + xsig;
-        double fE0 = 1 / (std::exp(x - bmu) - BF);
-        return jacob * fE0;
-      });
-    }
-#endif
     static double Integral2(double xsig, double bmu) {
       return ksh::IntegrateByGaussLegendre<100>(sqrtTangentLowerBound, sqrtTangentUpperBound, [=](double t) -> double {
         double tantt = std::tan(t * t);
@@ -51,39 +37,6 @@ namespace hydro2jam {
         return jacob * fEP;
       });
     }
-#else
-    struct LambdaIntegral2 {
-      double const& xsig;
-      double const& bmu;
-      LambdaIntegral2(const double& xsig, const double& bmu): xsig(xsig), bmu(bmu) {}
-      double operator()(double t) const {
-        double tantt = std::tan(t * t);
-        double jacob = 2 * t * (tantt * tantt + 1);
-        double x = tantt + xsig;
-        double fE2 = x * x / (std::exp(x - bmu) - BF);
-        return jacob * fE2;
-      }
-    };
-    static double Integral2(double xsig, double bmu) {
-      return ksh::IntegrateByGaussLegendre<100>(sqrtTangentLowerBound, sqrtTangentUpperBound, LambdaIntegral2(xsig, bmu));
-    }
-    struct LambdaIntegralP {
-      double const& xsig;
-      double const& bmu;
-      double const& bmass;
-      LambdaIntegralP(const double& xsig, const double& bmu, const double& bmass): xsig(xsig), bmu(bmu), bmass(bmass) {}
-      double operator()(double t) const {
-        double tantt = std::tan(t * t);
-        double jacob = 2 * t * (tantt * tantt + 1);
-        double x = tantt + xsig;
-        double fEP = x * std::sqrt(x * x - bmass * bmass) / (std::exp(x - bmu) - BF);
-        return jacob * fEP;
-      }
-    };
-    static double IntegralP(double xsig, double bmu, double bmass) {
-      return ksh::IntegrateByGaussLegendre<100>(sqrtTangentLowerBound, sqrtTangentUpperBound, LambdaIntegralP(xsig, bmu, bmass));
-    }
-#endif
     static double Integral0(double xsig, double bmu) {
       return -BF * std::log(1 - BF * std::exp(bmu - xsig));
     }
