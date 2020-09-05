@@ -35,6 +35,9 @@ public:
   }
 
 private:
+  static void cmd_version() {
+    std::cout << "hydro2jam (idt) " << PACKAGE_VERSION << PACKAGE_HASH << std::endl;
+  }
   static void cmd_help() {
     std::printf(
       "usage: hydro2jam [SUBCOMMAND] [OPTIONS|VAR=VALUE]\n"
@@ -92,6 +95,7 @@ private:
       "\n"
       " Other options\n"
       "  --help          show this help\n"
+      "  --version       show version information\n"
       "\n"
       "SAMPLE\n"
       "\n"
@@ -112,6 +116,8 @@ private:
   int arg_index;
   const char* arg_optarg;
   bool flag_error;
+  bool flag_version;
+  bool flag_help;
 
   const char* get_optarg() {
     if (arg_optarg) {
@@ -174,8 +180,9 @@ private:
     }
 
     if (longname == "help") {
-      cmd_help();
-      std::exit(EXIT_SUCCESS);
+      flag_help = true;
+    } else if (longname == "version") {
+      flag_version = true;
     } else if (longname == "resodata") {
       assign_optarg("hydro2jam_resodata");
     } else if (longname == "fphase") {
@@ -248,6 +255,8 @@ public:
     this->argv = argv;
     this->ctx = &ctx;
     this->flag_error = false;
+    this->flag_help = false;
+    this->flag_version = false;
 
     for (i = 1; i < argc; ) {
       arg = argv[arg_index = i++];
@@ -269,8 +278,22 @@ public:
       }
     }
 
-    if (flag_error) return 2;
-    return 0;
+    bool flag_exit = false;
+    int exit_status = EXIT_SUCCESS;
+    if (flag_error) exit_status = 2;
+
+    if (flag_version) {
+      cmd_version();
+      flag_exit = 1;
+    }
+    if (flag_help) {
+      cmd_help();
+      flag_exit = 1;
+    }
+    if (flag_exit)
+      std::exit(exit_status);
+
+    return exit_status;
   }
 };
 
@@ -416,7 +439,7 @@ int main(int argc, char *argv[]) {
   int const ext = args.read(argc, argv, ctx);
   if (ext) return ext;
 
-  std::cout << "hydro2jam [version " << PACKAGE_VERSION << ", seed = " << ctx.seed() << "]" << std::endl;
+  std::cout << "hydro2jam [version " << PACKAGE_VERSION << PACKAGE_HASH << ", seed = " << ctx.seed() << "]" << std::endl;
   Random rand(ctx.seed());
   // Random rand(ctx.seed());
   Random::setRandom(&rand);
