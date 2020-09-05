@@ -29,7 +29,7 @@ function readargs/option:help {
 ##   @var[out] libjam_PREFIX
 function readargs {
   flags=
-  PREFIX=
+  PREFIX=~/.opt/idt
   libjam_PREFIX=
   while (($#)); do
     local arg=$1; shift
@@ -64,7 +64,7 @@ function readargs {
 }
 
 function main {
-  local flags= libjam_PREFIX=
+  local flags libjam_PREFIX
   readargs "$@" || return 1
   echo ---------------------------------------
   {
