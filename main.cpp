@@ -156,7 +156,7 @@ private:
 
     std::size_t const pos = spec.find(':');
     if (pos == std::string::npos) {
-      std::cerr << "unrecognized input '-i " << arg << "'" << std::endl;
+      std::cerr << "hydro2jam: unrecognized input '-i " << optarg << "'" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -222,9 +222,9 @@ private:
     return true;
   }
   void read_option() {
-    arg_optarg = arg + 1;
     char c;
-    while (arg_optarg && (c = *arg_optarg++)) {
+    for (const char* p = arg + 1; p && (c = *p); p++) {
+      if (p[1]) arg_optarg = p + 1;
       if (!process_option(c)) {
         std::cerr << "hydro2jam:$" << arg_index << ": unknown option '-" << c << "'" << std::endl;
         flag_error = true;
