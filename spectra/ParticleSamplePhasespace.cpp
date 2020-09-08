@@ -66,9 +66,9 @@ namespace {
         iline = 0;
         for (isample = 0; ; isample++) {
           iline++;
-          if (!std::getline(ifs,line)) goto error_invalid_format;
-          int npart,dummy;
-          if (2 != std::sscanf(line.c_str()," %d %d",&npart,&dummy)) break;
+          if (!std::getline(ifs, line)) goto error_invalid_format;
+          int npart, dummy;
+          if (2 != std::sscanf(line.c_str(), " %d %d", &npart, &dummy)) break;
 
           if (isample == this->m_numberOfSamples) goto error_invalid_format;
 
@@ -82,7 +82,7 @@ namespace {
             double px, py, pz, m;
             double x, y, z, t;
             if (10 != std::sscanf(
-                line.c_str()," %d %d %lf %lf %lf %lf %lf %lf %lf %lf",
+                line.c_str(), " %d %d %lf %lf %lf %lf %lf %lf %lf %lf",
                 &kc, &kf, &px, &py, &pz, &m, &x, &y, &z, &t
               )) goto error_invalid_format;
 
@@ -200,11 +200,11 @@ namespace {
             if (!ifs.read((char*) &ks, sizeof ks)) goto error_invalid_format;
             if (!ifs.read((char*) &kf, sizeof kf)) goto error_invalid_format;
             if (!ifs.read((char*) &px, sizeof px)) goto error_invalid_format;
-            if (!ifs.read((char*) &px, sizeof py)) goto error_invalid_format;
-            if (!ifs.read((char*) &px, sizeof pz)) goto error_invalid_format;
+            if (!ifs.read((char*) &py, sizeof py)) goto error_invalid_format;
+            if (!ifs.read((char*) &pz, sizeof pz)) goto error_invalid_format;
             if (!ifs.read((char*) &m,  sizeof m )) goto error_invalid_format;
             if (!ifs.read((char*) &x, sizeof x)) goto error_invalid_format;
-            if (!ifs.read((char*) &t, sizeof y)) goto error_invalid_format;
+            if (!ifs.read((char*) &y, sizeof y)) goto error_invalid_format;
             if (!ifs.read((char*) &z, sizeof z)) goto error_invalid_format;
             if (!ifs.read((char*) &t, sizeof t)) goto error_invalid_format;
             this->addParticleMinkowski(kf, px, py, pz, m, x, y, z, t);
