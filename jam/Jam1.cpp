@@ -5,7 +5,7 @@
 #include "Jam1.hpp"
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
 Jam1::Jam1() {}
 
@@ -129,7 +129,7 @@ char* Jam1::getFNAME(int i) const {
 
 void  Jam1::setFNAME(int i, const char* v) {
   if (!strcpy_c2f(jamdat3_.FNAME[i - 1], 80, v)) {
-    std::cerr << "hydro2jam: filename \"" << v << "\" is too long" << std::endl;
+    std::cerr << "runjam: filename \"" << v << "\" is too long" << std::endl;
     std::exit(1);
   }
   //strncpy(jamdat3_.FNAME[i - 1], v, std::strlen(v));

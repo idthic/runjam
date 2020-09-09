@@ -35,7 +35,7 @@ LIBS     := $(user_LIBS)
 
 OBJDIR := obj
 
-hydro2jam_OBJS := \
+runjam_OBJS := \
   $(OBJDIR)/main.o \
   $(OBJDIR)/args.o \
   $(OBJDIR)/jam/Jam1.o \
@@ -49,19 +49,19 @@ hydro2jam_OBJS := \
   $(OBJDIR)/spectra/ParticleSampleRead.o \
   $(OBJDIR)/spectra/ParticleSamplePhasespace.o \
   $(OBJDIR)/spectra/ParticleSampleViscous.o \
-  $(OBJDIR)/Hydro2Jam.o \
+  $(OBJDIR)/RunJam.o \
   $(OBJDIR)/util/Math.o \
   $(OBJDIR)/util/PyRand.o \
   $(OBJDIR)/util/Random.o
-hydro2jam_LIBS := -ljam $(LIBS)
+runjam_LIBS := -ljam $(LIBS)
 
 directories += $(OBJDIR) $(OBJDIR)/util $(OBJDIR)/spectra $(OBJDIR)/jam $(OBJDIR)/ksh
 $(OBJDIR)/%.o: %.cpp | $(OBJDIR) $(OBJDIR)/util $(OBJDIR)/spectra $(OBJDIR)/jam $(OBJDIR)/ksh
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
-all: hydro2jam.exe
-hydro2jam.exe: $(hydro2jam_OBJS)
-	$(CXX) $(LDFLAGS) -o $@ $^ $(hydro2jam_LIBS)
+all: runjam.exe
+runjam.exe: $(runjam_OBJS)
+	$(CXX) $(LDFLAGS) -o $@ $^ $(runjam_LIBS)
 
 
 #---------------------------------------
@@ -69,15 +69,15 @@ hydro2jam.exe: $(hydro2jam_OBJS)
 
 ifneq ($(INSDIR),)
 
-$(INSDIR)/bin/hydro2jam.exe: hydro2jam.exe | $(INSDIR)/bin
+$(INSDIR)/bin/runjam.exe: runjam.exe | $(INSDIR)/bin
 	cp $< $@
-$(INSDIR)/share/hydro2jam/%: data/% | $(INSDIR)/share/hydro2jam
+$(INSDIR)/share/runjam/%: data/% | $(INSDIR)/share/runjam
 	cp $< $@
-directories += $(INSDIR)/bin $(INSDIR)/share/hydro2jam
+directories += $(INSDIR)/bin $(INSDIR)/share/runjam
 install-files += \
-  $(INSDIR)/bin/hydro2jam.exe \
-  $(INSDIR)/share/hydro2jam/ResonanceEosqJam.dat \
-  $(INSDIR)/share/hydro2jam/ResonanceJam.dat
+  $(INSDIR)/bin/runjam.exe \
+  $(INSDIR)/share/runjam/ResonanceEosqJam.dat \
+  $(INSDIR)/share/runjam/ResonanceJam.dat
 install: $(install-files)
 .PHONY: install
 

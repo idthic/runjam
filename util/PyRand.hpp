@@ -1,10 +1,10 @@
-#ifndef hydro2jam_util_PyRand_hpp
-#define hydro2jam_util_PyRand_hpp
+#ifndef runjam_util_PyRand_hpp
+#define runjam_util_PyRand_hpp
 
 #include "Random.hpp"
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 //The random number generator from Pythia6.
 
 class PyRand: public Random {
@@ -27,4 +27,4 @@ protected:
 }
 }
 
-#endif /* hydro2jam_util_PyRand_hpp */
+#endif /* runjam_util_PyRand_hpp */

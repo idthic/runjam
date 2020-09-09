@@ -15,7 +15,7 @@
 #include "ParticleSampleViscous.hpp"
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 namespace {
 
   // sqrt(pi/2)
@@ -539,7 +539,7 @@ namespace {
       LagrangeInterpolation<7> interpL[NINTERP];
       LagrangeInterpolation<7>::interpolation_data dataL[NINTERP][number_of_interpolated_functions];
 #else
-#  error hydro2jam: invalid macro value of CFInterpolationType
+#  error runjam: invalid macro value of CFInterpolationType
 #endif
 
     private:
@@ -1205,7 +1205,7 @@ namespace {
 }
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
   void SampleParticlesC0lrf(
     std::vector<Particle*>& plist,
@@ -1239,7 +1239,7 @@ namespace hydro2jam {
 // Impelmentation of ParticleSample
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 namespace {
 
   class OversampledParticleSampleBase: public ParticleSampleBase {
@@ -1352,7 +1352,7 @@ namespace {
     }
 
   public:
-    ParticleSampleViscous(hydro2jam_context const& ctx, std::string const& fname_hypersurface):
+    ParticleSampleViscous(runjam_context const& ctx, std::string const& fname_hypersurface):
       rlist(ctx), fname_hypersurface(fname_hypersurface), m_turnsOffViscousEffect(false)
     {
       this->m_switchingTemperature = 155.0;
@@ -1493,7 +1493,7 @@ namespace {
 
   public:
     ParticleSampleFromHydrojet(
-      hydro2jam_context const& ctx,
+      runjam_context const& ctx,
       std::string const& fname_freezeout,
       std::string const& fname_position
     ):
@@ -1506,7 +1506,7 @@ namespace {
     }
 
     ParticleSampleFromHydrojet(
-      hydro2jam_context const& ctx,
+      runjam_context const& ctx,
       std::string const& dname_hydro):
       rlist(ctx),
       fname_freezeout(dname_hydro + "/freezeout.dat"),
@@ -1673,11 +1673,11 @@ namespace {
   };
 
   class ParticleSampleFactory: ParticleSampleFactoryRegistered {
-    virtual IParticleSample* CreateInstance(hydro2jam_context const& ctx, std::string const& type, std::string const& inputfile) {
+    virtual IParticleSample* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
       // ResonanceListPCE を移動する
       if (type == "c0lrf") {
-        double const switchingTemperature = ctx.get_config("hydro2jam_switching_temperature", -1.0);
-        bool const turnsOffViscousEffect = ctx.get_config("hydro2jam_turnsOffViscousEffect", false);
+        double const switchingTemperature = ctx.get_config("runjam_switching_temperature", -1.0);
+        bool const turnsOffViscousEffect = ctx.get_config("runjam_turnsOffViscousEffect", false);
 
         ParticleSampleViscous* psamp = new ParticleSampleViscous(ctx, inputfile);
         if (switchingTemperature > 0.0)
@@ -1686,11 +1686,11 @@ namespace {
         return psamp;
 
       } else if (type == "hydrojet") {
-        double const switchingTemperature = ctx.get_config("hydro2jam_switching_temperature", -1.0);
-        double const deltat = ctx.get_config("hydro2jam_deltat", 0.3);
-        double const deltah = ctx.get_config("hydro2jam_deltah", 0.3);
-        double const deltax = ctx.get_config("hydro2jam_deltax", 0.3);
-        double const deltay = ctx.get_config("hydro2jam_deltay", 0.3);
+        double const switchingTemperature = ctx.get_config("runjam_switching_temperature", -1.0);
+        double const deltat = ctx.get_config("runjam_deltat", 0.3);
+        double const deltah = ctx.get_config("runjam_deltah", 0.3);
+        double const deltax = ctx.get_config("runjam_deltax", 0.3);
+        double const deltay = ctx.get_config("runjam_deltay", 0.3);
 
         ParticleSampleFromHydrojet* psamp = new ParticleSampleFromHydrojet(ctx, inputfile);
         psamp->setDtau(deltat);
@@ -1716,7 +1716,7 @@ namespace {
 // Check codes
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 namespace {
   class DummyResonanceList: public IResonanceList {
   public:

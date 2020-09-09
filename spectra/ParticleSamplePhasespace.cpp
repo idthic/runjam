@@ -8,7 +8,7 @@
 #include "IParticleSample.hpp"
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 namespace {
 
   class ParticleSampleReadPhasespaceData: public ParticleSampleBase {
@@ -245,7 +245,7 @@ namespace {
   };
 
   class ParticleSampleFactory: ParticleSampleFactoryRegistered {
-    virtual IParticleSample* CreateInstance(hydro2jam_context const& ctx, std::string const& type, std::string const& inputfile) {
+    virtual IParticleSample* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
       if (type == "phase1" || type == "phase") {
         ParticleSampleReadPhasespaceData* psamp = new ParticleSampleReadPhasespaceData(inputfile);
         if (type == "phase1") psamp->setNumberOfSamples(1);

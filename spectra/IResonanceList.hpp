@@ -3,15 +3,15 @@
 // 2015-03-25 KM
 //   * class IResonanceList: moved from ParticleSampleViscous.h
 //
-#ifndef hydro2jam_spectra_IResonanceData_hpp
-#define hydro2jam_spectra_IResonanceData_hpp
+#ifndef runjam_spectra_IResonanceData_hpp
+#define runjam_spectra_IResonanceData_hpp
 #include <vector>
 #include <string>
 #include <util/Constants.hpp>
 #include "../args.hpp"
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
 class IResonanceList {
 public:
@@ -52,7 +52,7 @@ private:
 
   void initialize(int kineticTemp, int eos_pce,std::string const& fname_rlist);
 public:
-  ResonanceListPCE(hydro2jam_context const& ctx);
+  ResonanceListPCE(runjam_context const& ctx);
   ResonanceListPCE(int kineticTemp, int eos_pce,std::string const& fname_rlist);
 
   resonance const& operator[](int ireso) const {

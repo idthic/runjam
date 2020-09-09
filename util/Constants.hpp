@@ -1,8 +1,8 @@
-#ifndef hydro2jam_util_Constants_hpp
-#define hydro2jam_util_Constants_hpp
+#ifndef runjam_util_Constants_hpp
+#define runjam_util_Constants_hpp
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
   // static const double hbarc_MeVfm=197.32; // scale transformation 1 [fm^-1]=197.32 [MeV]
   // static const double hbarc_MeVfm=197.327053 ; // 197.327053 hydrojet/src/physicsbase/Const.h

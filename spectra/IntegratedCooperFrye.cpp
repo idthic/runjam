@@ -10,7 +10,7 @@
 namespace ksh = kashiwa;
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 //NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 
   typedef kashiwa::phys::vector4 vector4;

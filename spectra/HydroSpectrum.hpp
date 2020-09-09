@@ -1,6 +1,6 @@
 // -*- mode: c++ -*-
-#ifndef hydro2jam_spectra_HydroSpectrum_hpp
-#define hydro2jam_spectra_HydroSpectrum_hpp
+#ifndef runjam_spectra_HydroSpectrum_hpp
+#define runjam_spectra_HydroSpectrum_hpp
 
 #include <iostream>
 #include <iomanip>
@@ -8,7 +8,7 @@
 #include <string>
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
 class HydroSpectrum {
 protected:

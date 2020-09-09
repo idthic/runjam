@@ -3,15 +3,15 @@
 // 2014-05-01 KM,
 //   * Created
 //
-#ifndef hydro2jam_spectra_ParticleSampleViscous_hpp
-#define hydro2jam_spectra_ParticleSampleViscous_hpp
+#ifndef runjam_spectra_ParticleSampleViscous_hpp
+#define runjam_spectra_ParticleSampleViscous_hpp
 #include <vector>
 #include <string>
 #include "IParticleSample.hpp"
 #include "IResonanceList.hpp"
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
   struct HypersurfaceElementC0Lrf {
     double m_ds[4];           //!< 曲線座標での面素ベクトル

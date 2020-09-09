@@ -1,6 +1,6 @@
 // -*- mode: c++ -*-
-#ifndef hydro2jam_Hydro2Jam_hpp
-#define hydro2jam_Hydro2Jam_hpp
+#ifndef runjam_RunJam_hpp
+#define runjam_RunJam_hpp
 
 #include <string>
 #include <fstream>
@@ -9,9 +9,9 @@
 #include "args.hpp"
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
-class Hydro2Jam {
+class RunJam {
 private:
   Jam1* jam;
   double aveNumberPart1, aveNumberPart2;
@@ -28,11 +28,11 @@ private:
   std::ofstream ofs_bin;
 
 private:
-  void initialize(hydro2jam_context const& iparam);
+  void initialize(runjam_context const& iparam);
 
 public:
-  Hydro2Jam(hydro2jam_context const& iparam);
-  ~Hydro2Jam();
+  RunJam(runjam_context const& iparam);
+  ~RunJam();
 
   void   setNumberOfTestParticle(int i) {numberTestParticle=i;}
   double getIniAverageParticleNumber1() {return aveNumberPart1;}

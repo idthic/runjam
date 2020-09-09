@@ -10,22 +10,22 @@
 #include "config.hpp"
 #include "util/Random.hpp"
 #include "util/PyRand.hpp"
-#include "Hydro2Jam.hpp"
+#include "RunJam.hpp"
 #include "spectra/ParticleSampleViscous.hpp"
 #include "jam/Jam1.hpp"
 
-using namespace idt::hydro2jam;
+using namespace idt::runjam;
 
 //-----------------------------------------------------------------------------
 // parameters
 
-struct Hydro2jamCommandlineArguments {
+struct RunjamCommandlineArguments {
   std::string subcommand;
   std::string initType;
   std::string initPath;
 
 public:
-  Hydro2jamCommandlineArguments() {
+  RunjamCommandlineArguments() {
     this->subcommand = "cascade";
     this->initType = "c0lrf";
     this->initPath = "hypersurface_v1.txt";
@@ -36,11 +36,11 @@ public:
 
 private:
   static void cmd_version() {
-    std::cout << "hydro2jam (idt) " << PACKAGE_VERSION << PACKAGE_HASH << std::endl;
+    std::cout << "runjam (idt) " << PACKAGE_VERSION << PACKAGE_HASH << std::endl;
   }
   static void cmd_help() {
     std::printf(
-      "usage: hydro2jam [SUBCOMMAND] [OPTIONS|VAR=VALUE]\n"
+      "usage: runjam [SUBCOMMAND] [OPTIONS|VAR=VALUE]\n"
       "\n"
       "SUBCOMMAND\n"
       "  cascade (default)\n"
@@ -48,22 +48,22 @@ private:
       "  sample\n"
       "\n"
       "OPTIONS and VARIABLES\n"
-      "      hydro2jam_cascade_mode=SUBCOMMAND\n"
-      "  -n, hydro2jam_nevent=INT [1]              number of events to process\n"
-      "  -s, hydro2jam_seed=INT [18371]            seed for random numbers\n"
-      "  -t, hydro2jam_oversampling_factor=NUM [1] ntest\n"
-      "  -w, hydro2jam_switch_weak_decay=INT [0]   sw_weakdecay {0 | 1}\n"
-      "      hydro2jam_phi_decays=BOOL [true]\n"
-      "      hydro2jam_decay_only=BOOL [false]\n"
-      "  --resodata, hydro2jam_resodata=FILE [ResonanceJam.dat] resodata\n"
+      "      runjam_cascade_mode=SUBCOMMAND\n"
+      "  -n, runjam_nevent=INT [1]              number of events to process\n"
+      "  -s, runjam_seed=INT [18371]            seed for random numbers\n"
+      "  -t, runjam_oversampling_factor=NUM [1] ntest\n"
+      "  -w, runjam_switch_weak_decay=INT [0]   sw_weakdecay {0 | 1}\n"
+      "      runjam_phi_decays=BOOL [true]\n"
+      "      runjam_decay_only=BOOL [false]\n"
+      "  --resodata, runjam_resodata=FILE [ResonanceJam.dat] resodata\n"
       "\n"
       " Output options\n"
-      "  -o,        hydro2jam_output_directory=DIR [out]   directory of output files\n"
-      "  -d,        hydro2jam_phasespace_enabled=INT [1]   dump phasespace\n"
-      "  --fphase,  hydro2jam_phasespace_fname=FILE [phasespace.dat]   output filename\n"
-      "  --fphase0, hydro2jam_phasespace_fname0=FILE [phasespace0.dat] output filename\n"
-      "             hydro2jam_output_phbin=BOOL [false]    output binary phasespace\n"
-      "             hydro2jam_output_phbin0=BOOL [false]   output binary phasespace0\n"
+      "  -o,        runjam_output_directory=DIR [out]   directory of output files\n"
+      "  -d,        runjam_phasespace_enabled=INT [1]   dump phasespace\n"
+      "  --fphase,  runjam_phasespace_fname=FILE [phasespace.dat]   output filename\n"
+      "  --fphase0, runjam_phasespace_fname0=FILE [phasespace0.dat] output filename\n"
+      "             runjam_output_phbin=BOOL [false]    output binary phasespace\n"
+      "             runjam_output_phbin0=BOOL [false]   output binary phasespace0\n"
       "\n"
       " Initialiation options\n"
       "  -i ICSPEC       specify initial condition\n"
@@ -76,7 +76,7 @@ private:
       "                  check to require that FILE contains only a single event.\n"
       "    phbin:FILE    load particle lists from the binary format \"ph000k.bin\".\n"
       "    psample:FILE  read a particle list from the file in the format of\n"
-      "                  hydro2jam \"particlesample_pos.dat\"\n"
+      "                  runjam \"particlesample_pos.dat\"\n"
       "\n"
       " Options for hydrojet hypersurface\n"
       "  --hydrojet-ftemp, hydrojet_kintmp=INT [5]       freezeout temperature type\n"
@@ -89,9 +89,9 @@ private:
       "  --hydrojet-dh,    hydrojet_deltah=NUM [0.3]     delta eta\n"
       "\n"
       " Options for c0lrf sampler\n"
-      "  --switching-temperature, hydro2jam_switching_temperature=TEMP [155]\n"
+      "  --switching-temperature, runjam_switching_temperature=TEMP [155]\n"
       "          an advice to switching temperature in MeV\n"
-      "  hydro2jam_turnsOffViscousEffect=INT\n"
+      "  runjam_turnsOffViscousEffect=INT\n"
       "\n"
       " Other options\n"
       "  --help          show this help\n"
@@ -99,9 +99,9 @@ private:
       "\n"
       "SAMPLE\n"
       "\n"
-      "$ ./hydro2jam cascade -s 12345 -o jam --hydrojet-dir hydro\n"
-      "$ ./hydro2jam cascade -s 12345 -o jam -i phase:phasespace0.in\n"
-      "$ ./hydro2jam decay -s 12345 -o jam -i phase:phasespace0.in\n"
+      "$ ./runjam cascade -s 12345 -o jam --hydrojet-dir hydro\n"
+      "$ ./runjam cascade -s 12345 -o jam -i phase:phasespace0.in\n"
+      "$ ./runjam decay -s 12345 -o jam -i phase:phasespace0.in\n"
       "\n"
     );
   }
@@ -109,7 +109,7 @@ private:
 private:
   int argc;
   char** argv;
-  hydro2jam_context* ctx;
+  runjam_context* ctx;
 
   int i;
   const char* arg;
@@ -127,7 +127,7 @@ private:
     } else if (i < argc) {
       return argv[i++];
     } else {
-      std::cerr << "hydro2jam:$" << arg_index << " (" << arg << "): missing optional argument." << std::endl;
+      std::cerr << "runjam:$" << arg_index << " (" << arg << "): missing optional argument." << std::endl;
       flag_error = true;
       return NULL;
     }
@@ -143,7 +143,7 @@ private:
       if (*optarg) {
         ctx->set_value(key, std::atof(optarg));
       } else {
-        std::cerr << "hydro2jam:option(" << arg << "): the argument of the option is empty." << std::endl;
+        std::cerr << "runjam:option(" << arg << "): the argument of the option is empty." << std::endl;
         flag_error = true;
       }
     }
@@ -162,7 +162,7 @@ private:
 
     std::size_t const pos = spec.find(':');
     if (pos == std::string::npos) {
-      std::cerr << "hydro2jam: unrecognized input '-i " << optarg << "'" << std::endl;
+      std::cerr << "runjam: unrecognized input '-i " << optarg << "'" << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -184,11 +184,11 @@ private:
     } else if (longname == "version") {
       flag_version = true;
     } else if (longname == "resodata") {
-      assign_optarg("hydro2jam_resodata");
+      assign_optarg("runjam_resodata");
     } else if (longname == "fphase") {
-      assign_optarg("hydro2jam_phasespace_fname");
+      assign_optarg("runjam_phasespace_fname");
     } else if (longname == "fphase0") {
-      assign_optarg("hydro2jam_phasespace_fname0");
+      assign_optarg("runjam_phasespace_fname0");
 
     } else if (longname == "hydrojet-dir") {
       assign_optarg("hydrojet_directory");
@@ -208,7 +208,7 @@ private:
       assign_optarg_double("hydrojet_deltah");
 
     } else if (longname == "switching-temperature") {
-      assign_optarg_double("hydro2jam_switching_temperature");
+      assign_optarg_double("runjam_switching_temperature");
     } else {
       std::cerr << "unknown option '" << arg << "'" << std::endl;
       flag_error = true;
@@ -217,12 +217,12 @@ private:
 
   bool process_option(int optchar) {
     switch (optchar) {
-    case 's': assign_optarg_int("hydro2jam_seed"); break;
-    case 'n': assign_optarg_int("hydro2jam_nevent"); break;
-    case 't': assign_optarg_int("hydro2jam_oversampling_factor"); break;
-    case 'o': assign_optarg("hydro2jam_output_directory"); break;
-    case 'd': assign_optarg_int("hydro2jam_phasespace_enabled"); break;
-    case 'w': assign_optarg_int("hydro2jam_swtich_weak_decay"); break;
+    case 's': assign_optarg_int("runjam_seed"); break;
+    case 'n': assign_optarg_int("runjam_nevent"); break;
+    case 't': assign_optarg_int("runjam_oversampling_factor"); break;
+    case 'o': assign_optarg("runjam_output_directory"); break;
+    case 'd': assign_optarg_int("runjam_phasespace_enabled"); break;
+    case 'w': assign_optarg_int("runjam_swtich_weak_decay"); break;
     case 'i': assign_optarg_input(); break;
     default: return false;
     }
@@ -233,7 +233,7 @@ private:
     for (const char* p = arg + 1; p && (c = *p); p++) {
       if (p[1]) arg_optarg = p + 1;
       if (!process_option(c)) {
-        std::cerr << "hydro2jam:$" << arg_index << ": unknown option '-" << c << "'" << std::endl;
+        std::cerr << "runjam:$" << arg_index << ": unknown option '-" << c << "'" << std::endl;
         flag_error = true;
       }
     }
@@ -250,7 +250,7 @@ private:
     return true;
   }
 public:
-  int read(int argc, char** argv, hydro2jam_context& ctx) {
+  int read(int argc, char** argv, runjam_context& ctx) {
     this->argc = argc;
     this->argv = argv;
     this->ctx = &ctx;
@@ -272,7 +272,7 @@ public:
         if (arg_index == 1) {
           this->subcommand = arg;
         } else if (!read_assign()) {
-          std::cerr << "hydro2jam:$" << arg_index << ": unrecognized argument '" << arg << "'" << std::endl;
+          std::cerr << "runjam:$" << arg_index << ": unrecognized argument '" << arg << "'" << std::endl;
           flag_error = true;
         }
       }
@@ -297,18 +297,18 @@ public:
   }
 };
 
-void doCascade(hydro2jam_context const& ctx, std::string const& type, std::string const& inputfile, std::string const& cascadeMode) {
+void doCascade(runjam_context const& ctx, std::string const& type, std::string const& inputfile, std::string const& cascadeMode) {
   std::cout << "JAM hadronic cascade start" << std::endl;
 
-  Hydro2Jam jam(ctx);
+  RunJam jam(ctx);
   jam.setMSTC(156, 1); // analysis of collision distribution
   jam.setMSTC(161, 0); // no analysis from jam internal subr.
   jam.setMSTC(162, 1); // Output collision histroy
   jam.setMSTC(165, 1); //
   //jam.setMSTC(41,0); // 0:no resonance decay after simulation.
 
-  int const ntest = ctx.get_config("hydro2jam_oversampling_factor", 1);
-  bool const sw_weakdecay = ctx.get_config("hydro2jam_swtich_weak_decay", 0);
+  int const ntest = ctx.get_config("runjam_oversampling_factor", 1);
+  bool const sw_weakdecay = ctx.get_config("runjam_swtich_weak_decay", 0);
   jam.setNumberOfTestParticle(ntest);
   if (sw_weakdecay) jam.setWeakDecay();
 
@@ -316,7 +316,7 @@ void doCascade(hydro2jam_context const& ctx, std::string const& type, std::strin
 
   IParticleSample* psamp = CreateParticleSample(ctx, type, inputfile);
   if (!psamp) {
-    std::cerr << "hydro2jam: failed to initialize ParticleSample of type '" << type << "'." <<  std::endl;
+    std::cerr << "runjam: failed to initialize ParticleSample of type '" << type << "'." <<  std::endl;
     std::exit(1);
   }
 
@@ -333,7 +333,7 @@ void doCascade(hydro2jam_context const& ctx, std::string const& type, std::strin
 void savePhasespaceData(std::string fname, std::vector<Particle*> plist, ParticleIDType::value_type idtype) {
   std::FILE* f = std::fopen(fname.c_str(), "w");
   if (!f) {
-    std::cerr << "hydro2jam: failed to open the file '" << fname << "'" << std::endl;
+    std::cerr << "runjam: failed to open the file '" << fname << "'" << std::endl;
     return;
   }
 
@@ -349,18 +349,18 @@ void savePhasespaceData(std::string fname, std::vector<Particle*> plist, Particl
     case ParticleIDType::HydroParticleID:
       {
         int ir = particle->id;
-        kf = Hydro2Jam::sampleJamID(ir + 1);
+        kf = RunJam::sampleJamID(ir + 1);
       }
       break;
     case ParticleIDType::PDGCode:
       kf = particle->id;
       break;
     default:
-      std::cerr << "hydro2jam: invalid value of psamp->getParticleIdType()." << std::endl;
+      std::cerr << "runjam: invalid value of psamp->getParticleIdType()." << std::endl;
       std::exit(EXIT_FAILURE);
     }
     if (kf == 0) {
-      std::cerr << "hydro2jam: invalid value of kf (PDG particle code)." << std::endl;
+      std::cerr << "runjam: invalid value of kf (PDG particle code)." << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
@@ -401,15 +401,15 @@ void savePhasespaceData(std::string fname, std::vector<Particle*> plist, Particl
   std::fclose(f);
 }
 
-void doGeneratePhasespace0(hydro2jam_context const& ctx, std::string const& type, std::string const& inputfile) {
+void doGeneratePhasespace0(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
   int const nevent = ctx.nevent(1000);
-  int const ibase = ctx.get_config("hydro2jam_ievent_begin", 0);
-  double const ntest = ctx.get_config("hydro2jam_oversampling_factor", 1.0);
+  int const ibase = ctx.get_config("runjam_ievent_begin", 0);
+  double const ntest = ctx.get_config("runjam_oversampling_factor", 1.0);
   std::string const outdir = ctx.outdir();
 
-  hydro2jam_context ctx1(ctx);
-  ctx1.set_value("hydro2jam_nevent", 1);
-  ctx1.set_value("hydro2jam_oversampling_factor", nevent * ntest);
+  runjam_context ctx1(ctx);
+  ctx1.set_value("runjam_nevent", 1);
+  ctx1.set_value("runjam_oversampling_factor", nevent * ntest);
 
   IParticleSample* psamp = CreateParticleSample(ctx1, type, inputfile);
   psamp->update();
@@ -433,13 +433,13 @@ void doGeneratePhasespace0(hydro2jam_context const& ctx, std::string const& type
 //-----------------------------------------------------------------------------
 
 int main(int argc, char *argv[]) {
-  hydro2jam_context ctx;
+  runjam_context ctx;
 
-  Hydro2jamCommandlineArguments args;
+  RunjamCommandlineArguments args;
   int const ext = args.read(argc, argv, ctx);
   if (ext) return ext;
 
-  std::cout << "hydro2jam [version " << PACKAGE_VERSION << PACKAGE_HASH << ", seed = " << ctx.seed() << "]" << std::endl;
+  std::cout << "runjam [version " << PACKAGE_VERSION << PACKAGE_HASH << ", seed = " << ctx.seed() << "]" << std::endl;
   Random rand(ctx.seed());
   // Random rand(ctx.seed());
   Random::setRandom(&rand);
@@ -450,13 +450,13 @@ int main(int argc, char *argv[]) {
   } else if (args.subcommand == "test-viscous-correction-integration") {
     return checkViscousCooperFryeInterpolated(true);
   } else if (args.subcommand == "cascade") {
-    std::string mode = ctx.get_config<std::string>("hydro2jam_cascade_mode", "cascade");
-    if (mode == "cascade" && ctx.get_config("hydro2jam_decay_only", false)) mode = "decay";
+    std::string mode = ctx.get_config<std::string>("runjam_cascade_mode", "cascade");
+    if (mode == "cascade" && ctx.get_config("runjam_decay_only", false)) mode = "decay";
     doCascade(ctx, args.initType, args.initPath, mode);
   } else if (args.subcommand == "decay" || args.subcommand == "sample") {
     doCascade(ctx, args.initType, args.initPath, args.subcommand);
   } else {
-    std::cerr << "hydro2jam: unknown subcommand ' " << args.subcommand << "'" << std::endl;
+    std::cerr << "runjam: unknown subcommand ' " << args.subcommand << "'" << std::endl;
     return 2;
   }
 

@@ -1,5 +1,5 @@
-#ifndef hydro2jam_context_hpp
-#define hydro2jam_context_hpp
+#ifndef runjam_context_hpp
+#define runjam_context_hpp
 #include <cstring>
 #include <cstdio>
 #include <string>
@@ -96,18 +96,18 @@ namespace util {
 }
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
-  class hydro2jam_context: public idt::util::application_context {
+  class runjam_context: public idt::util::application_context {
   public:
     int seed() const {
-      return this->get_config("hydro2jam_seed", 18371);
+      return this->get_config("runjam_seed", 18371);
     }
     int nevent(int defaultValue = 1) const {
-      return this->get_config("hydro2jam_nevent", defaultValue);
+      return this->get_config("runjam_nevent", defaultValue);
     }
     std::string outdir() const {
-      return this->get_config<std::string>("hydro2jam_output_directory", "out");
+      return this->get_config<std::string>("runjam_output_directory", "out");
     }
 
     int eospce() const {

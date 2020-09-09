@@ -1,5 +1,44 @@
 # hydro2jam
 
+## Compile
+
+### Requirements
+
+This package requires the library `libjam` from JAM version 1.820 or
+before.  The source code of JAM can be obtained from the following URL:
+
+  http://www.aiu.ac.jp/~ynara/jam/
+
+In the JAM package, the parameter `mxv` defined in `src/jam1.inc`
+should be rewritten to 200000 before the compile of JAM.
+For illustration, the JAM library can be installed by the following commands.
+
+```bash
+$ wget http://www.aiu.ac.jp/~ynara/jam/old/jam-1.820.tar.bz2
+$ tar xf jam-1.820.tar.bz
+$ cd jam-1.820
+$ EDIT src/jam1.inc
+$ export F77=gfortran
+$ ./configure --prefix=$HOME/opt/jam/1.820
+$ make -j
+$ make install
+```
+
+### Compile
+
+`runjam.exe` will be created with the following commands.
+
+```bash
+$ ./configure --prefix=$HOME/opt/idt --with-jam=$HOME/opt/jam/1.820
+$ make
+$ make install
+```
+
+
+## Usage
+
+Please check the output of `runjam.exe --help`.
+
 ### Option `--resodata, hydro2jam_resodata=FILE`
 
 The list of particles
@@ -19,7 +58,7 @@ The list of particles
 - 4 = 140 MeV
 - 5 = 160 MeV [default]
 
-## Change 0.1..0.2
+## Changes 0.1..0.2
 
 - General options:
   - Option `-dirJAM PATH`   -> `-o PATH`

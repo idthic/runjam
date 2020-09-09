@@ -1,9 +1,9 @@
 // -*- C++ -*-
-#ifndef hydro2jam_spectra_IntegratedCooperFrye_hpp
-#define hydro2jam_spectra_IntegratedCooperFrye_hpp
+#ifndef runjam_spectra_IntegratedCooperFrye_hpp
+#define runjam_spectra_IntegratedCooperFrye_hpp
 #include <ksh/phys/Minkowski.hpp>
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
   void IntegrateBosonCooperFrye(
     double& dNPos,double& dNNeg,
     const kashiwa::phys::vector4& u,

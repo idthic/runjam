@@ -12,7 +12,7 @@
 #include "ElementReso.hpp"
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 namespace {
 
   static const double FreezeoutSkipTemperature = 0.01; // unit: [/fm]
@@ -232,9 +232,9 @@ void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string f
         double beta = 1.0 / tf;
 
         if (rlist[ir].bf == -1) {
-          idt::hydro2jam::IntegrateBosonCooperFrye(npos, nneg, u, ds, beta, rlist[ir].mass, rlist[ir].mu);
+          idt::runjam::IntegrateBosonCooperFrye(npos, nneg, u, ds, beta, rlist[ir].mass, rlist[ir].mu);
         } else {
-          idt::hydro2jam::IntegrateFermionCooperFrye(npos, nneg, u, ds, beta, rlist[ir].mass, rlist[ir].mu);
+          idt::runjam::IntegrateFermionCooperFrye(npos, nneg, u, ds, beta, rlist[ir].mass, rlist[ir].mu);
         }
 
         double n = (nneg + npos) * rlist[ir].degeff;
@@ -683,7 +683,7 @@ static std::string elementOutputFilenames[151] = {
 };
 
 class ParticleSampleFactory: ParticleSampleFactoryRegistered {
-  virtual IParticleSample* CreateInstance(hydro2jam_context const& ctx, std::string const& type, std::string const& inputfile) {
+  virtual IParticleSample* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
     if (type != "hydrojet.original") return 0;
 
     std::string const indir = ctx.indir();
@@ -695,10 +695,10 @@ class ParticleSampleFactory: ParticleSampleFactoryRegistered {
 
     ParticleSampleHydrojet* psamp =
       new ParticleSampleHydrojet(indir, elementOutputFilenames, kintmp, eospce, resodata);
-    psamp->setDtau(ctx.get_config("hydro2jam_deltat", 0.3));
-    psamp->setDx(ctx.get_config("hydro2jam_deltax", 0.3));
-    psamp->setDy(ctx.get_config("hydro2jam_deltay", 0.3));
-    psamp->setDh(ctx.get_config("hydro2jam_deltah", 0.3));
+    psamp->setDtau(ctx.get_config("runjam_deltat", 0.3));
+    psamp->setDx(ctx.get_config("runjam_deltax", 0.3));
+    psamp->setDy(ctx.get_config("runjam_deltay", 0.3));
+    psamp->setDh(ctx.get_config("runjam_deltah", 0.3));
 
     psamp->setBaryonFree(ctx.get_config("hydrojet_baryonfree", 1));
     psamp->setHypersurfaceFilenames(fn_freezeout_dat, fn_position_dat);

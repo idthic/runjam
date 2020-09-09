@@ -1,12 +1,12 @@
 // -*- mode: c++ -*-
-#ifndef hydro2jam_util_Math_hpp
-#define hydro2jam_util_Math_hpp
+#ifndef runjam_util_Math_hpp
+#define runjam_util_Math_hpp
 #include <cmath>
 #include <cstdlib>
 #include <algorithm>
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
 class Math
 {
@@ -49,4 +49,4 @@ template<class T> inline const T& max(const T& a, const T& b, const T& c)
 }
 }
 
-#endif // hydro2jam_util_Math_hpp
+#endif // runjam_util_Math_hpp

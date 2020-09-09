@@ -1,13 +1,13 @@
 // -*- mode: c++ -*-
 #pragma once
-#ifndef hydro2jam_spectra_ElementReso_hpp
-#define hydro2jam_spectra_ElementReso_hpp
+#ifndef runjam_spectra_ElementReso_hpp
+#define runjam_spectra_ElementReso_hpp
 #include <vector>
 #include "HydroSpectrum.hpp"
 #include "IResonanceList.hpp"
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
 class ElementReso: public HydroSpectrum {
 protected:

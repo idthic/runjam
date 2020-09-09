@@ -5,8 +5,8 @@
 //   * class IParticleSample was moved from ParticleSampleHydrojet.h.
 //   * Added comments.
 //
-#ifndef hydro2jam_spectra_IParticleSample_hpp
-#define hydro2jam_spectra_IParticleSample_hpp
+#ifndef runjam_spectra_IParticleSample_hpp
+#define runjam_spectra_IParticleSample_hpp
 #include <cstdlib>
 #include <iostream>
 #include <vector>
@@ -14,7 +14,7 @@
 #include "../args.hpp"
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
 struct ParticleIDType {
   enum value_type {
@@ -111,7 +111,7 @@ private:
 
   class IParticleSampleFactory {
   public:
-    virtual IParticleSample* CreateInstance(hydro2jam_context const& ctx, std::string const& type, std::string const& inputfile) = 0;
+    virtual IParticleSample* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) = 0;
     virtual ~IParticleSampleFactory() {}
   protected:
     void Register(IParticleSampleFactory* factory);
@@ -122,7 +122,7 @@ private:
     ParticleSampleFactoryRegistered() { Register(this); }
   };
 
-  IParticleSample* CreateParticleSample(hydro2jam_context const& ctx, std::string const& type, std::string const& inputfile);
+  IParticleSample* CreateParticleSample(runjam_context const& ctx, std::string const& type, std::string const& inputfile);
 
 }
 }

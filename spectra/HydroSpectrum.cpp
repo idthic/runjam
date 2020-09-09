@@ -32,7 +32,7 @@ inline double thermal_distribution(double x, double sgn) {
 
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
 using namespace std;
 

@@ -6,7 +6,7 @@
 // implementation of class ParticleSampleBase
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
 void ParticleSampleBase::addParticleMinkowski(int iReso, double px, double py, double pz, double m, double x, double y, double z, double t) {
   double const e = m < 0.0 ? -1.0 : std::sqrt(px * px + py * py + pz * pz + m * m);
@@ -36,7 +36,7 @@ void ParticleSampleBase::clearParticleList() {
 
   static std::vector<IParticleSampleFactory*> particleSampleFactories;
 
-  IParticleSample* CreateParticleSample(hydro2jam_context const& ctx, std::string const& type, std::string const& inputfile) {
+  IParticleSample* CreateParticleSample(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
     std::size_t n = particleSampleFactories.size();
     for (std::size_t i = 0; i < n; i++)
       if (IParticleSample* ret = particleSampleFactories[i]->CreateInstance(ctx, type, inputfile))

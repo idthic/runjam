@@ -1,6 +1,6 @@
 // -*- mode: c++ -*-
-#ifndef hydro2jam_util_Random_hpp
-#define hydro2jam_util_Random_hpp
+#ifndef runjam_util_Random_hpp
+#define runjam_util_Random_hpp
 
 #include <iostream>
 #include <cstdlib>
@@ -8,7 +8,7 @@
 #include <cmath>
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
 class Random {
 protected:

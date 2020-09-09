@@ -8,7 +8,7 @@
 #include "Math.hpp"
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
 Random* Random::srand = 0;
 //bool EventBase::first = true;

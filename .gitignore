@@ -6,5 +6,5 @@
 
 /config.mk
 /config.hpp
-/hydro2jam.exe
+/*.exe
 /dist

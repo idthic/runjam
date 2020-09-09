@@ -8,7 +8,7 @@
 using namespace std;
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
 //...Gives ordinary Gamma function Gamma(x) for positive, real arguments;
 //...see M. Abramowitz, I. A. Stegun: Handbook of Mathematical Functions

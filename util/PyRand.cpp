@@ -1,7 +1,7 @@
 #include "PyRand.hpp"
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
 //...Generates random numbers uniformly distributed between
 //...0 and 1, excluding the endpoints.

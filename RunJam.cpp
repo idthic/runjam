@@ -8,20 +8,20 @@
 #include <iomanip>
 #include <fstream>
 #include <sstream>
-#include "Hydro2Jam.hpp"
+#include "RunJam.hpp"
 #include "args.hpp"
 #include "util/Random.hpp"
 #include "spectra/IParticleSample.hpp"
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
 //=========Set input values and switches ========================
-Hydro2Jam::Hydro2Jam(hydro2jam_context const& ctx) {
+RunJam::RunJam(runjam_context const& ctx) {
   this->initialize(ctx);
 }
 
-void Hydro2Jam::initialize(hydro2jam_context const& ctx) {
+void RunJam::initialize(runjam_context const& ctx) {
   this->nevent = ctx.nevent(1);
 
   std::string const outdir = ctx.outdir();
@@ -31,7 +31,7 @@ void Hydro2Jam::initialize(hydro2jam_context const& ctx) {
   jam = new Jam1();
 
   //....Initialize JAM
-  jam->setMSTC(1, ctx.get_config("hydro2jam_jamseed", seed)); // int seed = 1921;
+  jam->setMSTC(1, ctx.get_config("runjam_jamseed", seed)); // int seed = 1921;
   jam->setMSTC(2, this->nevent); // number of event.
   //jam->setMSTC(38,6);          // io number for jamlist.
   jam->setMSTC(8,0);             // job mode.
@@ -82,11 +82,11 @@ void Hydro2Jam::initialize(hydro2jam_context const& ctx) {
 
   numberTestParticle = 1;
 
-  if (ctx.get_config("hydro2jam_phasespace_enabled", true)) {
+  if (ctx.get_config("runjam_phasespace_enabled", true)) {
     std::string fname_phasespace;
     std::string fname_phasespace0;
-    ctx.read_config<std::string>(fname_phasespace, "hydro2jam_phasespace_fname", "phasespace.dat");
-    ctx.read_config<std::string>(fname_phasespace0, "hydro2jam_phasespace_fname0", "phasespace0.dat");
+    ctx.read_config<std::string>(fname_phasespace, "runjam_phasespace_fname", "phasespace.dat");
+    ctx.read_config<std::string>(fname_phasespace0, "runjam_phasespace_fname0", "phasespace0.dat");
     if (outdir.size() > 0) {
       if (fname_phasespace[0] != '/')
         fname_phasespace = outdir + "/" + fname_phasespace;
@@ -96,31 +96,31 @@ void Hydro2Jam::initialize(hydro2jam_context const& ctx) {
 
     ofs.open(fname_phasespace.c_str());
     if (!ofs) {
-      std::cerr << "hydro2jam: failed to open '" << fname_phasespace << "' for write." << std::endl;
+      std::cerr << "runjam: failed to open '" << fname_phasespace << "' for write." << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
     ofs0.open(fname_phasespace0.c_str());
     if (!ofs0) {
-      std::cerr << "hydro2jam: failed to open '" << fname_phasespace0 << "' for write." << std::endl;
+      std::cerr << "runjam: failed to open '" << fname_phasespace0 << "' for write." << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }
 
-  if (ctx.get_config("hydro2jam_output_phbin", false)) {
+  if (ctx.get_config("runjam_output_phbin", false)) {
     std::string filename = outdir + "/phasespace.bin";
     ofs_bin.open(filename, std::ios::binary);
     if (!ofs_bin) {
-      std::cerr << "hydro2jam: failed to open '" << filename << "' for write." << std::endl;
+      std::cerr << "runjam: failed to open '" << filename << "' for write." << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }
 
-  if (ctx.get_config("hydro2jam_output_phbin0", false)) {
+  if (ctx.get_config("runjam_output_phbin0", false)) {
     std::string filename = outdir + "/phasespace0.bin";
     ofs_bin0.open(filename, std::ios::binary);
     if (!ofs_bin0) {
-      std::cerr << "hydro2jam: failed to open '" << filename << "' for write." << std::endl;
+      std::cerr << "runjam: failed to open '" << filename << "' for write." << std::endl;
       std::exit(EXIT_FAILURE);
     }
   }
@@ -131,11 +131,11 @@ void Hydro2Jam::initialize(hydro2jam_context const& ctx) {
   //jam->setMDCY(jam->jamComp(3212),1,1);   // Sigma0 decay
   //jam->setMDCY(jam->jamComp(3112),1,1);   // Sigma+ decay
 
-  if (!ctx.get_config("hydro2jam_phi_decays", true))
+  if (!ctx.get_config("runjam_phi_decays", true))
     jam->setMDCY(jam->jamComp(333), 1, 0); // no phi decay
 }
 
-Hydro2Jam::~Hydro2Jam() {
+RunJam::~RunJam() {
   if (ofs.is_open()) {
     ofs << -999 << std::endl;
     ofs.close();
@@ -176,7 +176,7 @@ void outputPhaseSpaceBinary(Jam1* jam, std::ofstream& ofs) {
   }
 }
 
-void Hydro2Jam::printPhaseSpaceData(std::ofstream& output) {
+void RunJam::printPhaseSpaceData(std::ofstream& output) {
   int nv = jam->getNV();
   output << nv << "  " << numberTestParticle << std::endl;
   for (int i = 1; i <= nv; i++) {
@@ -206,7 +206,7 @@ void Hydro2Jam::printPhaseSpaceData(std::ofstream& output) {
   }
 }
 
-void Hydro2Jam::initJam(IParticleSample* psamp) {
+void RunJam::initJam(IParticleSample* psamp) {
   std::vector<Particle*> const& plist = psamp->getParticleList();
 
   std::vector<Particle*>::const_iterator mp;
@@ -222,7 +222,7 @@ void Hydro2Jam::initJam(IParticleSample* psamp) {
       kf = particle->id;
       break;
     default:
-      std::cerr<<"Hydro2Jam::initJam: invalid value of psamp->getParticleIdType()."<<std::endl;
+      std::cerr<<"RunJam::initJam: invalid value of psamp->getParticleIdType()."<<std::endl;
       std::exit(EXIT_FAILURE);
     }
     if (kf == 0) continue;
@@ -299,7 +299,7 @@ void Hydro2Jam::initJam(IParticleSample* psamp) {
   jam->setNMESON(nmeson);  // set total number of mesons.
 }
 
-void Hydro2Jam::cmCorrection() {
+void RunJam::cmCorrection() {
   double cx = 0.0;
   double cy = 0.0;
   double cz = 0.0;
@@ -346,7 +346,7 @@ void Hydro2Jam::cmCorrection() {
   }
 }
 
-void Hydro2Jam::generateEvent(IParticleSample* psamp, std::string const& cascadeMode) {
+void RunJam::generateEvent(IParticleSample* psamp, std::string const& cascadeMode) {
   int const nevent = this->nevent;
   aveNumberPart1 = 0.0;
   aveNumberPart2 = 0.0;
@@ -374,7 +374,7 @@ void Hydro2Jam::generateEvent(IParticleSample* psamp, std::string const& cascade
     }
 
     if (iev % nprint == 0) {
-      std::cout << "hydro2jam:iev=" << iev << ": "
+      std::cout << "runjam:iev=" << iev << ": "
                 << "sampling done. The number of initial test particles is nv=" << nv << "." << std::endl;
     }
 
@@ -394,14 +394,14 @@ void Hydro2Jam::generateEvent(IParticleSample* psamp, std::string const& cascade
       jam->finalResonanceDecay();
       if (iev % nprint == 0) {
         std::cout
-          << "hydro2jam:iev=" << iev << ": "
+          << "runjam:iev=" << iev << ": "
           << "decay done." << std::endl;
       }
     } else {
       jam->jamEvt(iev);
       if (iev % nprint == 0) {
         std::cout
-          << "hydro2jam:iev=" << iev << ": "
+          << "runjam:iev=" << iev << ": "
           << "cascade done. The average number of collisions is "
           << (jam->getMSTD(41) + jam->getMSTD(42)) / numberTestParticle << "." << std::endl;
       }
@@ -431,7 +431,7 @@ class HydroParticleCodeTable {
       if (jamCode3) list.push_back(jamCode3);
       if (jamCode4) list.push_back(jamCode4);
     } else {
-      std::cerr << "Hydro2Jam.cxx(HydroParticleCodeTable::registerMapping): invalid initialization" << std::endl;
+      std::cerr << "RunJam.cxx(HydroParticleCodeTable::registerMapping): invalid initialization" << std::endl;
       std::exit(1);
     }
   }
@@ -603,12 +603,12 @@ public:
       }
     }
 
-    std::cerr << "Hydro2Jam.cxx: unexpected hydroParticleCode=" << hydroParticleCode << std::endl;
+    std::cerr << "RunJam.cxx: unexpected hydroParticleCode=" << hydroParticleCode << std::endl;
     return 0;
   }
 };
 
-int Hydro2Jam::sampleJamID(int irshift) {
+int RunJam::sampleJamID(int irshift) {
   static HydroParticleCodeTable table;
   return table.generateJamID(irshift);
 }

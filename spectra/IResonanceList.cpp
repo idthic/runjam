@@ -7,7 +7,7 @@
 #include "../args.hpp"
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
 ResonanceListPCE::resonance ResonanceListPCE::resT[5][21] = {
   //degeff is "effective degree of freedom" which means
@@ -141,7 +141,7 @@ ResonanceListPCE::resonance ResonanceListPCE::resT[5][21] = {
   }
 };
 
-ResonanceListPCE::ResonanceListPCE(hydro2jam_context const& ctx) {
+ResonanceListPCE::ResonanceListPCE(runjam_context const& ctx) {
   int const eospce = ctx.eospce();
   int const kintmp = ctx.kintmp();
   std::string const resodata = ctx.resodata();

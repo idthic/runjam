@@ -7,7 +7,7 @@
 #include "IParticleSample.hpp"
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 namespace {
 
   static bool is_comment_line(std::string const& line) {
@@ -71,7 +71,7 @@ namespace {
   };
 
   class ParticleSampleFactory: ParticleSampleFactoryRegistered {
-    virtual IParticleSample* CreateInstance(hydro2jam_context const& ctx, std::string const& type, std::string const& inputfile) {
+    virtual IParticleSample* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
       if (type != "psample") return 0;
       return new ParticleSampleRead(inputfile);
     }

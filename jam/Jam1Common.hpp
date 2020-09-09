@@ -1,5 +1,5 @@
-#ifndef hydro2jam_jam_Jam1Common_h
-#define hydro2jam_jam_Jam1Common_h
+#ifndef runjam_jam_Jam1Common_h
+#define runjam_jam_Jam1Common_h
 
 #include "../config.hpp"
 // This number should be the same as "mxv" in jam1.inc
@@ -11,7 +11,7 @@
 #endif
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
 #ifdef HYDROJET_FORTRAN_NOEXTNAME
 #  define jaminit_ jaminit

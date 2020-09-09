@@ -14,8 +14,8 @@ namespace fsys {
   }
 }
 
-std::string idt::hydro2jam::hydro2jam_context::resodata() const {
-  std::string file = this->get_config<std::string>("hydro2jam_resodata", "ResonanceJam.dat");
+std::string idt::runjam::runjam_context::resodata() const {
+  std::string file = this->get_config<std::string>("runjam_resodata", "ResonanceJam.dat");
 
   if (fsys::is_file(file.c_str())) return file;
 

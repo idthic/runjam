@@ -1,11 +1,11 @@
 // -*- mode: c++ -*-
-#ifndef hydro2jam_jam_Jam1_h
-#define hydro2jam_jam_Jam1_h
+#ifndef runjam_jam_Jam1_h
+#define runjam_jam_Jam1_h
 #include <cstdlib>
 #include "Jam1Common.hpp"
 
 namespace idt {
-namespace hydro2jam {
+namespace runjam {
 
 class Jam1 {
 public:
