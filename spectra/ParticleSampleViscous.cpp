@@ -10,8 +10,8 @@
 #include <iterator>
 #include <ksh/integrator.hpp>
 #include <util/Constants.hpp>
+#include <util.hpp>
 
-#include "util/Random.hpp"
 #include "ParticleSampleViscous.hpp"
 
 namespace idt {
@@ -983,7 +983,7 @@ namespace {
       //   Therefore, the ucdf should be generated in the interval (0, totalIsotropicPartCDF],
       //   and we want to use the uniform random numbers in (0, 1]. Since getrand() is the random number generator
       //   in the interval [0, 1), we can use 1.0-getRand() to generate the desired numbers.
-      double const x = IsotropicPartInverseUCDF((1.0 - Random::getRand()) * totalIsotropicPartCDF);
+      double const x = IsotropicPartInverseUCDF((1.0 - idt::util::urand()) * totalIsotropicPartCDF);
       double const bp = std::sqrt(x * x - bmass * bmass);
       if (!std::isfinite(bp)) {
         std::cerr << "ParticleSampleViscous.cpp(generateMomentum): beta*p nan/inf" << std::endl;
@@ -1002,18 +1002,18 @@ namespace {
           return false;
         } else if (a <= b) {
           // chi = (a+b*c)^2
-          double const chi = (a + b) * (a + b) * Random::getRand();
+          double const chi = (a + b) * (a + b) * idt::util::urand();
           cost = (std::sqrt(chi) - a) / b;
         } else {
           // chi = (a+b*c)^2
           // psi = (chi-a*a)/b
-          double const psi = b + (4.0 * Random::getRand() - 2.0) * a;
+          double const psi = b + (4.0 * idt::util::urand() - 2.0) * a;
           double const chi = a * a + b * psi;
           cost = psi / (a + std::sqrt(chi));
         }
 
         double const sint = std::sqrt(1.0 - cost * cost);
-        double const phd = 2 * M_PI * Random::getRand();
+        double const phd = 2 * M_PI * idt::util::urand();
 
         // dsig∥z な座標系での運動量
         bpout[0] = x;
@@ -1043,7 +1043,7 @@ namespace {
 
       // (3) 非等方部分の確率的棄却
       //   棄却した時は、再生成は行わない。
-      return Random::getRand() < UnisotropicPartProbability(bpout);
+      return idt::util::urand() < UnisotropicPartProbability(bpout);
     }
 
     bool generateParticleSample(Particle* particle) {
@@ -1063,7 +1063,7 @@ namespace {
       for (int i = 0; i < 4; i++) {
         x[i] = surface->position(i);
         if (surface->m_dx[i] > 0.0)
-          x[i] += (Random::getRand() - 0.5) * surface->m_dx[i];
+          x[i] += (idt::util::urand() - 0.5) * surface->m_dx[i];
       }
 
       double const cosh_ = std::cosh(x[1]);
@@ -1165,7 +1165,7 @@ namespace {
       // nlambda = <n> = Poisson 分布期待値
       double const nlambda1 = totalIntegral * (1.0 / (8 * M_PI * M_PI)) * (temperature * temperature * temperature);
       double const nlambda = nlambda1 * reso->numberOfDegrees(ireso) * this->m_overSamplingFactor;
-      int const n = Random::getRandPoisson(nlambda);
+      int const n = idt::util::irand_poisson(nlambda);
       if (n == 0) return;
 
       double prob = 1.0;
@@ -1182,7 +1182,7 @@ namespace {
 
       Particle particle;
       for (int i = 0; i < n; i++) {
-        if (m_dominating && Random::getRand() >= prob) continue;
+        if (m_dominating && idt::util::urand() >= prob) continue;
         if (generateParticleSample(&particle)) {
           particle.pdg = reso->generatePDGCode(ireso);
           particle.e = -1.0; // onshell (JAM初期化時に jam->jamMass() で自動決定させる)
@@ -1303,11 +1303,11 @@ namespace {
 
       // 一括生成要求がある時
       if (this->numberOfExpectedEvents > 0) {
-        double const& ncache = this->numberOfExpectedEvents;
+        int ncache = this->numberOfExpectedEvents;
         this->updateWithOverSampling(this->m_overSamplingFactor * ncache);
         this->pcache.resize(ncache, std::vector<Particle*>());
         for (std::vector<Particle*>::const_iterator i = this->base::plist.begin(); i != this->base::plist.end(); ++i)
-          this->pcache[int(Random::getRand() * ncache)].push_back(*i);
+          this->pcache[idt::util::irand(ncache)].push_back(*i);
 
         this->numberOfExpectedEvents = 0;
         this->indexOfCachedEvents = 0;

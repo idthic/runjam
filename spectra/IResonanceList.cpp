@@ -3,9 +3,9 @@
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
-#include "../util/Random.hpp"
+#include <util.hpp>
+#include <args.hpp>
 #include "IResonanceList.hpp"
-#include "../args.hpp"
 
 namespace idt {
 namespace runjam {
@@ -251,7 +251,7 @@ int ResonanceListPCE::generatePDGCode(int ireso) const {
   if (codes.size() == 1)
     return codes[0];
   else
-    return codes[int(Random::getRand() * codes.size())];
+    return codes[idt::util::irand(codes.size())];
 }
 
 }

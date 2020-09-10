@@ -5,7 +5,7 @@
 #include <ksh/integrator.hpp>
 #include <ksh/phys/Minkowski.hpp>
 #include <util/Constants.hpp>
-#include <util/Random.hpp>
+#include <util.hpp>
 
 #include "IParticleSample.hpp"
 #include "IntegratedCooperFrye.hpp"
@@ -244,31 +244,31 @@ void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string f
         if ((iw == 1)  ||  (iw == 5)) {
           //out going
           ipos = 1;
-          ran = Random::getRand();
+          ran = idt::util::urand();
           if (ran < numResPos)
             generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
-          ran = Random::getRand();
+          ran = idt::util::urand();
           if (ran < numResPos)
             generateParticle(vx, -vy, yv, ds0, dsx, -dsy, dsz, ir, ipos, tau, xx, -yy, eta);
-          ran = Random::getRand();
+          ran = idt::util::urand();
           if (ran < numResPos)
             generateParticle(-vx, vy, -yv, ds0, -dsx, dsy, -dsz, ir, ipos, tau, -xx, yy, -eta);
-          ran = Random::getRand();
+          ran = idt::util::urand();
           if (ran < numResPos)
             generateParticle(-vx, -vy, -yv, ds0, -dsx, -dsy, -dsz, ir, ipos, tau, -xx, -yy, -eta);
 
           //in coming
           ipos = 0;
-          ran = Random::getRand();
+          ran = idt::util::urand();
           if (ran < numResNeg)
             generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
-          ran = Random::getRand();
+          ran = idt::util::urand();
           if (ran < numResNeg)
             generateParticle(vx, -vy, yv, ds0, dsx, -dsy, dsz, ir, ipos, tau, xx, -yy, eta);
-          ran = Random::getRand();
+          ran = idt::util::urand();
           if (ran < numResNeg)
             generateParticle(-vx, vy, -yv, ds0, -dsx, dsy, -dsz, ir, ipos, tau, -xx, yy, -eta);
-          ran = Random::getRand();
+          ran = idt::util::urand();
           if (ran < numResNeg)
             generateParticle(-vx, -vy, -yv, ds0, -dsx, -dsy, -dsz, ir, ipos, tau, -xx, -yy, -eta);
 
@@ -276,19 +276,19 @@ void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string f
 
           //out going
           ipos = 1;
-          ran = Random::getRand();
+          ran = idt::util::urand();
           if (ran < numResPos)
             generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
-          ran = Random::getRand();
+          ran = idt::util::urand();
           if (ran < numResPos)
             generateParticle(-vx, vy, -yv, ds0, -dsx, dsy, -dsz, ir, ipos, tau, -xx, yy, -eta);
 
           //in coming
           ipos = 0;
-          ran = Random::getRand();
+          ran = idt::util::urand();
           if (ran < numResNeg)
             generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
-          ran = Random::getRand();
+          ran = idt::util::urand();
           if (ran < numResNeg)
             generateParticle(-vx, vy, -yv, ds0, -dsx, dsy, -dsz, ir, ipos, tau, -xx, yy, -eta);
 
@@ -296,19 +296,19 @@ void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string f
 
           //out going
           ipos = 1;
-          ran = Random::getRand();
+          ran = idt::util::urand();
           if (ran < numResPos)
             generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
-          ran = Random::getRand();
+          ran = idt::util::urand();
           if (ran < numResPos)
             generateParticle(vx, -vy, yv, ds0, dsx, -dsy, dsz, ir, ipos, tau, xx, -yy, eta);
 
           //in coming
           ipos = 0;
-          ran = Random::getRand();
+          ran = idt::util::urand();
           if (ran < numResNeg)
             generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
-          ran = Random::getRand();
+          ran = idt::util::urand();
           if (ran < numResNeg)
             generateParticle(vx, -vy, yv, ds0, dsx, -dsy, dsz, ir, ipos, tau, xx, -yy, eta);
 
@@ -316,13 +316,13 @@ void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string f
 
           //out going
           ipos = 1;
-          ran = Random::getRand();
+          ran = idt::util::urand();
           if (ran < numResPos)
             generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
 
           //in coming
           ipos = 0;
-          ran = Random::getRand();
+          ran = idt::util::urand();
           if (ran < numResNeg)
             generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
 
@@ -406,7 +406,7 @@ void ParticleSampleHydrojet::generateParticle(double vx, double vy, double yv,
     do {
       // Generate momentum [0:6GeV/c] according to Bose/Fermi
       // distribution in local rest frame using bisection method
-      double r1 = Random::getRand() * fm;
+      double r1 = idt::util::urand() * fm;
       double pmax = 6000.0 / hbarc_MeVfm;
       double pmin = 0.0;
       double ppp = (pmax + pmin) * 0.5;
@@ -428,9 +428,9 @@ void ParticleSampleHydrojet::generateParticle(double vx, double vy, double yv,
       }
 
       // random variable on unit sphere
-      double r2 = -2 * Random::getRand() + 1;
+      double r2 = -2 * idt::util::urand() + 1;
       double theta = acos(r2);
-      double phd = 2 * M_PI * Random::getRand();
+      double phd = 2 * M_PI * idt::util::urand();
 
       // uniform random number on surface
       double prxd = ppp * sin(theta) * cos(phd);
@@ -468,15 +468,15 @@ void ParticleSampleHydrojet::generateParticle(double vx, double vy, double yv,
         << std::endl;
     }
 
-    ranemis = ranmax * Random::getRand();
+    ranemis = ranmax * idt::util::urand();
 
   } while (ranemis > prds / pu / gamma);
 
   //↓ は bulk emission の時だけしか正しく無い気がする by KM
   //Uniformly distributed in a fluid element in coordinate space
-  double ran1 = Random::getRand();
-  double ran2 = Random::getRand();
-  double ran3 = Random::getRand();
+  double ran1 = idt::util::urand();
+  double ran2 = idt::util::urand();
+  double ran3 = idt::util::urand();
   double xx = x0 + dx * (ran1 - 0.5);
   double yy = y0 + dy * (ran2 - 0.5);
   double eta= eta0 + dh * (ran3 - 0.5);

@@ -36,8 +36,9 @@ LIBS     := $(user_LIBS)
 OBJDIR := obj
 
 runjam_OBJS := \
-  $(OBJDIR)/main.o \
+  $(OBJDIR)/util.o \
   $(OBJDIR)/args.o \
+  $(OBJDIR)/main.o \
   $(OBJDIR)/jam/Jam1.o \
   $(OBJDIR)/ksh/integrator.o \
   $(OBJDIR)/spectra/ElementReso.o \
@@ -49,10 +50,7 @@ runjam_OBJS := \
   $(OBJDIR)/spectra/ParticleSampleRead.o \
   $(OBJDIR)/spectra/ParticleSamplePhasespace.o \
   $(OBJDIR)/spectra/ParticleSampleViscous.o \
-  $(OBJDIR)/RunJam.o \
-  $(OBJDIR)/util/Math.o \
-  $(OBJDIR)/util/PyRand.o \
-  $(OBJDIR)/util/Random.o
+  $(OBJDIR)/RunJam.o
 runjam_LIBS := -ljam $(LIBS)
 
 directories += $(OBJDIR) $(OBJDIR)/util $(OBJDIR)/spectra $(OBJDIR)/jam $(OBJDIR)/ksh

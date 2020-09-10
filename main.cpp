@@ -8,8 +8,6 @@
 #include <iostream>
 
 #include "config.hpp"
-#include "util/Random.hpp"
-#include "util/PyRand.hpp"
 #include "RunJam.hpp"
 #include "spectra/ParticleSampleViscous.hpp"
 #include "jam/Jam1.hpp"
@@ -119,7 +117,7 @@ void doGeneratePhasespace0(runjam_context const& ctx, std::string const& type, s
   std::vector<Particle*> const& plist = psamp->getParticleList();
   std::vector<std::vector<Particle*> > phases((std::size_t) nevent);
   for (std::vector<Particle*>::const_iterator i = plist.begin(); i != plist.end(); ++i)
-    phases[std::min(int(Random::getRand() * nevent), nevent - 1)].push_back(*i);
+    phases[idt::util::irand(nevent)].push_back(*i);
 
   // 保存
   for (int i = 0; i < nevent; i++) {
@@ -141,9 +139,8 @@ int main(int argc, char *argv[]) {
   if (ext) return ext;
 
   std::cout << "runjam [version " << PACKAGE_VERSION << PACKAGE_HASH << ", seed = " << ctx.seed() << "]" << std::endl;
-  Random rand(ctx.seed());
-  // Random rand(ctx.seed());
-  Random::setRandom(&rand);
+
+  idt::util::set_random_seed(ctx.seed());
 
   if (args.subcommand == "generate-phasespace0") {
     // test 用
