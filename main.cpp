@@ -49,7 +49,7 @@ void doCascade(runjam_context const& ctx, std::string const& type, std::string c
     << std::endl;
 }
 
-void savePhasespaceData(std::string fname, std::vector<Particle*> plist, ParticleIDType::value_type idtype) {
+void savePhasespaceData(std::string fname, std::vector<Particle*> plist) {
   std::FILE* f = std::fopen(fname.c_str(), "w");
   if (!f) {
     std::cerr << "runjam: failed to open the file '" << fname << "'" << std::endl;
@@ -61,36 +61,19 @@ void savePhasespaceData(std::string fname, std::vector<Particle*> plist, Particl
   for (std::vector<Particle*>::iterator i = plist.begin(); i != plist.end(); ++i) {
     Particle* particle = *i;
 
-    //---------------------------------
     // (1) kf ... PDG particle code
-    int kf;
-    switch (idtype) {
-    case ParticleIDType::HydroParticleID:
-      {
-        int ir = particle->id;
-        kf = RunJam::sampleJamID(ir + 1);
-      }
-      break;
-    case ParticleIDType::PDGCode:
-      kf = particle->id;
-      break;
-    default:
-      std::cerr << "runjam: invalid value of psamp->getParticleIdType()." << std::endl;
-      std::exit(EXIT_FAILURE);
-    }
+    int kf = particle->pdg;
     if (kf == 0) {
       std::cerr << "runjam: invalid value of kf (PDG particle code)." << std::endl;
       std::exit(EXIT_FAILURE);
     }
 
-    //---------------------------------
     // (2) ks ... 安定粒子なら 1, 不安定粒子なら 2.
     int ks = 2;
     int const kc = Jam1::jamComp(kf); // jam internal particle code.
     if (Jam1::getPMAS(kc,2) <= 1e-7 || Jam1::getMDCY(kc,1) == 0
       || Jam1::getMDCY(kc,2) == 0 || Jam1::getMDCY(kc,3) == 0) ks = 1;
 
-    //---------------------------------
     // (3) px,py,pz,m
     double const px = particle->px;
     double const py = particle->py;
@@ -98,20 +81,19 @@ void savePhasespaceData(std::string fname, std::vector<Particle*> plist, Particl
     double pe = particle->e;
     double m;
     if (pe < 0.0) {
+      // onshell jamMass を用いて決定
       m = Jam1::jamMass(kf);
       pe = std::sqrt(px*px+py*py+pz*pz+m*m);
     } else {
       m = std::sqrt(pe*pe-(px*px+py*py+pz*pz));
     }
 
-    //---------------------------------
     // (3) x,y,z,t
     double const x = particle->x;
     double const y = particle->y;
     double const z = particle->z;
     double const t = particle->t;
 
-    //---------------------------------
     std::fprintf(
       f, "%5d %9d %13.6g %13.6g %13.6g %13.6g %13.6g %13.6g %13.6g %13.6g\n",
       ks, kf, px, py, pz, m, x, y, z, t);
@@ -143,7 +125,7 @@ void doGeneratePhasespace0(runjam_context const& ctx, std::string const& type, s
   for (int i = 0; i < nevent; i++) {
     std::vector<char> fn(outdir.size() + 50);
     std::sprintf(&fn[0], "%s/dens%06d_phasespace0.dat", outdir.c_str(), ibase + i);
-    savePhasespaceData(&fn[0], phases[i], psamp->getParticleIdType());
+    savePhasespaceData(&fn[0], phases[i]);
   }
 
   delete psamp;

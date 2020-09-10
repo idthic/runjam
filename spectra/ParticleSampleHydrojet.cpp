@@ -60,7 +60,6 @@ namespace {
     double getDh() { return dh; }
 
     virtual std::vector<Particle*> const& getParticleList() const override { return plist; }
-    virtual ParticleIDType::value_type getParticleIdType() const override { return ParticleIDType::PDGCode; }
 
   private:
     std::string fn_freezeout_dat;

@@ -1180,11 +1180,11 @@ namespace {
         this->totalIsotropicPartCDF = totalIntegral;
       }
 
-      Particle particle(ireso);
+      Particle particle;
       for (int i = 0; i < n; i++) {
         if (m_dominating && Random::getRand() >= prob) continue;
         if (generateParticleSample(&particle)) {
-          particle.id = reso->generatePDGCode(ireso);
+          particle.pdg = reso->generatePDGCode(ireso);
           particle.e = -1.0; // onshell (JAM初期化時に jam->jamMass() で自動決定させる)
           plist.push_back(new Particle(particle));
         }
@@ -1349,8 +1349,6 @@ namespace {
       this->m_switchingTemperature = 155.0;
     }
 
-    virtual ParticleIDType::value_type getParticleIdType() const override { return ParticleIDType::PDGCode; }
-
     virtual void updateWithOverSampling(double overSamplingFactor) {
       this->base::clearParticleList();
 
@@ -1510,8 +1508,6 @@ namespace {
     }
 
   private:
-    virtual ParticleIDType::value_type getParticleIdType() const override { return ParticleIDType::PDGCode; }
-
     bool readHypersurfaceElement(HypersurfaceElementC0Lrf& surface, std::ifstream& ifsf, std::ifstream& ifsp) const {
       // isbulk
       int isbulk;

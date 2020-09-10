@@ -34,8 +34,6 @@ namespace {
     }
 
   private:
-    virtual ParticleIDType::value_type getParticleIdType() const { return ParticleIDType::PDGCode; }
-
     virtual std::vector<Particle*> const& getParticleList() const {
       if (m_currentSampleIndex < 0) {
         std::cerr << "ParticleSampleReadPhasespaceData: A phasespace file has not been read." << std::endl;
@@ -149,8 +147,6 @@ namespace {
     }
 
   private:
-    virtual ParticleIDType::value_type getParticleIdType() const { return ParticleIDType::PDGCode; }
-
     virtual std::vector<Particle*> const& getParticleList() const {
       if (m_currentSampleIndex < 0) {
         std::cerr << "ParticleSampleReadPhasespaceBinary: A phasespace file has not been read." << std::endl;

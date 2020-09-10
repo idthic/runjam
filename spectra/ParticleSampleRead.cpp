@@ -26,8 +26,6 @@ namespace {
       fname_particlesample_dat(fname_particlesample_dat) {}
 
   private:
-    virtual ParticleIDType::value_type getParticleIdType() const override { return ParticleIDType::PDGCode; }
-
     void readFile() {
       this->clearParticleList();
 

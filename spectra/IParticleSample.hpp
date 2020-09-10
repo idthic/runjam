@@ -10,17 +10,9 @@
 namespace idt {
 namespace runjam {
 
-struct ParticleIDType {
-  enum value_type {
-    HydroParticleID, // usually denoted as id
-    PDGCode,         // usually denoted as kf
-    JamInternalCode, // usually denoted as kc
-  };
-};
-
 struct Particle {
 public:
-  int id;
+  int pdg;
   double mass;
 
   double x;
@@ -33,7 +25,7 @@ public:
   double py;
   double pz;
 public:
-  Particle(int id): id(id) {
+  Particle(int pdg): pdg(pdg) {
     this->mass = -1.0;
     this->x = 0.0;
     this->y = 0.0;
@@ -63,8 +55,6 @@ public:
   /// \~en retrieves the generated resonance distribution.
   /// \~ja 生成した粒子分布を取得します。
   virtual std::vector<Particle*> const& getParticleList() const = 0;
-
-  virtual ParticleIDType::value_type getParticleIdType() const = 0;
 };
 
 class ParticleSampleBase: public IParticleSample {
