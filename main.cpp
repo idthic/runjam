@@ -19,17 +19,17 @@ using namespace idt::runjam;
 void doCascade(runjam_context const& ctx, std::string const& type, std::string const& inputfile, std::string const& cascadeMode) {
   std::cout << "JAM hadronic cascade start" << std::endl;
 
-  RunJam jam(ctx);
-  jam.setMSTC(156, 1); // analysis of collision distribution
-  jam.setMSTC(161, 0); // no analysis from jam internal subr.
-  jam.setMSTC(162, 1); // Output collision histroy
-  jam.setMSTC(165, 1); //
-  //jam.setMSTC(41,0); // 0:no resonance decay after simulation.
+  RunJam runjam(ctx);
+  runjam.setMSTC(156, 1); // analysis of collision distribution
+  runjam.setMSTC(161, 0); // no analysis from jam internal subr.
+  runjam.setMSTC(162, 1); // Output collision histroy
+  runjam.setMSTC(165, 1); //
+  //runjam.setMSTC(41,0); // 0:no resonance decay after simulation.
 
   int const ntest = ctx.get_config("runjam_oversampling_factor", 1);
-  bool const sw_weakdecay = ctx.get_config("runjam_swtich_weak_decay", 0);
-  jam.setNumberOfTestParticle(ntest);
-  if (sw_weakdecay) jam.setWeakDecay();
+  bool const sw_weakdecay = ctx.get_config("runjam_switch_weak_decay", false);
+  runjam.setNumberOfTestParticle(ntest);
+  if (sw_weakdecay) runjam.setWeakDecay();
 
   std::cout << "jam event generation start" << std::endl;
 
@@ -39,13 +39,13 @@ void doCascade(runjam_context const& ctx, std::string const& type, std::string c
     std::exit(1);
   }
 
-  jam.generateEvent(psamp, cascadeMode);
+  runjam.generateEvent(psamp, cascadeMode);
   delete psamp;
 
   std::cout
     << "Average initial particle number from hydrojet:"
-    << " before decay= " << jam.getIniAverageParticleNumber1()
-    << " after decay= " << jam.getIniAverageParticleNumber2()
+    << " before decay= " << runjam.getIniAverageParticleNumber1()
+    << " after decay= " << runjam.getIniAverageParticleNumber2()
     << std::endl;
 }
 

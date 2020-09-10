@@ -1237,7 +1237,6 @@ namespace {
     typedef ParticleSampleBase base;
 
   private:
-    // default value = 1.0
     double m_overSamplingFactor;
   public:
     void setOverSamplingFactor(double value) {
@@ -1249,17 +1248,21 @@ namespace {
 
     // 実装: 複数事象一括生成について。
     //
-    // 1 numberOfExpectedEvents が有限の値に設定されている時、一括生成が要求されている事を意味する。
-    //   numberOfExpectedEvents は setAdviceNumberOfExpectedEvents を通して設定できる。
-    //   一括生成が要求されている時に update が呼ばれると一括生成が実行され、
+    // 1 numberOfExpectedEvents が有限の値に設定されている時、一括生成
+    //   が要求されている事を意味する。numberOfExpectedEvents は
+    //   setAdviceNumberOfExpectedEvents を通して設定できる。一括生成
+    //   が要求されている時に update が呼ばれると一括生成が実行され、
     //   numberOfExpectedEvents は 0 にクリアされる。
+    //
     // 2 一括生成された粒子は base::plist に保持され寿命が管理される。
     //   同時に、事象 #ievent の粒子一覧は pcache[ievent] に記録される。
-    //   pcache.size()>0 の時、一括生成された事象が未だ残っている事を表す。
-    //   (pcache.size()>0 の間 base::plist には一括生成された全粒子が格納されている事になる。)
-    // 3 pcache の事象を使い切ると pcache はクリアされる。
-    //   この場合は通常の 1 事象の生成が行われる。
-    //   その過程で、今迄一括生成の全粒子 plist も解放・クリアされる。
+    //   pcache.size()>0 の時、一括生成された事象が未だ残っている事を
+    //   表す。(pcache.size()>0 の間 base::plist には一括生成された全
+    //   粒子が格納されている事になる。)
+    //
+    // 3 pcache の事象を使い切ると pcache はクリアされる。この場合は通
+    //   常の 1 事象の生成が行われる。その過程で、今迄一括生成の全粒子
+    //   plist も解放・クリアされる。
     //
 
   private:

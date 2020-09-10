@@ -1,5 +1,3 @@
-//...A main program to use the initial condition of hadronic cascade
-//...from hydro
 #include <cmath>
 #include <cstdint>
 #include <vector>
@@ -16,7 +14,6 @@
 namespace idt {
 namespace runjam {
 
-//=========Set input values and switches ========================
 RunJam::RunJam(runjam_context const& ctx) {
   this->initialize(ctx);
 }
@@ -339,7 +336,7 @@ void RunJam::generateEvent(IParticleSample* psamp, std::string const& cascadeMod
   int const nevent = this->nevent;
   aveNumberPart1 = 0.0;
   aveNumberPart2 = 0.0;
-  jam->setMSTC(5,numberTestParticle);
+  jam->setMSTC(5, numberTestParticle);
 
   if (nevent * numberTestParticle > 0)
     psamp->setAdviceNumberOfExpectedEvents(nevent * numberTestParticle);

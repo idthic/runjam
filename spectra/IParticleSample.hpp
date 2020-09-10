@@ -37,7 +37,6 @@ public:
     this->e  = 0.0;
   }
   Particle() {}
-
 };
 
 class IParticleSample {

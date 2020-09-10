@@ -11,17 +11,17 @@
 #include "IntegratedCooperFrye.hpp"
 #include "ElementReso.hpp"
 
-namespace idt {
-namespace runjam {
+using namespace idt::runjam;
+
 namespace {
 
-  static const double FreezeoutSkipTemperature = 0.01; // unit: [/fm]
+  static const std::size_t HYDRO2JAM_ITERATION_MAX = 20;
+  static const double HYDRO2JAM_TEMPERATURE_MIN = 0.01; // 2014-07-30 (unit: [/fm])
 
   class ParticleSampleHydrojet: public ElementReso, public IParticleSample {
   private:
     std::vector<std::ifstream> resDataPos;
     std::vector<std::ifstream> resDataNeg;
-    int di; // iteration number in bisection method
 
     std::vector<Particle*> plist;
     int    baryonfree;
@@ -30,11 +30,12 @@ namespace {
     double meanf;
 
     bool mode_delayed_cooperfrye;
-    bool fReverseParticleList;
-    bool fShuffleParticleList;
+
+    bool cfg_reverse_particles;
+    bool cfg_shuffle_particles;
 
   public:
-    ParticleSampleHydrojet(std::string const& dir, std::string* outf, int kin, int eos_pce, std::string const& fname);
+    ParticleSampleHydrojet(runjam_context const& ctx, std::string const& dir, std::string* outf, int kin, int eos_pce, std::string const& fname);
     ~ParticleSampleHydrojet();
     void setBaryonFree(int i) { baryonfree = i; }
     void setTMPF(double t) { tmpf = t / hbarc_MeVfm * 1000.0; }
@@ -74,7 +75,7 @@ namespace {
     }
 
   private:
-    void getSample(
+    void generateParticle(
       double vx, double vy, double vz,
       double ds0, double dsx, double dsy,
       double dsz, int ir, int ipos,
@@ -89,11 +90,9 @@ namespace {
       double yy, double eta, int ipos);
   };
 
-ParticleSampleHydrojet::ParticleSampleHydrojet(std::string const& dir, std::string* outf, int kin, int eos_pce, std::string const& fname):
+ParticleSampleHydrojet::ParticleSampleHydrojet(runjam_context const& ctx, std::string const& dir, std::string* outf, int kin, int eos_pce, std::string const& fname):
   ElementReso(dir, outf, kin, eos_pce, fname)
 {
-	//	di = 10;
-	di = 20; // iteration number in bisection method
 	plist.clear();
 
   mode_delayed_cooperfrye = false;
@@ -104,20 +103,14 @@ ParticleSampleHydrojet::ParticleSampleHydrojet(std::string const& dir, std::stri
 	meanf = 0.45 / hbarc_MeVfm * 1000.0;
 
   // 2013/04/23, KM, reverse z axis
-  {
-    const char* env = std::getenv("ParticleSample_ReverseParticleList");
-    this->fReverseParticleList = env && std::atoi(env);
-    if (this->fReverseParticleList)
-      std::cout << "ParticleSampleHydrojet: ReverseParticleList mode enabled!" << std::endl;
-  }
+  this->cfg_reverse_particles = ctx.get_config("hydrojet_reverse_particles", false);
+  if (this->cfg_reverse_particles)
+    std::cout << "ParticleSampleHydrojet: ReverseParticleList mode enabled!" << std::endl;
 
   // 2013/04/30, KM, shuffle the particle list
-  {
-    const char* env = std::getenv("ParticleSample_ShuffleParticleList");
-    this->fShuffleParticleList = env && std::atoi(env);
-    if (this->fShuffleParticleList)
-      std::cout << "ParticleSampleHydrojet: ShuffleParticleList mode enabled!" << std::endl;
-  }
+  this->cfg_shuffle_particles = ctx.get_config("hydrojet_shuffle_particles", false);
+  if (this->cfg_shuffle_particles)
+    std::cout << "ParticleSampleHydrojet: ShuffleParticleList mode enabled!" << std::endl;
 }
 
 ParticleSampleHydrojet::~ParticleSampleHydrojet() {
@@ -170,7 +163,6 @@ void ParticleSampleHydrojet::initialize(std::string const& fn_freezeout_dat, std
   mode_delayed_cooperfrye = true;
 }
 
-//void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string fn_position_dat, std::string fn_ecc)
 void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string fn_position_dat) {
   int const nreso_loop = rlist.numberOfResonances();
 
@@ -203,11 +195,9 @@ void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string f
 
     readPData();
 
-    // 2014-07-30
-    if (tf < FreezeoutSkipTemperature) {
+    if (tf < HYDRO2JAM_TEMPERATURE_MIN) {
       if (tf == 0.0)
-        std::cerr << "ParticleSampleHydrojet.cpp(ParticleSampleHydrojet::analyze)! TF=ZERO" << std::endl;
-      //std::cerr << "ParticleSampleHydrojet.cpp(ParticleSampleHydrojet::analyze): skipped lowT surface." << std::endl;
+        std::cerr << "ParticleSampleHydrojet! (warning) zero temperature surface." << std::endl;
       continue;
     }
 
@@ -255,86 +245,86 @@ void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string f
           //out going
           ipos = 1;
           ran = Random::getRand();
-          if(ran < numResPos)
-            getSample(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
+          if (ran < numResPos)
+            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
           ran = Random::getRand();
-          if(ran < numResPos)
-            getSample(vx, -vy, yv, ds0, dsx, -dsy, dsz, ir, ipos, tau, xx, -yy, eta);
+          if (ran < numResPos)
+            generateParticle(vx, -vy, yv, ds0, dsx, -dsy, dsz, ir, ipos, tau, xx, -yy, eta);
           ran = Random::getRand();
-          if(ran < numResPos)
-            getSample(-vx, vy, -yv, ds0, -dsx, dsy, -dsz, ir, ipos, tau, -xx, yy, -eta);
+          if (ran < numResPos)
+            generateParticle(-vx, vy, -yv, ds0, -dsx, dsy, -dsz, ir, ipos, tau, -xx, yy, -eta);
           ran = Random::getRand();
-          if(ran < numResPos)
-            getSample(-vx, -vy, -yv, ds0, -dsx, -dsy, -dsz, ir, ipos, tau, -xx, -yy, -eta);
+          if (ran < numResPos)
+            generateParticle(-vx, -vy, -yv, ds0, -dsx, -dsy, -dsz, ir, ipos, tau, -xx, -yy, -eta);
 
           //in coming
           ipos = 0;
           ran = Random::getRand();
-          if(ran < numResNeg)
-            getSample(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
+          if (ran < numResNeg)
+            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
           ran = Random::getRand();
-          if(ran < numResNeg)
-            getSample(vx, -vy, yv, ds0, dsx, -dsy, dsz, ir, ipos, tau, xx, -yy, eta);
+          if (ran < numResNeg)
+            generateParticle(vx, -vy, yv, ds0, dsx, -dsy, dsz, ir, ipos, tau, xx, -yy, eta);
           ran = Random::getRand();
-          if(ran < numResNeg)
-            getSample(-vx, vy, -yv, ds0, -dsx, dsy, -dsz, ir, ipos, tau, -xx, yy, -eta);
+          if (ran < numResNeg)
+            generateParticle(-vx, vy, -yv, ds0, -dsx, dsy, -dsz, ir, ipos, tau, -xx, yy, -eta);
           ran = Random::getRand();
-          if(ran < numResNeg)
-            getSample(-vx, -vy, -yv, ds0, -dsx, -dsy, -dsz, ir, ipos, tau, -xx, -yy, -eta);
+          if (ran < numResNeg)
+            generateParticle(-vx, -vy, -yv, ds0, -dsx, -dsy, -dsz, ir, ipos, tau, -xx, -yy, -eta);
 
-        } else if((iw == 3)  ||  (iw == 7)) {
+        } else if ((iw == 3)  ||  (iw == 7)) {
 
           //out going
           ipos = 1;
           ran = Random::getRand();
-          if(ran < numResPos)
-            getSample(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
+          if (ran < numResPos)
+            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
           ran = Random::getRand();
-          if(ran < numResPos)
-            getSample(-vx, vy, -yv, ds0, -dsx, dsy, -dsz, ir, ipos, tau, -xx, yy, -eta);
+          if (ran < numResPos)
+            generateParticle(-vx, vy, -yv, ds0, -dsx, dsy, -dsz, ir, ipos, tau, -xx, yy, -eta);
 
           //in coming
           ipos = 0;
           ran = Random::getRand();
-          if(ran < numResNeg)
-            getSample(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
+          if (ran < numResNeg)
+            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
           ran = Random::getRand();
-          if(ran < numResNeg)
-            getSample(-vx, vy, -yv, ds0, -dsx, dsy, -dsz, ir, ipos, tau, -xx, yy, -eta);
+          if (ran < numResNeg)
+            generateParticle(-vx, vy, -yv, ds0, -dsx, dsy, -dsz, ir, ipos, tau, -xx, yy, -eta);
 
-        } else if((iw == 2)  ||  (iw == 6)) {
+        } else if ((iw == 2)  ||  (iw == 6)) {
 
           //out going
           ipos = 1;
           ran = Random::getRand();
-          if(ran < numResPos)
-            getSample(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
+          if (ran < numResPos)
+            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
           ran = Random::getRand();
-          if(ran < numResPos)
-            getSample(vx, -vy, yv, ds0, dsx, -dsy, dsz, ir, ipos, tau, xx, -yy, eta);
+          if (ran < numResPos)
+            generateParticle(vx, -vy, yv, ds0, dsx, -dsy, dsz, ir, ipos, tau, xx, -yy, eta);
 
           //in coming
           ipos = 0;
           ran = Random::getRand();
-          if(ran < numResNeg)
-            getSample(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
+          if (ran < numResNeg)
+            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
           ran = Random::getRand();
-          if(ran < numResNeg)
-            getSample(vx, -vy, yv, ds0, dsx, -dsy, dsz, ir, ipos, tau, xx, -yy, eta);
+          if (ran < numResNeg)
+            generateParticle(vx, -vy, yv, ds0, dsx, -dsy, dsz, ir, ipos, tau, xx, -yy, eta);
 
-        } else if((iw == 4)  ||  (iw == 8)) {
+        } else if ((iw == 4)  ||  (iw == 8)) {
 
           //out going
           ipos = 1;
           ran = Random::getRand();
-          if(ran < numResPos)
-            getSample(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
+          if (ran < numResPos)
+            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
 
           //in coming
           ipos = 0;
           ran = Random::getRand();
-          if(ran < numResNeg)
-            getSample(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
+          if (ran < numResNeg)
+            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
 
         }
       }
@@ -342,7 +332,7 @@ void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string f
   }
 
   // 2013/04/30, KM, shuffle the particle list
-  if (this->fShuffleParticleList) {
+  if (this->cfg_shuffle_particles) {
 #if __cplusplus >= 201703L
     std::shuffle(this->plist.begin(), this->plist.end(), RandomURGB());
 #else
@@ -363,8 +353,7 @@ void ParticleSampleHydrojet::finish()
   }
 }
 
-void ParticleSampleHydrojet::
-getSample(double vx, double vy, double yv,
+void ParticleSampleHydrojet::generateParticle(double vx, double vy, double yv,
 	  double ds0, double dsx, double dsy, double dsz, int ir, int ipos,
 	  double tau, double x0, double y0, double eta0)
 {
@@ -424,7 +413,7 @@ getSample(double vx, double vy, double yv,
 
       double const mu = rlist[ir].mu;
       double const sgn = rlist[ir].bf;
-      for (int id = 0; id < di; id++) {
+      for (int id = 0; id < HYDRO2JAM_ITERATION_MAX; id++) {
         ppp = (pmax + pmin) * 0.5;
         double const fp = kashiwa::IntegrateByGaussLegendre<12>(0.0, ppp,
           [beta, mu, mres2, sgn] (double p) {
@@ -475,7 +464,7 @@ getSample(double vx, double vy, double yv,
         << "Please increase 'facranmax'"
         << " at least "
         << prds / pu / gamma / ranmax * facranmax
-        << " [at ParticleSampleHydrojet::getSample]"
+        << " [at ParticleSampleHydrojet::generateParticle]"
         << std::endl;
     }
 
@@ -493,7 +482,7 @@ getSample(double vx, double vy, double yv,
   double eta= eta0 + dh * (ran3 - 0.5);
 
   // 2013/04/23, KM, reverse z axis
-  if (this->fReverseParticleList) {
+  if (this->cfg_reverse_particles) {
     prz = -prz;
     eta = -eta;
   }
@@ -505,22 +494,22 @@ void ParticleSampleHydrojet::putParticle(double px, double py, double pz,
 	double e, double m, int ir, double tau, double x,
 	double y, double eta, int ipos)
 {
-  // Note: ipos=1 の時が positive contribution による粒子。
-  //   ipos=0 の時は negative contribution による粒子。
-  //   元々の hydrojet では ipos=0 の粒子もファイルに出力する機能があった。
+  // Note: ipos=1 の時が positive contribution による粒子。ipos=0 の時
+  //   は negative contribution による粒子。元々の hydrojet では
+  //   ipos=0 の粒子もファイルに出力する機能があった。
   if (!ipos) return;
 
-  Particle* jp = new Particle(rlist.generatePDGCode(ir));
-  jp->px = px * hbarc_GeVfm;
-  jp->py = py * hbarc_GeVfm;
-  jp->pz = pz * hbarc_GeVfm;
-  //jp->setPe(std::sqrt(m*m+px*px+py*py+pz*pz)*hbarc_GeVfm);
-  jp->e = -1.0; // onshell (JAM初期化時に jam->jamMass() で自動決定させる)
-  jp->x = x;
-  jp->y = y;
-  jp->t = tau * std::cosh(eta);
-  jp->z = tau * std::sinh(eta);
-  this->plist.push_back(jp);
+  Particle* part = new Particle(rlist.generatePDGCode(ir));
+  part->px = px * hbarc_GeVfm;
+  part->py = py * hbarc_GeVfm;
+  part->pz = pz * hbarc_GeVfm;
+  //part->setPe(std::sqrt(m*m+px*px+py*py+pz*pz)*hbarc_GeVfm);
+  part->e = -1.0; // onshell (JAM初期化時に jam->jamMass() で自動決定させる)
+  part->x = x;
+  part->y = y;
+  part->t = tau * std::cosh(eta);
+  part->z = tau * std::sinh(eta);
+  this->plist.push_back(part);
 }
 
 static std::string elementOutputFilenames[151] = {
@@ -688,12 +677,12 @@ class ParticleSampleFactory: ParticleSampleFactoryRegistered {
     std::string const fn_freezeout_dat = inputfile + "/freezeout.dat";
     std::string const fn_position_dat = inputfile + "/position.dat";
 
-    ParticleSampleHydrojet* psamp =
-      new ParticleSampleHydrojet(indir, elementOutputFilenames, kintmp, eospce, resodata);
-    psamp->setDtau(ctx.get_config("runjam_deltat", 0.3));
-    psamp->setDx(ctx.get_config("runjam_deltax", 0.3));
-    psamp->setDy(ctx.get_config("runjam_deltay", 0.3));
-    psamp->setDh(ctx.get_config("runjam_deltah", 0.3));
+    ParticleSampleHydrojet* psamp
+      = new ParticleSampleHydrojet(ctx, indir, elementOutputFilenames, kintmp, eospce, resodata);
+    psamp->setDtau(ctx.get_config("hydrojet_deltat", 0.3));
+    psamp->setDx(ctx.get_config("hydrojet_deltax", 0.3));
+    psamp->setDy(ctx.get_config("hydrojet_deltay", 0.3));
+    psamp->setDh(ctx.get_config("hydrojet_deltah", 0.3));
 
     psamp->setBaryonFree(ctx.get_config("hydrojet_baryonfree", 1));
     psamp->setHypersurfaceFilenames(fn_freezeout_dat, fn_position_dat);
@@ -701,6 +690,4 @@ class ParticleSampleFactory: ParticleSampleFactoryRegistered {
   }
 } instance;
 
-}
-}
 }

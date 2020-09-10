@@ -61,8 +61,8 @@ namespace {
       "      runjam_cascade_mode=SUBCOMMAND\n"
       "  -n, runjam_nevent=INT [1]              number of events to process\n"
       "  -s, runjam_seed=INT [18371]            seed for random numbers\n"
-      "  -t, runjam_oversampling_factor=NUM [1] ntest\n"
-      "  -w, runjam_switch_weak_decay=INT [0]   sw_weakdecay {0 | 1}\n"
+      "  -t, runjam_oversampling_factor=NUM [1] number of test particles\n"
+      "  -w, runjam_switch_weak_decay=BOOL [false] enable weak decays\n"
       "      runjam_phi_decays=BOOL [true]\n"
       "      runjam_decay_only=BOOL [false]\n"
       "  --resodata, runjam_resodata=FILE [ResonanceJam.dat] resodata\n"
@@ -75,7 +75,7 @@ namespace {
       "             runjam_output_phbin=BOOL [false]    output binary phasespace\n"
       "             runjam_output_phbin0=BOOL [false]   output binary phasespace0\n"
       "\n"
-      " Initialiation options\n"
+      " Initialization options\n"
       "  -i ICSPEC       specify initial condition\n"
       "    c0lrf:FILE    sample particles from the hypersurface data from\n"
       "                  rfh c0lrf format \"hypersurface_v1.txt\"\n"
@@ -88,6 +88,11 @@ namespace {
       "    psample:FILE  read a particle list from the file in the format of\n"
       "                  runjam \"particlesample_pos.dat\"\n"
       "\n"
+      " Options for viscous sampler\n"
+      "  --switching-temperature, runjam_switching_temperature=TEMP [155]\n"
+      "                    an advice to switching temperature in MeV\n"
+      "  runjam_turnsOffViscousEffect=INT\n"
+      "\n"
       " Options for hydrojet hypersurface\n"
       "  --hydrojet-ftemp, hydrojet_kintmp=INT [5]       freezeout temperature type\n"
       "  --hydrojet-pce,   hydrojet_eospce=INT [6]       eos_pce\n"
@@ -97,11 +102,8 @@ namespace {
       "  --hydrojet-dx,    hydrojet_deltax=NUM [0.3]     delta x\n"
       "  --hydrojet-dy,    hydrojet_deltay=NUM [0.3]     delta y\n"
       "  --hydrojet-dh,    hydrojet_deltah=NUM [0.3]     delta eta\n"
-      "\n"
-      " Options for c0lrf sampler\n"
-      "  --switching-temperature, runjam_switching_temperature=TEMP [155]\n"
-      "          an advice to switching temperature in MeV\n"
-      "  runjam_turnsOffViscousEffect=INT\n"
+      "  hydrojet_reverse_particles=BOOL [false]         (debug) perform z-reflection\n"
+      "  hydrojet_shuffle_particles=BOOL [false]         (debug) shuffle particles\n"
       "\n"
       " Other options\n"
       "  --help          show this help\n"
@@ -237,7 +239,7 @@ namespace {
       case 't': assign_optarg_int("runjam_oversampling_factor"); break;
       case 'o': assign_optarg("runjam_output_directory"); break;
       case 'd': assign_optarg_int("runjam_phasespace_enabled"); break;
-      case 'w': assign_optarg_int("runjam_swtich_weak_decay"); break;
+      case 'w': assign_optarg_int("runjam_switch_weak_decay"); break;
       case 'i': assign_optarg_input(); break;
       default: return false;
       }

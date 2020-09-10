@@ -58,6 +58,18 @@ The list of particles
 - 4 = 140 MeV
 - 5 = 160 MeV [default]
 
+## Changes 0.2..0.3
+
+- change variable prefix: `hydro2jam_*` -> `runjam_*`
+- rename environment: `ParticleSample_ReverseParticleList` -> `hydrojet_reverse_particles`
+- rename environment: `ParticleSample_ReverseParticleList` -> `hydrojet_shuffle_particles`
+- fix bugs that some options did not work because of option name typos:
+  - `runjam_switch_weak_decay`
+  - `--hydrojet-dt, hydrojet_deltat`
+  - `--hydrojet-dx, hydrojet_deltax`
+  - `--hydrojet-dy, hydrojet_deltay`
+  - `--hydrojet-dh, hydrojet_deltah`
+
 ## Changes 0.1..0.2
 
 - General options:
