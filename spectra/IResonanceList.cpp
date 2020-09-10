@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
+#include "../util/Random.hpp"
 #include "IResonanceList.hpp"
 #include "../args.hpp"
 
@@ -188,17 +189,22 @@ void ResonanceListPCE::initialize(int kineticTemp, int eos_pce, std::string cons
 
     std::istringstream istr(line);
     resonance record;
-    int bftype;
+    int bftype, pdgcode;
+    std::string resonance_name;
     istr >> record.mass
          >> record.deg
          >> record.degeff
          >> record.mu
          >> bftype
-         >> record.anti;
-    if (!istr) {
+         >> record.anti
+         >> resonance_name;
+    while (istr >> pdgcode)
+      record.pdg_codes.push_back(pdgcode);
+    if (record.pdg_codes.empty()) {
       std::cerr << fname_rlist << ":" << iline << ": invalid format." << std::endl;
       std::exit(1);
     }
+
     record.mass /= hbarc_MeVfm; // fm^{-1}
     record.mu   /= hbarc_MeVfm; // fm^{-1}
     record.bf   = bftype == 1 ? -1: bftype == 2 ? 1 : bftype;
@@ -214,30 +220,38 @@ void ResonanceListPCE::initialize(int kineticTemp, int eos_pce, std::string cons
     std::exit(1);
   }
 
-	if (eos_pce == 1) {
+  if (eos_pce == 1) {
     int const itemp = kineticTemp - 1;
-	  if (itemp >= 0 && itemp < 5) {
-	    for (int i = 0; i < data.size(); i++) {
-        resonance& recdst = data[i];
-        resonance& recsrc = resT[itemp][i];
-
-	      recdst.mu = recsrc.mu;
-        // recdst.mass = recsrc.mass;
-        // recdst.deg    = recsrc.deg;
-        // recdst.degeff = recsrc.degeff;
-        // recdst.bf     = recsrc.bf;
-        // recdst.anti   = recsrc.anti;
-
-	      recdst.mu /= hbarc_MeVfm;
-        // recdst.mass /= hbarc_MeVfm;
-        // if (recdst.bf == 1) recdst.bf = -1;
-        // if (recdst.bf == 2) recdst.bf = 1;
-	    }
-	  } else {
-      std::cerr << "ResonanceListPCE::.ctor! something is wrong: Resonance table not available " << std::endl;
+    if (!(0 <= itemp && itemp < 5)) {
+      std::cerr << "ResonanceListPCE! unsupported kintmp=" << kineticTemp << "." << std::endl;
       std::exit(1);
-	  }
-	}
+    }
+
+    for (int i = 0; i < data.size(); i++) {
+      resonance& recdst = data[i];
+      resonance& recsrc = resT[itemp][i];
+
+      recdst.mu = recsrc.mu;
+      // recdst.mass = recsrc.mass;
+      // recdst.deg    = recsrc.deg;
+      // recdst.degeff = recsrc.degeff;
+      // recdst.bf     = recsrc.bf;
+      // recdst.anti   = recsrc.anti;
+
+      recdst.mu /= hbarc_MeVfm;
+      // recdst.mass /= hbarc_MeVfm;
+      // if (recdst.bf == 1) recdst.bf = -1;
+      // if (recdst.bf == 2) recdst.bf = 1;
+    }
+  }
+}
+
+int ResonanceListPCE::generatePDGCode(int ireso) const {
+  auto const& codes = this->data[ireso].pdg_codes;
+  if (codes.size() == 1)
+    return codes[0];
+  else
+    return codes[int(Random::getRand() * codes.size())];
 }
 
 }

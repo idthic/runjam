@@ -1,10 +1,4 @@
 // -*- mode: c++ -*-
-//
-// 2014-05-09 KM,
-//   * Created
-//   * class IParticleSample was moved from ParticleSampleHydrojet.h.
-//   * Added comments.
-//
 #ifndef runjam_spectra_IParticleSample_hpp
 #define runjam_spectra_IParticleSample_hpp
 #include <cstdlib>
@@ -70,7 +64,7 @@ public:
   /// \~ja 生成した粒子分布を取得します。
   virtual std::vector<Particle*> const& getParticleList() const = 0;
 
-  virtual ParticleIDType::value_type getParticleIdType() const { return ParticleIDType::HydroParticleID; }
+  virtual ParticleIDType::value_type getParticleIdType() const = 0;
 };
 
 class ParticleSampleBase: public IParticleSample {

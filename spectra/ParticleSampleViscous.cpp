@@ -1168,15 +1168,6 @@ namespace {
       int const n = Random::getRandPoisson(nlambda);
       if (n == 0) return;
 
-      // if (ireso == 17 && temperature > 0.75) { // pion
-      //   std::cerr << "start dbg_checkIsotropicPartUCDF" << std::endl;
-      //   this->dbg_checkIsotropicPartUCDF();
-      //   std::exit(EXIT_FAILURE);
-      // }
-      // if (ireso == 18) {
-      //   std::fprintf(stderr, "jam30x:npos=%g\n", nlambda1);
-      // }
-
       double prob = 1.0;
       if (m_dominating) {
         this->totalIsotropicPartCDF = base::IsotropicPartTotalCDF();
@@ -1192,9 +1183,9 @@ namespace {
       Particle particle(ireso);
       for (int i = 0; i < n; i++) {
         if (m_dominating && Random::getRand() >= prob) continue;
-
         if (generateParticleSample(&particle)) {
-          particle.e = -1.0; // isospin 等を決めてから mass Pe を決める。
+          particle.id = reso->generatePDGCode(ireso);
+          particle.e = -1.0; // onshell (JAM初期化時に jam->jamMass() で自動決定させる)
           plist.push_back(new Particle(particle));
         }
       }
@@ -1358,6 +1349,8 @@ namespace {
       this->m_switchingTemperature = 155.0;
     }
 
+    virtual ParticleIDType::value_type getParticleIdType() const override { return ParticleIDType::PDGCode; }
+
     virtual void updateWithOverSampling(double overSamplingFactor) {
       this->base::clearParticleList();
 
@@ -1517,6 +1510,8 @@ namespace {
     }
 
   private:
+    virtual ParticleIDType::value_type getParticleIdType() const override { return ParticleIDType::PDGCode; }
+
     bool readHypersurfaceElement(HypersurfaceElementC0Lrf& surface, std::ifstream& ifsf, std::ifstream& ifsp) const {
       // isbulk
       int isbulk;
@@ -1726,6 +1721,11 @@ namespace {
 
     virtual double chemicalPotential(int ir) const { return 0.0; }
     virtual int numberOfDegrees(int ir) const { return 1; }
+
+  private:
+    std::vector<int> m_dummy_pdg_codes;
+  public:
+    virtual int generatePDGCode(int ireso) const override { return ireso; }
   };
 }
 

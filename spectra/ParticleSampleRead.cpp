@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include "IParticleSample.hpp"
+#include "IResonanceList.hpp"
 
 namespace idt {
 namespace runjam {
@@ -17,13 +18,16 @@ namespace {
   }
 
   class ParticleSampleRead: public ParticleSampleBase {
+    ResonanceListPCE rlist;
     std::string fname_particlesample_dat;
   public:
     ParticleSampleRead(std::string const& fname_particlesample_dat):
-      fname_particlesample_dat(fname_particlesample_dat)
-    {}
+      rlist(-1, 6, "ResonanceJam.dat"),
+      fname_particlesample_dat(fname_particlesample_dat) {}
 
   private:
+    virtual ParticleIDType::value_type getParticleIdType() const override { return ParticleIDType::PDGCode; }
+
     void readFile() {
       this->clearParticleList();
 
@@ -44,7 +48,8 @@ namespace {
           if (!(is >> px >> py >> pz >> e >> em >> ir >> tau >> rx >> ry >> eta))
             goto error_invalid_format;
 
-          this->addParticleTauEta(ir, px, py, pz, em, rx, ry, tau, eta);
+          int const pdg = rlist.generatePDGCode(ir);
+          this->addParticleTauEta(pdg, px, py, pz, em, rx, ry, tau, eta);
         }
 
         return;

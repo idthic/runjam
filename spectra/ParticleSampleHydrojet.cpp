@@ -59,7 +59,8 @@ namespace {
     double getDy() { return dy; }
     double getDh() { return dh; }
 
-    std::vector<Particle*> const& getParticleList() const { return plist; }
+    virtual std::vector<Particle*> const& getParticleList() const override { return plist; }
+    virtual ParticleIDType::value_type getParticleIdType() const override { return ParticleIDType::PDGCode; }
 
   private:
     std::string fn_freezeout_dat;
@@ -69,7 +70,7 @@ namespace {
       this->fn_freezeout_dat = fn_freezeout_dat;
       this->fn_position_dat = fn_position_dat;
     }
-    void update() {
+    virtual void update() override {
       this->analyze(this->fn_freezeout_dat, this->fn_position_dat);
     }
 
@@ -510,17 +511,12 @@ void ParticleSampleHydrojet::putParticle(double px, double py, double pz,
   //   元々の hydrojet では ipos=0 の粒子もファイルに出力する機能があった。
   if (!ipos) return;
 
-  Particle* jp = new(std::nothrow) Particle(ir);
-  if (!jp) {
-    std::cerr << "(ParticleSampleHydrojet::putPartile:) No more memory" << std::endl;
-    exit(1);
-  }
-
+  Particle* jp = new Particle(rlist.generatePDGCode(ir));
   jp->px = px * hbarc_GeVfm;
   jp->py = py * hbarc_GeVfm;
   jp->pz = pz * hbarc_GeVfm;
   //jp->setPe(std::sqrt(m*m+px*px+py*py+pz*pz)*hbarc_GeVfm);
-  jp->e = -1.0; // 自動で計算する様にする
+  jp->e = -1.0; // onshell (JAM初期化時に jam->jamMass() で自動決定させる)
   jp->x = x;
   jp->y = y;
   jp->t = tau * std::cosh(eta);

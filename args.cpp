@@ -6,12 +6,12 @@
 namespace fsys {
   static bool exists(const char* path) {
     struct stat st;
-    return stat(path, &st);
+    return stat(path, &st) == 0;
   }
 
   static bool is_file(const char* path) {
     struct stat st;
-    return stat(path, &st) && S_ISREG(st.st_mode);
+    return stat(path, &st) == 0 && S_ISREG(st.st_mode);
   }
 }
 
@@ -28,7 +28,7 @@ std::string runjam_context::resodata() const {
 
     if (std::strlen(PACKAGE_PREFIX)) {
       path = PACKAGE_PREFIX;
-      path += "/data/";
+      path += "/share/runjam/";
       path += file;
       if (fsys::is_file(path.c_str())) return path;
     }
