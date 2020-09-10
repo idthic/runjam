@@ -2,7 +2,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstdio>
-#include <util/Constants.hpp>
+#include <util.hpp>
 
 #ifdef ALPHA
 # include <strstream>

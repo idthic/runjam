@@ -9,7 +9,6 @@
 #include <sstream>
 #include <iterator>
 #include <ksh/integrator.hpp>
-#include <util/Constants.hpp>
 #include <util.hpp>
 
 #include "ParticleSampleViscous.hpp"

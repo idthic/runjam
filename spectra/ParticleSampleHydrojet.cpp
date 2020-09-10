@@ -4,13 +4,13 @@
 #include <algorithm>
 #include <ksh/integrator.hpp>
 #include <ksh/phys/Minkowski.hpp>
-#include <util/Constants.hpp>
 #include <util.hpp>
 
 #include "IParticleSample.hpp"
 #include "IntegratedCooperFrye.hpp"
 #include "ElementReso.hpp"
 
+using namespace idt;
 using namespace idt::runjam;
 
 namespace {

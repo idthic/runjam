@@ -7,8 +7,7 @@
 #define runjam_spectra_IResonanceData_hpp
 #include <vector>
 #include <string>
-#include <util/Constants.hpp>
-#include "../args.hpp"
+#include <args.hpp>
 
 namespace idt {
 namespace runjam {
