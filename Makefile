@@ -41,7 +41,6 @@ runjam_OBJS := \
   $(OBJDIR)/main.o \
   $(OBJDIR)/jam/Jam1.o \
   $(OBJDIR)/ksh/integrator.o \
-  $(OBJDIR)/spectra/ElementReso.o \
   $(OBJDIR)/spectra/HydroSpectrum.o \
   $(OBJDIR)/spectra/IParticleSample.o \
   $(OBJDIR)/spectra/IResonanceList.o \

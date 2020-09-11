@@ -1,4 +1,4 @@
-# hydro2jam
+# runjam
 
 ## Compile
 
@@ -39,7 +39,7 @@ $ make install
 
 Please check the output of `runjam.exe --help`.
 
-### Option `--resodata, hydro2jam_resodata=FILE`
+### Option `--resodata, runjam_resodata=FILE`
 
 The list of particles
 

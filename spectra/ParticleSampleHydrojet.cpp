@@ -1,14 +1,23 @@
-#include <cmath>
 #include <cstdlib>
-#include <new>
+#include <cmath>
 #include <algorithm>
+#include <vector>
+#include <string>
+#include <iostream>
+#include <fstream>
+
+#ifdef _OPENMP
+# include <omp.h>
+#endif
+
+#include <util.hpp>
 #include <ksh/integrator.hpp>
 #include <ksh/phys/Minkowski.hpp>
-#include <util.hpp>
+#include <spectra/IResonanceList.hpp>
+#include <spectra/IParticleSample.hpp>
+#include <spectra/IntegratedCooperFrye.hpp>
 
-#include "IParticleSample.hpp"
-#include "IntegratedCooperFrye.hpp"
-#include "ElementReso.hpp"
+#include "HydroSpectrum.hpp"
 
 using namespace idt;
 using namespace idt::runjam;
@@ -23,8 +32,9 @@ namespace {
   // static const double HYDRO2JAM_FACRANMAX = 1.8;// 2019-08-27, LHC, larger radial flow
   static const double HYDRO2JAM_FACRANMAX = 2.0; // 2014-07-30 for RFH
 
-  class ParticleSampleHydrojet: public ElementReso, public IParticleSample {
+  class ParticleSampleHydrojet: public HydroSpectrum, public IParticleSample {
   private:
+    ResonanceListPCE rlist;
     std::vector<Particle*> plist;
 
     bool flag_negative_contribution = false;
@@ -39,18 +49,25 @@ namespace {
     std::vector<std::ifstream> resDataPos;
     std::vector<std::ifstream> resDataNeg;
 
+    std::vector<std::string>   elemFile;
+
   public:
-    ParticleSampleHydrojet(runjam_context const& ctx, std::string const& dir, std::string* outf, int kin, int eos_pce, std::string const& fname);
+    ParticleSampleHydrojet(runjam_context const& ctx, std::string const& cachedir, std::string* outf, int kin, int eos_pce, std::string const& fname);
     ~ParticleSampleHydrojet();
+
     void setBaryonFree(int i) { baryonfree = i; }
-    void setTMPF(double t) { tmpf = t / hbarc_MeVfm * 1000.0; }
-    void setMUBF(double m) { mubf = m / hbarc_MeVfm * 1000.0; }
+    void setTMPF(double t) { tmpf = t / hbarc_GeVfm; }
+    void setMUBF(double m) { mubf = m / hbarc_GeVfm; }
 
   private:
-    bool tryOpenCooperFryeCache();
+    bool openCooperFryeCacheForRead();
     void initialize();
     void analyze(double oversamplingFactor);
     void finalize();
+
+  private:
+    void createCooperFryeCache(int ireso);
+    void createCooperFryeCache();
 
   private:
     double dx, dy, dh, dtau;
@@ -99,17 +116,26 @@ namespace {
       double yy, double eta, int ipos);
   };
 
-ParticleSampleHydrojet::ParticleSampleHydrojet(runjam_context const& ctx, std::string const& dir, std::string* outf, int kin, int eos_pce, std::string const& fname):
-  ElementReso(dir, outf, kin, eos_pce, fname)
+ParticleSampleHydrojet::ParticleSampleHydrojet(runjam_context const& ctx, std::string const& cachedir, std::string* outf, int kintmp, int eos_pce, std::string const& fname):
+  HydroSpectrum(kintmp, eos_pce), rlist(kintmp, eos_pce, fname)
 {
 	plist.clear();
+
+  int const nreso_loop = this->rlist.numberOfResonances();
+  this->elemFile.resize(nreso_loop);
+  for (int i = 0; i < nreso_loop; i++) {
+    if (cachedir.size() >0)
+      elemFile[i] = cachedir + "/" + outf[i];
+    else
+      elemFile[i] = outf[i];
+  }
 
   mode_delayed_cooperfrye = false;
 
   // constants
-	tmpf = 0.16 / hbarc_MeVfm * 1000.0;
-	mubf = 1.6 / hbarc_MeVfm * 1000.0;
-	meanf = 0.45 / hbarc_MeVfm * 1000.0;
+	tmpf = 0.16 / hbarc_GeVfm;
+	mubf = 1.6 / hbarc_GeVfm;
+	meanf = 0.45 / hbarc_GeVfm;
 
   // 2013/04/23, KM, reverse z axis
   this->cfg_reverse_particles = ctx.get_config("hydrojet_reverse_particles", false);
@@ -130,7 +156,94 @@ ParticleSampleHydrojet::~ParticleSampleHydrojet() {
   }
 }
 
-bool ParticleSampleHydrojet::tryOpenCooperFryeCache() {
+  // 一度に 151x2 のファイルを開いて書き込むとディスクに悪いので共鳴毎に処理する。
+  void ParticleSampleHydrojet::createCooperFryeCache(int ireso) {
+    //---------------------------------------------------------------------------
+    // initialize files
+
+    // open output files
+    std::ofstream ostr_elm;
+    if (ireso < 21) {
+      ostr_elm.open((elemFile[ireso]).c_str());
+      if (!ostr_elm) {
+        std::cerr << "ParticleSampleHydrojet::createCooperFryeCache! failed to create file " << elemFile[ireso] << std::endl;
+        std::exit(1);
+      }
+    }
+    std::ofstream ostr_pos((elemFile[ireso] + ".POS").c_str());
+    if (!ostr_pos) {
+      std::cerr << "ParticleSampleHydrojet::createCooperFryeCache! failed to create file " << elemFile[ireso] << ".POS" << std::endl;
+      std::exit(1);
+    }
+    std::ofstream ostr_neg((elemFile[ireso] + ".NEG").c_str());
+    if (!ostr_neg) {
+      std::cerr << "ParticleSampleHydrojet::createCooperFryeCache! failed to create file " << elemFile[ireso] << ".NEG" << std::endl;
+      std::exit(1);
+    }
+
+    ResonanceListPCE::resonance& recreso = this->rlist[ireso];
+
+    openFDataFile(fn_freezeout_dat);
+
+    //---------------------------------------------------------------------------
+    while (!readFData()) {
+      if (!baryonfree) {
+        recreso.mu = 0.0;
+        if (recreso.bf == 1) recreso.mu = mubf * sqrt(1.0 - tf * tf / tmpf / tmpf) - meanf * nbf;
+        if (recreso.anti) recreso.mu = -mubf * sqrt(1.0 - tf * tf / tmpf / tmpf) + meanf * nbf;
+        //if (recreso.anti) recreso.mu = -mubf * sqrt(1.0 - tf * tf / tmpf / tmpf) - meanf * nbf;
+        //if (recreso.bf==1) recreso.mu = mub;
+        //if (recreso.anti) recreso.mu = -mub;
+      }
+
+      if (tf == 0.0) {
+        std::cerr << "(ParticleSampleHydrojet::createCooperFryeCache) TF=ZERO" << std::endl;
+        //write(24, 9000)0.0
+        continue;
+      }
+
+      //-------------------------------------------------------------------------
+      // integration
+
+      double npos = 0.0;
+      double nneg = 0.0;
+
+      double const gamma = 1.0 / sqrt(1.0 - vx * vx - vy * vy - vz * vz);
+      kashiwa::phys::vector4 u(gamma, vx * gamma, vy * gamma, vz * gamma);
+      kashiwa::phys::vector4 ds(ds0, -dsx, -dsy, -dsz);
+      double const beta = 1.0 / tf;
+
+      if (recreso.bf == -1) {
+        idt::runjam::IntegrateBosonCooperFrye(npos, nneg, u, ds, beta, recreso.mass, recreso.mu);
+      } else {
+        idt::runjam::IntegrateFermionCooperFrye(npos, nneg, u, ds, beta, recreso.mass, recreso.mu);
+      }
+
+      double const n = (nneg + npos) * recreso.degeff;
+      npos *= recreso.deg;
+      nneg *= recreso.deg;
+      //-------------------------------------------------------------------------
+
+      if (ireso < 21) ostr_elm << n << "\n";
+      ostr_pos << npos << "\n";
+      ostr_neg << nneg << "\n";
+    }
+
+    //  close files.
+    if (ireso < 21) ostr_elm.close();
+    ostr_pos.close();
+    ostr_neg.close();
+
+    closeFDataFile();
+  }
+
+  void ParticleSampleHydrojet::createCooperFryeCache() {
+    int const nreso_loop = this->rlist.numberOfResonances();
+    for(int ireso = 0; ireso < nreso_loop; ireso++)
+      this->createCooperFryeCache(ireso);
+  }
+
+bool ParticleSampleHydrojet::openCooperFryeCacheForRead() {
   int const nreso_loop = rlist.numberOfResonances();
 
   resDataPos.clear();
@@ -144,13 +257,13 @@ bool ParticleSampleHydrojet::tryOpenCooperFryeCache() {
   for (int i = 0; i < nreso_loop; i++) {
     std::string fnneg = elemFile[i] + ".NEG";
     resDataNeg.emplace_back(fnneg.c_str());
-    resDataNeg[i].open(fnneg.c_str(), std::ios::in);
     if (!resDataNeg.back()) goto failed;
   }
   return true;
 
 failed:
   resDataPos.clear();
+  resDataNeg.clear();
   return false;
 }
 
@@ -160,7 +273,7 @@ void ParticleSampleHydrojet::initialize() {
   openPDataFile(this->fn_position_dat);
 
   std::cout << "ParticleSampleHydrojet.cpp(ParticleSampleHydrojet::initialize): checking Cooper-Frye cache files (.POS/.NEG)... " << std::flush;
-  if (this->tryOpenCooperFryeCache()) {
+  if (this->openCooperFryeCacheForRead()) {
     std::cout << "yes" << std::endl;
     return;
   } else {
