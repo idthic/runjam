@@ -18,7 +18,9 @@ namespace runjam {
       return this->get_config("runjam_nevent", defaultValue);
     }
     std::string outdir() const {
-      return this->get_config<std::string>("runjam_output_directory", "out");
+      std::string ret = this->get_config<std::string>("runjam_output_directory", "out");
+      if (ret.size() == 0) ret = ".";
+      return ret;
     }
 
     int eospce() const {

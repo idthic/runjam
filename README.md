@@ -60,15 +60,29 @@ The list of particles
 
 ## Changes 0.2..0.3
 
-- change variable prefix: `hydro2jam_*` -> `runjam_*`
-- rename environment: `ParticleSample_ReverseParticleList` -> `hydrojet_reverse_particles`
-- rename environment: `ParticleSample_ReverseParticleList` -> `hydrojet_shuffle_particles`
+- change option prefix: `hydro2jam_*` -> `runjam_*`
+- rename option: `ParticleSample_ReverseParticleList` -> `hydrojet_reverse_particles`
+- rename option: `ParticleSample_ReverseParticleList` -> `hydrojet_shuffle_particles`
 - fix bugs that some options did not work because of option name typos:
   - `runjam_switch_weak_decay`
   - `--hydrojet-dt, hydrojet_deltat`
   - `--hydrojet-dx, hydrojet_deltax`
   - `--hydrojet-dy, hydrojet_deltay`
   - `--hydrojet-dh, hydrojet_deltah`
+- split the option for multi-event phasespace files
+  - remove option `runjam_phasespace_enabled`
+  - new option `runjam_output_phdat`
+  - new option `runjam_output_phdat0`
+- rename options for multi-event phasespace filenames
+  - rename option `runjam_phasespace_fname` -> `runjam_fname_phdat`
+  - rename option `runjam_phasespace_fname0` -> `runjam_fname_phdat0`
+- add options for phasespace binary filenames
+  - new option `runjam_fname_phbin`
+  - new option `runjam_fname_phbin0`
+- add options to save single-event phasespace files
+  - new option `runjam_output_phbin_indexed`
+  - new option `runjam_output_phbin0_indexed`
+  - rename option `runjam_ievent_begin` -> `runjam_output_index_start`
 
 ## Changes 0.1..0.2
 

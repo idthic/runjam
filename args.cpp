@@ -60,7 +60,8 @@ namespace {
       "OPTIONS and VARIABLES\n"
       "      runjam_cascade_mode=SUBCOMMAND\n"
       "  -n, runjam_nevent=INT [1]              number of events to process\n"
-      "  -s, runjam_seed=INT [18371]            seed for random numbers\n"
+      "  -s, runjam_seed=INT [18371]            seed for random numbers in runjam\n"
+      "      runjam_jamseed=INT [runjam_seed]   seed for random numbers in JAM\n"
       "  -t, runjam_oversampling_factor=NUM [1] number of test particles\n"
       "  -w, runjam_switch_weak_decay=BOOL [false] enable weak decays\n"
       "      runjam_phi_decays=BOOL [true]\n"
@@ -69,11 +70,16 @@ namespace {
       "\n"
       " Output options\n"
       "  -o,        runjam_output_directory=DIR [out]   directory of output files\n"
-      "  -d,        runjam_phasespace_enabled=INT [1]   dump phasespace\n"
-      "  --fphase,  runjam_phasespace_fname=FILE [phasespace.dat]   output filename\n"
-      "  --fphase0, runjam_phasespace_fname0=FILE [phasespace0.dat] output filename\n"
+      "  --fphase,  runjam_fname_phdat=FILE []     output filename\n"
+      "  --fphase0, runjam_fname_phdat0=FILE []    output filename\n"
+      "  -d INT                                         (set the next two options)\n"
+      "             runjam_output_phdat=BOOL [true]     output phasespace data\n"
+      "             runjam_output_phdat0=BOOL [true]    output phasespace0 data\n"
       "             runjam_output_phbin=BOOL [false]    output binary phasespace\n"
       "             runjam_output_phbin0=BOOL [false]   output binary phasespace0\n"
+      "             runjam_output_phdat_indexed=BOOL [false]\n"
+      "             runjam_output_phdat0_indexed=BOOL [false]\n"
+      "             runjam_output_index_start=INT [0]\n"
       "\n"
       " Initialization options\n"
       "  -i ICSPEC       specify initial condition\n"
@@ -203,9 +209,9 @@ namespace {
       } else if (longname == "resodata") {
         assign_optarg("runjam_resodata");
       } else if (longname == "fphase") {
-        assign_optarg("runjam_phasespace_fname");
+        assign_optarg("runjam_fname_phdat");
       } else if (longname == "fphase0") {
-        assign_optarg("runjam_phasespace_fname0");
+        assign_optarg("runjam_fname_phdat0");
 
       } else if (longname == "hydrojet-dir") {
         assign_optarg("hydrojet_directory");
@@ -238,7 +244,13 @@ namespace {
       case 'n': assign_optarg_int("runjam_nevent"); break;
       case 't': assign_optarg_int("runjam_oversampling_factor"); break;
       case 'o': assign_optarg("runjam_output_directory"); break;
-      case 'd': assign_optarg_int("runjam_phasespace_enabled"); break;
+      case 'd':
+        if (const char* optarg = get_optarg()) {
+          int const value = std::atoi(optarg);
+          ctx->set_value("runjam_output_phdat", value);
+          ctx->set_value("runjam_output_phdat0", value);
+        }
+        break;
       case 'w': assign_optarg_int("runjam_switch_weak_decay"); break;
       case 'i': assign_optarg_input(); break;
       default: return false;
