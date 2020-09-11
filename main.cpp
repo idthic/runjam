@@ -8,10 +8,11 @@
 #include <iostream>
 
 #include "config.hpp"
-#include "RunJam.hpp"
 #include "spectra/ParticleSampleViscous.hpp"
-#include "jam/Jam1.hpp"
+#include "RunJam.hpp"
+#include "libjam.hpp"
 
+using namespace idt;
 using namespace idt::runjam;
 
 void doCascade(runjam_context const& ctx, std::string const& type, std::string const& inputfile, std::string const& cascadeMode) {
@@ -68,9 +69,9 @@ void savePhasespaceData(std::string fname, std::vector<Particle*> plist) {
 
     // (2) ks ... 安定粒子なら 1, 不安定粒子なら 2.
     int ks = 2;
-    int const kc = Jam1::jamComp(kf); // jam internal particle code.
-    if (Jam1::getPMAS(kc,2) <= 1e-7 || Jam1::getMDCY(kc,1) == 0
-      || Jam1::getMDCY(kc,2) == 0 || Jam1::getMDCY(kc,3) == 0) ks = 1;
+    int const kc = libjam::jamComp(kf); // jam internal particle code.
+    if (libjam::getPMAS(kc,2) <= 1e-7 || libjam::getMDCY(kc,1) == 0
+      || libjam::getMDCY(kc,2) == 0 || libjam::getMDCY(kc,3) == 0) ks = 1;
 
     // (3) px,py,pz,m
     double const px = particle->px;
@@ -80,7 +81,7 @@ void savePhasespaceData(std::string fname, std::vector<Particle*> plist) {
     double m;
     if (pe < 0.0) {
       // onshell jamMass を用いて決定
-      m = Jam1::jamMass(kf);
+      m = libjam::jamMass(kf);
       pe = std::sqrt(px*px+py*py+pz*pz+m*m);
     } else {
       m = std::sqrt(pe*pe-(px*px+py*py+pz*pz));

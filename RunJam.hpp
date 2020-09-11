@@ -5,7 +5,6 @@
 #include <string>
 #include <fstream>
 #include "spectra/ParticleSample.hpp"
-#include "jam/Jam1.hpp"
 #include "args.hpp"
 
 namespace idt {
@@ -13,7 +12,6 @@ namespace runjam {
 
 class RunJam {
 private:
-  Jam1* jam;
   double aveNumberPart1, aveNumberPart2;
   int nevent;
   int numberTestParticle;
@@ -34,12 +32,12 @@ public:
   RunJam(runjam_context const& iparam);
   ~RunJam();
 
-  void   setNumberOfTestParticle(int i) {numberTestParticle=i;}
-  double getIniAverageParticleNumber1() {return aveNumberPart1;}
-  double getIniAverageParticleNumber2() {return aveNumberPart2;}
-  void   setWeakDecay() {jam->setMSTC(42,0);}  //=0: allow weak decays
-  void   unsetWeakDecay() {jam->setMSTC(42,1);}  //=1:no weak decays
-  void   setMSTC(int i,int j) {jam->setMSTC(i,j);}
+  void   setNumberOfTestParticle(int i) { numberTestParticle = i; }
+  double getIniAverageParticleNumber1() { return aveNumberPart1; }
+  double getIniAverageParticleNumber2() { return aveNumberPart2; }
+  void   setWeakDecay();
+  void   unsetWeakDecay();
+  void   setMSTC(int i, int j);
   void   generateEvent(ParticleSampleBase* psamp, std::string const& cascadeMode);
   void   initJam(ParticleSampleBase* psamp);
   void   cmCorrection();

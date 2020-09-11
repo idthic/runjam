@@ -39,7 +39,7 @@ runjam_OBJS := \
   $(OBJDIR)/util.o \
   $(OBJDIR)/args.o \
   $(OBJDIR)/main.o \
-  $(OBJDIR)/jam/Jam1.o \
+  $(OBJDIR)/libjam.o \
   $(OBJDIR)/ksh/integrator.o \
   $(OBJDIR)/spectra/HydroSpectrum.o \
   $(OBJDIR)/spectra/ParticleSample.o \
