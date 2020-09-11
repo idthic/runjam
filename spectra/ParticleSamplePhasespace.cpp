@@ -5,7 +5,7 @@
 #include <iostream>
 #include <sstream>
 #include <cstdint>
-#include "IParticleSample.hpp"
+#include "ParticleSample.hpp"
 
 namespace idt {
 namespace runjam {

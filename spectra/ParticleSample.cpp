@@ -1,6 +1,6 @@
 #include <cmath>
 #include <vector>
-#include "IParticleSample.hpp"
+#include "ParticleSample.hpp"
 
 //-----------------------------------------------------------------------------
 // implementation of class ParticleSampleBase

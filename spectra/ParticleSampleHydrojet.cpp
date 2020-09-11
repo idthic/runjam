@@ -14,8 +14,8 @@
 #include <util.hpp>
 #include <ksh/integrator.hpp>
 #include <ksh/phys/Minkowski.hpp>
-#include <spectra/IResonanceList.hpp>
-#include <spectra/IParticleSample.hpp>
+#include <spectra/ResonanceList.hpp>
+#include <spectra/ParticleSample.hpp>
 #include <spectra/IntegratedCooperFrye.hpp>
 
 #include "HydroSpectrum.hpp"

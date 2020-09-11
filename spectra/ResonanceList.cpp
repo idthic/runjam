@@ -5,7 +5,7 @@
 #include <sstream>
 #include <util.hpp>
 #include <args.hpp>
-#include "IResonanceList.hpp"
+#include "ResonanceList.hpp"
 
 namespace idt {
 namespace runjam {

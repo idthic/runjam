@@ -4,7 +4,7 @@
 
 #include <string>
 #include <fstream>
-#include "spectra/IParticleSample.hpp"
+#include "spectra/ParticleSample.hpp"
 #include "jam/Jam1.hpp"
 #include "args.hpp"
 

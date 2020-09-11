@@ -7,8 +7,8 @@
 #define runjam_spectra_ParticleSampleViscous_hpp
 #include <vector>
 #include <string>
-#include "IParticleSample.hpp"
-#include "IResonanceList.hpp"
+#include "ParticleSample.hpp"
+#include "ResonanceList.hpp"
 
 namespace idt {
 namespace runjam {

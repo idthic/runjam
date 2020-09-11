@@ -1,6 +1,6 @@
 // -*- mode: c++ -*-
-#ifndef runjam_spectra_IParticleSample_hpp
-#define runjam_spectra_IParticleSample_hpp
+#ifndef runjam_spectra_ParticleSample_hpp
+#define runjam_spectra_ParticleSample_hpp
 #include <cstdlib>
 #include <iostream>
 #include <vector>

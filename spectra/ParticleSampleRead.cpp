@@ -4,8 +4,8 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include "IParticleSample.hpp"
-#include "IResonanceList.hpp"
+#include "ParticleSample.hpp"
+#include "ResonanceList.hpp"
 
 namespace idt {
 namespace runjam {

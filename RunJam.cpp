@@ -8,7 +8,7 @@
 #include <sstream>
 #include "RunJam.hpp"
 #include "args.hpp"
-#include "spectra/IParticleSample.hpp"
+#include "spectra/ParticleSample.hpp"
 
 namespace idt {
 namespace runjam {
