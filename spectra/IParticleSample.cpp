@@ -8,9 +8,11 @@
 namespace idt {
 namespace runjam {
 
-void ParticleSampleBase::addParticleMinkowski(int iReso, double px, double py, double pz, double m, double x, double y, double z, double t) {
+void ParticleSampleBase::addParticleMinkowski(int pdg, double px, double py, double pz, double m, double x, double y, double z, double t) {
   double const e = m < 0.0 ? -1.0 : std::sqrt(px * px + py * py + pz * pz + m * m);
-  Particle* particle = new Particle(iReso);
+  Particle* particle = new Particle;
+  particle->pdg = pdg;
+  particle->mass = m;
   particle->px = px;
   particle->py = py;
   particle->pz = pz;
@@ -22,10 +24,10 @@ void ParticleSampleBase::addParticleMinkowski(int iReso, double px, double py, d
   this->plist.push_back(particle);
 }
 
-void ParticleSampleBase::addParticleTauEta(int iReso, double px, double py, double pz, double m, double x, double y, double eta, double tau) {
+void ParticleSampleBase::addParticleTauEta(int pdg, double px, double py, double pz, double m, double x, double y, double eta, double tau) {
   double const t = tau * std::cosh(eta);
   double const z = tau * std::sinh(eta);
-  this->addParticleMinkowski(iReso, px, py, pz, m, x, y, z, t);
+  this->addParticleMinkowski(pdg, px, py, pz, m, x, y, z, t);
 }
 
 void ParticleSampleBase::clearParticleList() {

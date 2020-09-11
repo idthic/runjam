@@ -1232,91 +1232,6 @@ namespace idt {
 namespace runjam {
 namespace {
 
-  class OversampledParticleSampleBase: public ParticleSampleBase {
-    typedef ParticleSampleBase base;
-
-  private:
-    double m_overSamplingFactor;
-  public:
-    void setOverSamplingFactor(double value) {
-      this->m_overSamplingFactor = value;
-    }
-    double getOverSamplingFactor() const {
-      return this->m_overSamplingFactor;
-    }
-
-    // 実装: 複数事象一括生成について。
-    //
-    // 1 numberOfExpectedEvents が有限の値に設定されている時、一括生成
-    //   が要求されている事を意味する。numberOfExpectedEvents は
-    //   setAdviceNumberOfExpectedEvents を通して設定できる。一括生成
-    //   が要求されている時に update が呼ばれると一括生成が実行され、
-    //   numberOfExpectedEvents は 0 にクリアされる。
-    //
-    // 2 一括生成された粒子は base::plist に保持され寿命が管理される。
-    //   同時に、事象 #ievent の粒子一覧は pcache[ievent] に記録される。
-    //   pcache.size()>0 の時、一括生成された事象が未だ残っている事を
-    //   表す。(pcache.size()>0 の間 base::plist には一括生成された全
-    //   粒子が格納されている事になる。)
-    //
-    // 3 pcache の事象を使い切ると pcache はクリアされる。この場合は通
-    //   常の 1 事象の生成が行われる。その過程で、今迄一括生成の全粒子
-    //   plist も解放・クリアされる。
-    //
-
-  private:
-    int numberOfExpectedEvents;
-    int indexOfCachedEvents;
-    std::vector<std::vector<Particle*> > pcache;
-
-  public:
-    virtual std::vector<Particle*> const& getParticleList() const {
-      if (this->indexOfCachedEvents >= 0)
-        return this->pcache[indexOfCachedEvents];
-      else
-        return this->plist;
-    }
-
-  public:
-    virtual void setAdviceNumberOfExpectedEvents(int nEvents) {
-      this->numberOfExpectedEvents = nEvents;
-      this->indexOfCachedEvents = -1;
-    }
-
-  public:
-    OversampledParticleSampleBase(): m_overSamplingFactor(1.0) {
-      this->setAdviceNumberOfExpectedEvents(0);
-    }
-
-    virtual void updateWithOverSampling(double overSamplingFactor) = 0;
-
-    virtual void update() {
-      // 一括生成済の時
-      if (this->pcache.size() > 0) {
-        if (++this->indexOfCachedEvents < this->pcache.size())
-          return;
-
-        this->pcache.clear();
-        this->indexOfCachedEvents = -1;
-      }
-
-      // 一括生成要求がある時
-      if (this->numberOfExpectedEvents > 0) {
-        int ncache = this->numberOfExpectedEvents;
-        this->updateWithOverSampling(this->m_overSamplingFactor * ncache);
-        this->pcache.resize(ncache, std::vector<Particle*>());
-        for (std::vector<Particle*>::const_iterator i = this->base::plist.begin(); i != this->base::plist.end(); ++i)
-          this->pcache[idt::util::irand(ncache)].push_back(*i);
-
-        this->numberOfExpectedEvents = 0;
-        this->indexOfCachedEvents = 0;
-        return;
-      }
-
-      this->updateWithOverSampling(this->m_overSamplingFactor);
-    }
-  };
-
   class ParticleSampleViscous: public OversampledParticleSampleBase {
     typedef OversampledParticleSampleBase base;
 
@@ -1346,7 +1261,7 @@ namespace {
 
   public:
     ParticleSampleViscous(runjam_context const& ctx, std::string const& fname_hypersurface):
-      rlist(ctx), fname_hypersurface(fname_hypersurface), m_turnsOffViscousEffect(false)
+      base(ctx), rlist(ctx), fname_hypersurface(fname_hypersurface), m_turnsOffViscousEffect(false)
     {
       this->m_switchingTemperature = 155.0;
     }
@@ -1489,8 +1404,7 @@ namespace {
       runjam_context const& ctx,
       std::string const& fname_freezeout,
       std::string const& fname_position
-    ):
-      rlist(ctx),
+    ): base(ctx), rlist(ctx),
       fname_freezeout(fname_freezeout),
       fname_position(fname_position),
       dx(0.3), dy(0.3), dh(0.3), dtau(0.3)
@@ -1501,7 +1415,7 @@ namespace {
     ParticleSampleFromHydrojet(
       runjam_context const& ctx,
       std::string const& dname_hydro):
-      rlist(ctx),
+      base(ctx), rlist(ctx),
       fname_freezeout(dname_hydro + "/freezeout.dat"),
       fname_position(dname_hydro + "/position.dat"),
       dx(0.3), dy(0.3), dh(0.3), dtau(0.3)

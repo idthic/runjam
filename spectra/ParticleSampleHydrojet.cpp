@@ -33,13 +33,11 @@ namespace {
   // static const double HYDRO2JAM_FACRANMAX = 1.8;// 2019-08-27, LHC, larger radial flow
   static const double HYDRO2JAM_FACRANMAX = 2.0; // 2014-07-30 for RFH
 
-  class ParticleSampleHydrojet: public IParticleSample {
+  class ParticleSampleHydrojet: public OversampledParticleSampleBase {
+    typedef OversampledParticleSampleBase base;
   private:
     ResonanceListPCE rlist;
     HydroSpectrum m_hf;
-    std::vector<Particle*> plist;
-  public:
-    virtual std::vector<Particle*> const& getParticleList() const override { return plist; }
 
   private:
     bool flag_negative_contribution = false;
@@ -89,7 +87,6 @@ namespace {
   public:
     ParticleSampleHydrojet(runjam_context const& ctx, std::string const& cachedir, std::string suffix,
       int kin, int eos_pce, std::string const& fn_resodata);
-    ~ParticleSampleHydrojet();
 
   private:
     void initialize();
@@ -100,11 +97,8 @@ namespace {
       double ds0, double dsx, double dsy,
       double dsz, int ir, int ipos,
       double tau, double xx, double yy, double eta, int reflection = 0);
-    void putParticle(
-      double px, double py, double pz,
-      double e, double m, int ir, double tau, double x,
-      double y, double eta, int ipos);
     void updateWithOverSampling(double oversamplingFactor) {
+      this->base::clearParticleList();
       this->initialize();
       this->analyze(oversamplingFactor);
       this->finalize();
@@ -117,12 +111,7 @@ namespace {
   ParticleSampleHydrojet::ParticleSampleHydrojet(
     runjam_context const& ctx, std::string const& cachedir, std::string suffix,
     int kintmp, int eos_pce, std::string const& fn_resodata
-  ):
-    rlist(kintmp, eos_pce, fn_resodata),
-    m_hf(kintmp, eos_pce)
-  {
-  	plist.clear();
-
+  ): base(ctx), rlist(kintmp, eos_pce, fn_resodata), m_hf(kintmp, eos_pce) {
     int const nreso_loop = this->rlist.numberOfResonances();
     this->cache_fname.resize(nreso_loop);
     for (int i = 0; i < nreso_loop; i++) {
@@ -148,14 +137,6 @@ namespace {
     this->cfg_shuffle_particles = ctx.get_config("hydrojet_shuffle_particles", false);
     if (this->cfg_shuffle_particles)
       std::cout << "ParticleSampleHydrojet: ShuffleParticleList mode enabled!" << std::endl;
-  }
-
-  ParticleSampleHydrojet::~ParticleSampleHydrojet() {
-    if (plist.size() > 0) {
-      std::vector<Particle*>::iterator cp;
-      for (cp = plist.begin(); cp != plist.end();cp++) delete *cp;
-      plist.clear();
-    }
   }
 
   // 一度に 151x2 のファイルを開いて書き込むとディスクに悪いので共鳴毎に処理する。
@@ -289,12 +270,6 @@ namespace {
 
   void ParticleSampleHydrojet::analyze(double oversamplingFactor) {
     int const nreso_loop = rlist.numberOfResonances();
-
-    if (plist.size() > 0) {
-      std::vector<Particle*>::iterator cp;
-      for(cp = plist.begin(); cp != plist.end();cp++) delete *cp;
-      plist.clear();
-    }
 
     double ran;
 
@@ -570,29 +545,20 @@ namespace {
       eta = -eta;
     }
 
-    putParticle(prx, pry, prz, er, mres, ir, tau, xx, yy, eta, ipos);
-  }
-
-  void ParticleSampleHydrojet::putParticle(double px, double py, double pz,
-  	double e, double m, int ir, double tau, double x,
-  	double y, double eta, int ipos)
-  {
     // Note: ipos=1 の時が positive contribution による粒子。ipos=0 の時
     //   は negative contribution による粒子。元々の hydrojet では
     //   ipos=0 の粒子もファイルに出力する機能があった。
-    if (!ipos) return;
+    if (ipos) {
+      int const pdg = rlist.generatePDGCode(ir);
+      double const px_GeV = prx * hbarc_GeVfm;
+      double const py_GeV = pry * hbarc_GeVfm;
+      double const pz_GeV = prz * hbarc_GeVfm;
 
-    Particle* part = new Particle(rlist.generatePDGCode(ir));
-    part->px = px * hbarc_GeVfm;
-    part->py = py * hbarc_GeVfm;
-    part->pz = pz * hbarc_GeVfm;
-    //part->setPe(std::sqrt(m*m+px*px+py*py+pz*pz)*hbarc_GeVfm);
-    part->e = -1.0; // onshell (JAM初期化時に jam->jamMass() で自動決定させる)
-    part->x = x;
-    part->y = y;
-    part->t = tau * std::cosh(eta);
-    part->z = tau * std::sinh(eta);
-    this->plist.push_back(part);
+      // use jamMass (JAM初期化時に jam->jamMass() で mass と e を自動決定)
+      double const mass_GeV = -1.0; // mres * hbarc_GeVfm;
+
+      base::addParticleTauEta(pdg, px_GeV, py_GeV, pz_GeV, mass_GeV, xx, yy, eta, tau);
+    }
   }
 
   class ParticleSampleFactory: ParticleSampleFactoryRegistered {
