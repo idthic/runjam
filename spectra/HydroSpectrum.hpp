@@ -11,8 +11,7 @@ namespace idt {
 namespace runjam {
 
 class HydroSpectrum {
-protected:
-  double hbarc, pi;
+public:
   int degpi, degk, degp; // degree of freedom.
   double  mpi, mk, mpro; // masses of pions, kaons and protons.
   double  mupi, muk, mup; // chemical potentials.

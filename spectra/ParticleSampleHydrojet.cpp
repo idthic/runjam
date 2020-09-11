@@ -33,43 +33,37 @@ namespace {
   // static const double HYDRO2JAM_FACRANMAX = 1.8;// 2019-08-27, LHC, larger radial flow
   static const double HYDRO2JAM_FACRANMAX = 2.0; // 2014-07-30 for RFH
 
-  class ParticleSampleHydrojet: public HydroSpectrum, public IParticleSample {
+  class ParticleSampleHydrojet: public IParticleSample {
   private:
     ResonanceListPCE rlist;
+    HydroSpectrum m_hf;
     std::vector<Particle*> plist;
+  public:
+    virtual std::vector<Particle*> const& getParticleList() const override { return plist; }
 
+  private:
     bool flag_negative_contribution = false;
+    bool cfg_reverse_particles;
+    bool cfg_shuffle_particles;
 
+  private:
+    std::string fn_freezeout_dat;
+    std::string fn_position_dat;
+  public:
+    void setHypersurfaceFilenames(std::string const& fn_freezeout_dat, std::string const& fn_position_dat) {
+      this->fn_freezeout_dat = fn_freezeout_dat;
+      this->fn_position_dat = fn_position_dat;
+    }
+
+  private:
     int    cfg_baryon_disable;
     double cfg_baryon_tmpf;  // [unit: fm^{-1}]
     double cfg_baryon_mubf;  // [unit: fm^{-1}]
     double cfg_baryon_meanf;
-    bool cfg_reverse_particles;
-    bool cfg_shuffle_particles;
-
-    bool cache_available;
-    std::vector<std::string>   cache_fname;
-    std::vector<std::ifstream> cache_ifsPos;
-    std::vector<std::ifstream> cache_ifsNeg;
-
   public:
-    ParticleSampleHydrojet(runjam_context const& ctx, std::string const& cachedir, std::string suffix,
-      int kin, int eos_pce, std::string const& fn_resodata);
-    ~ParticleSampleHydrojet();
-
     void setBaryonFree(int i) { cfg_baryon_disable = i; }
     void setTMPF(double t) { cfg_baryon_tmpf = t / hbarc_GeVfm; }
     void setMUBF(double m) { cfg_baryon_mubf = m / hbarc_GeVfm; }
-
-  private:
-    bool openCooperFryeCacheForRead();
-    void initialize();
-    void analyze(double oversamplingFactor);
-    void finalize();
-
-  private:
-    void createCooperFryeCache(int ireso);
-    void createCooperFryeCache();
 
   private:
     double dx, dy, dh, dtau;
@@ -83,26 +77,24 @@ namespace {
     double getDy() { return dy; }
     double getDh() { return dh; }
 
-    virtual std::vector<Particle*> const& getParticleList() const override { return plist; }
-
   private:
-    std::string fn_freezeout_dat;
-    std::string fn_position_dat;
+    bool cache_available;
+    std::vector<std::string>   cache_fname;
+    std::vector<std::ifstream> cache_ifsPos;
+    std::vector<std::ifstream> cache_ifsNeg;
+    bool openCooperFryeCacheForRead();
+    void createCooperFryeCache(int ireso);
+    void createCooperFryeCache();
+
   public:
-    void setHypersurfaceFilenames(std::string const& fn_freezeout_dat, std::string const& fn_position_dat) {
-      this->fn_freezeout_dat = fn_freezeout_dat;
-      this->fn_position_dat = fn_position_dat;
-    }
-    void updateWithOverSampling(double oversamplingFactor) {
-      this->initialize();
-      this->analyze(oversamplingFactor);
-      this->finalize();
-    }
-    virtual void update() override {
-      this->updateWithOverSampling(1.0);
-    }
+    ParticleSampleHydrojet(runjam_context const& ctx, std::string const& cachedir, std::string suffix,
+      int kin, int eos_pce, std::string const& fn_resodata);
+    ~ParticleSampleHydrojet();
 
   private:
+    void initialize();
+    void analyze(double oversamplingFactor);
+    void finalize();
     void generateParticle(
       double vx, double vy, double vz,
       double ds0, double dsx, double dsy,
@@ -112,17 +104,22 @@ namespace {
       double px, double py, double pz,
       double e, double m, int ir, double tau, double x,
       double y, double eta, int ipos);
-    void outputData(
-      double prx, double pry, double prz,
-      double er, double mres, int ir, double tau, double xx,
-      double yy, double eta, int ipos);
+    void updateWithOverSampling(double oversamplingFactor) {
+      this->initialize();
+      this->analyze(oversamplingFactor);
+      this->finalize();
+    }
+    virtual void update() override {
+      this->updateWithOverSampling(1.0);
+    }
   };
 
   ParticleSampleHydrojet::ParticleSampleHydrojet(
     runjam_context const& ctx, std::string const& cachedir, std::string suffix,
     int kintmp, int eos_pce, std::string const& fn_resodata
   ):
-    HydroSpectrum(kintmp, eos_pce), rlist(kintmp, eos_pce, fn_resodata)
+    rlist(kintmp, eos_pce, fn_resodata),
+    m_hf(kintmp, eos_pce)
   {
   	plist.clear();
 
@@ -188,22 +185,22 @@ namespace {
 
     ResonanceListPCE::resonance& recreso = this->rlist[ireso];
 
-    openFDataFile(fn_freezeout_dat);
+    m_hf.openFDataFile(fn_freezeout_dat);
 
     //---------------------------------------------------------------------------
-    while (!readFData()) {
+    while (!m_hf.readFData()) {
       if (!cfg_baryon_disable) {
         recreso.mu = 0.0;
         if (recreso.bf == 1) {
-          double const mub = cfg_baryon_mubf * sqrt(1.0 - tf * tf / cfg_baryon_tmpf / cfg_baryon_tmpf);
-          double const mean_field = cfg_baryon_meanf * nbf;
+          double const mub = cfg_baryon_mubf * sqrt(1.0 - m_hf.tf * m_hf.tf / cfg_baryon_tmpf / cfg_baryon_tmpf);
+          double const mean_field = cfg_baryon_meanf * m_hf.nbf;
           recreso.mu   = mub - mean_field;
           if (recreso.anti) recreso.mu = -mub + mean_field;
           // if (recreso.anti) recreso.mu = -mub - mean_field;
         }
       }
 
-      if (tf == 0.0) {
+      if (m_hf.tf == 0.0) {
         std::cerr << "(ParticleSampleHydrojet::createCooperFryeCache) TF=ZERO" << std::endl;
         //write(24, 9000)0.0
         continue;
@@ -215,10 +212,10 @@ namespace {
       double npos = 0.0;
       double nneg = 0.0;
 
-      double const gamma = 1.0 / sqrt(1.0 - vx * vx - vy * vy - vz * vz);
-      kashiwa::phys::vector4 u(gamma, vx * gamma, vy * gamma, vz * gamma);
-      kashiwa::phys::vector4 ds(ds0, -dsx, -dsy, -dsz);
-      double const beta = 1.0 / tf;
+      double const gamma = 1.0 / sqrt(1.0 - m_hf.vx * m_hf.vx - m_hf.vy * m_hf.vy - m_hf.vz * m_hf.vz);
+      kashiwa::phys::vector4 u(gamma, m_hf.vx * gamma, m_hf.vy * gamma, m_hf.vz * gamma);
+      kashiwa::phys::vector4 ds(m_hf.ds0, -m_hf.dsx, -m_hf.dsy, -m_hf.dsz);
+      double const beta = 1.0 / m_hf.tf;
 
       if (recreso.bf == -1) {
         idt::runjam::IntegrateBosonCooperFrye(npos, nneg, u, ds, beta, recreso.mass, recreso.mu);
@@ -241,7 +238,7 @@ namespace {
     ostr_pos.close();
     ostr_neg.close();
 
-    closeFDataFile();
+    m_hf.closeFDataFile();
   }
 
   void ParticleSampleHydrojet::createCooperFryeCache() {
@@ -276,8 +273,8 @@ namespace {
 
   void ParticleSampleHydrojet::initialize() {
     // Open files for input.
-    openFDataFile(this->fn_freezeout_dat);
-    openPDataFile(this->fn_position_dat);
+    m_hf.openFDataFile(this->fn_freezeout_dat);
+    m_hf.openPDataFile(this->fn_position_dat);
 
     std::cout << "ParticleSampleHydrojet.cpp(ParticleSampleHydrojet::initialize): checking Cooper-Frye cache files (.POS/.NEG)... " << std::flush;
     if (this->openCooperFryeCacheForRead()) {
@@ -301,13 +298,15 @@ namespace {
 
     double ran;
 
-    while (!readFData()) {
+    while (!m_hf.readFData()) {
+      m_hf.readPData();
+
       if (!cfg_baryon_disable) {
         for (int i = 0; i < nreso_loop; i++) {
           rlist[i].mu = 0.0;
           if (rlist[i].bf == 1) {
-            double const mub = cfg_baryon_mubf * sqrt(1.0 - tf * tf / cfg_baryon_tmpf / cfg_baryon_tmpf);
-            double const mean_field = cfg_baryon_meanf * nbf;
+            double const mub = cfg_baryon_mubf * sqrt(1.0 - m_hf.tf * m_hf.tf / cfg_baryon_tmpf / cfg_baryon_tmpf);
+            double const mean_field = cfg_baryon_meanf * m_hf.nbf;
             rlist[i].mu   = mub - mean_field;
             if (rlist[i].anti) rlist[i].mu = -mub + mean_field;
             // if (rlist[i].anti) rlist[i].mu = -mub - mean_field;
@@ -315,10 +314,8 @@ namespace {
         }
       }
 
-      readPData();
-
-      if (tf < HYDRO2JAM_TEMPERATURE_MIN) {
-        if (tf == 0.0)
+      if (m_hf.tf < HYDRO2JAM_TEMPERATURE_MIN) {
+        if (m_hf.tf == 0.0)
           std::cerr << "ParticleSampleHydrojet! (warning) zero temperature surface." << std::endl;
         continue;
       }
@@ -339,10 +336,10 @@ namespace {
           double npos = 0.0;
           double nneg = 0.0;
 
-          double gamma = 1.0 / sqrt(1.0 - vx * vx - vy * vy - vz * vz);
-          kashiwa::phys::vector4 u(gamma, vx * gamma, vy * gamma, vz * gamma);
-          kashiwa::phys::vector4 ds(ds0, -dsx, -dsy, -dsz);
-          double beta = 1.0 / tf;
+          double gamma = 1.0 / sqrt(1.0 - m_hf.vx * m_hf.vx - m_hf.vy * m_hf.vy - m_hf.vz * m_hf.vz);
+          kashiwa::phys::vector4 u(gamma, m_hf.vx * gamma, m_hf.vy * gamma, m_hf.vz * gamma);
+          kashiwa::phys::vector4 ds(m_hf.ds0, -m_hf.dsx, -m_hf.dsy, -m_hf.dsz);
+          double beta = 1.0 / m_hf.tf;
 
           if (rlist[ir].bf == -1) {
             idt::runjam::IntegrateBosonCooperFrye(npos, nneg, u, ds, beta, rlist[ir].mass, rlist[ir].mu);
@@ -358,7 +355,7 @@ namespace {
         numResNeg *= oversamplingFactor;
 
         int reflection_count, reflection_step;
-        switch (iw % 4) {
+        switch (m_hf.iw % 4) {
         case 1: // iw = 1, 5
           // reflection = 0, 1, 2, 3
           reflection_count = 4;
@@ -381,12 +378,12 @@ namespace {
           break;
         }
 
-        if (bulk == 1) {
-          ds0 = dss * std::cosh(hh);
-          dsz = -dss * std::sinh(hh);
+        if (m_hf.bulk == 1) {
+          m_hf.ds0 = m_hf.dss * std::cosh(m_hf.hh);
+          m_hf.dsz = -m_hf.dss * std::sinh(m_hf.hh);
         } else {
-          ds0 = dss * std::sinh(hh);
-          dsz = -dss * std::cosh(hh);
+          m_hf.ds0 = m_hf.dss * std::sinh(m_hf.hh);
+          m_hf.dsz = -m_hf.dss * std::cosh(m_hf.hh);
         }
 
         // positive contribution
@@ -395,7 +392,7 @@ namespace {
           int const n = idt::util::irand_poisson(numResPos * reflection_count);
           for (int i = 0; i < n; i++) {
             int const reflection = idt::util::irand(reflection_count) * reflection_step;
-            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta, reflection);
+            generateParticle(m_hf.vx, m_hf.vy, m_hf.yv, m_hf.ds0, m_hf.dsx, m_hf.dsy, m_hf.dsz, ir, ipos, m_hf.tau, m_hf.xx, m_hf.yy, m_hf.eta, reflection);
           }
         }
 
@@ -405,7 +402,7 @@ namespace {
           int const n = idt::util::irand_poisson(numResNeg * reflection_count);
           for (int i = 0; i < n; i++) {
             int const reflection = idt::util::irand(reflection_count) * reflection_step;
-            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta, reflection);
+            generateParticle(m_hf.vx, m_hf.vy, m_hf.yv, m_hf.ds0, m_hf.dsx, m_hf.dsy, m_hf.dsz, ir, ipos, m_hf.tau, m_hf.xx, m_hf.yy, m_hf.eta, reflection);
           }
         }
       }
@@ -413,17 +410,17 @@ namespace {
 
     // 2013/04/30, KM, shuffle the particle list
     if (this->cfg_shuffle_particles) {
-  #if __cplusplus >= 201703L
+#if __cplusplus >= 201703L
       std::shuffle(this->plist.begin(), this->plist.end(), RandomURGB());
-  #else
+#else
       std::random_shuffle(this->plist.begin(), this->plist.end());
-  #endif
+#endif
     }
   }
 
   void ParticleSampleHydrojet::finalize() {
-    closeFDataFile();
-    closePDataFile();
+    m_hf.closeFDataFile();
+    m_hf.closePDataFile();
     if (cache_available) {
       cache_ifsPos.clear();
       cache_ifsNeg.clear();
@@ -461,7 +458,7 @@ namespace {
     double const dtau = getDtau();
     double const vz = tanh(yv);
     double const gamma =  cosh(yv) / sqrt(1.0 - (vx * vx + vy * vy) * cosh(yv) * cosh(yv));
-    double const beta= 1./tf;
+    double const beta = 1.0 / m_hf.tf;
     double const mres = rlist[ir].mass;
     double const mres2 = mres*mres;
     double prds, prx, pry, prz, er, pu;
@@ -479,7 +476,7 @@ namespace {
       + kashiwa::IntegrateByGaussLaguerre<20>(ptmid, 1.0, integrand);
 
     double ranmax = dx * dy * dh * tau * HYDRO2JAM_FACRANMAX;
-    if (bulk == 0) {
+    if (m_hf.bulk == 0) {
       if (dsx != 0.0 || dsy != 0.0) {
         ranmax = dx * dh * tau * dtau * HYDRO2JAM_FACRANMAX;
       } else {

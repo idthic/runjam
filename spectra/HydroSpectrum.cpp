@@ -46,11 +46,7 @@ const double HydroSpectrum::mProton  = 939.0;
 HydroSpectrum::HydroSpectrum(int kint, int eos_pce) {
   kineticTemp = kint;
 
-  pi   = 3.1415926;
   fin  = -1;
-
-
-  hbarc = 0.19732;
 
   //...degree of freedom  [pi+ or pi- or pi0]
   degpi = 1;
