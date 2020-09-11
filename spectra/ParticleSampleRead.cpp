@@ -20,10 +20,20 @@ namespace {
   class ParticleSampleRead: public ParticleSampleBase {
     ResonanceListPCE rlist;
     std::string fname_particlesample_dat;
+    double m_overSamplingFactor = 1.0;
   public:
-    ParticleSampleRead(std::string const& fname_particlesample_dat):
+    ParticleSampleRead(runjam_context const& ctx, std::string const& fname_particlesample_dat):
       rlist(-1, 6, "ResonanceJam.dat"),
-      fname_particlesample_dat(fname_particlesample_dat) {}
+      fname_particlesample_dat(fname_particlesample_dat),
+      m_overSamplingFactor(ctx.get_config("runjam_oversampling_factor", 1.0))
+    {}
+
+  public:
+    // この枠組ではファイルに保存されていた粒子集合の oversampling が
+    // 分からないので、環境に設定されていた値を信じてそのまま返す。
+    virtual double getOverSamplingFactor() const override {
+      return m_overSamplingFactor;
+    }
 
   private:
     void readFile() {
@@ -76,7 +86,7 @@ namespace {
   class ParticleSampleFactory: ParticleSampleFactoryBase {
     virtual ParticleSampleBase* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
       if (type != "psample") return 0;
-      return new ParticleSampleRead(inputfile);
+      return new ParticleSampleRead(ctx, inputfile);
     }
   } instance;
 

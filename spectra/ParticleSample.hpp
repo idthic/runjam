@@ -53,6 +53,8 @@ namespace runjam {
     /// このインスタンスを用いて生成すると予想されるイベントの数を指定します。
     virtual void setAdviceNumberOfExpectedEvents(int nEvents) {}
 
+    virtual double getOverSamplingFactor() const = 0;
+
     /// @fn std::vector<Particle*> const& getParticleList() const;
     /// \~en retrieves the generated resonance distribution.
     /// \~ja 生成した粒子分布を取得します。
@@ -102,7 +104,7 @@ namespace runjam {
     void setOverSamplingFactor(double value) {
       this->m_overSamplingFactor = value;
     }
-    double getOverSamplingFactor() const {
+    virtual double getOverSamplingFactor() const override {
       return this->m_overSamplingFactor;
     }
 

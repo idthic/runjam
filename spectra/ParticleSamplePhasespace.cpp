@@ -13,18 +13,11 @@ namespace {
 
   class ParticleSampleReadPhasespaceData: public ParticleSampleBase {
     std::string fname_phasespace_dat;
-  public:
-    ParticleSampleReadPhasespaceData(std::string const& fname_phasespace_dat):
-      fname_phasespace_dat(fname_phasespace_dat)
-    {
-      this->m_currentSampleIndex = -1;
-      this->m_numberOfSamples = -1;
-    }
 
   private:
-    int m_numberOfSamples;
-    int m_currentSampleIndex;
-    std::vector<std::vector<Particle*> > pcache;
+    double m_overSamplingFactor; // イベントの一行目の $2 から読み取る
+    int    m_numberOfSamples;
+    int    m_currentSampleIndex;
   public:
     void setNumberOfSamples(int value) {
       this->m_numberOfSamples = value;
@@ -32,7 +25,21 @@ namespace {
     int getNumberOfSamples() const {
       return m_numberOfSamples;
     }
+    virtual double getOverSamplingFactor() const override {
+      return m_overSamplingFactor;
+    }
 
+  public:
+    ParticleSampleReadPhasespaceData(runjam_context const& ctx, std::string const& fname_phasespace_dat):
+      fname_phasespace_dat(fname_phasespace_dat),
+      m_overSamplingFactor(ctx.get_config("runjam_oversampling_factor", 1.0))
+    {
+      this->m_currentSampleIndex = -1;
+      this->m_numberOfSamples = -1;
+    }
+
+  private:
+    std::vector<std::vector<Particle*> > pcache;
   private:
     virtual std::vector<Particle*> const& getParticleList() const {
       if (m_currentSampleIndex < 0) {
@@ -65,8 +72,8 @@ namespace {
         for (isample = 0; ; isample++) {
           iline++;
           if (!std::getline(ifs, line)) goto error_invalid_format;
-          int npart, dummy;
-          if (2 != std::sscanf(line.c_str(), " %d %d", &npart, &dummy)) break;
+          int npart;
+          if (2 != std::sscanf(line.c_str(), " %d %f", &npart, &m_overSamplingFactor)) break;
 
           if (isample == this->m_numberOfSamples) goto error_invalid_format;
 
@@ -126,18 +133,11 @@ namespace {
 
   class ParticleSampleReadPhasespaceBinary: public ParticleSampleBase {
     std::string fname_phasespace_bin;
-  public:
-    ParticleSampleReadPhasespaceBinary(std::string const& fname_phasespace_bin):
-      fname_phasespace_bin(fname_phasespace_bin)
-    {
-      this->m_currentSampleIndex = -1;
-      this->m_numberOfSamples = 1000;
-    }
 
   private:
-    int m_numberOfSamples;
-    int m_currentSampleIndex;
-    std::vector<std::vector<Particle*> > pcache;
+    double m_overSamplingFactor;
+    int   m_numberOfSamples;
+    int   m_currentSampleIndex;
   public:
     void setNumberOfSamples(int value) {
       this->m_numberOfSamples = value;
@@ -145,9 +145,25 @@ namespace {
     int getNumberOfSamples() const {
       return m_numberOfSamples;
     }
+    // この枠組ではファイルに保存されていた粒子集合の oversampling が
+    // 分からないので、環境に設定されていた値を信じてそのまま返す。
+    virtual double getOverSamplingFactor() const override {
+      return m_overSamplingFactor;
+    }
+
+  public:
+    ParticleSampleReadPhasespaceBinary(runjam_context const& ctx, std::string const& fname_phasespace_bin):
+      fname_phasespace_bin(fname_phasespace_bin),
+      m_overSamplingFactor(ctx.get_config("runjam_oversampling_factor", 1.0))
+    {
+      this->m_currentSampleIndex = -1;
+      this->m_numberOfSamples = 1000;
+    }
 
   private:
-    virtual std::vector<Particle*> const& getParticleList() const {
+    std::vector<std::vector<Particle*> > pcache;
+  private:
+    virtual std::vector<Particle*> const& getParticleList() const override {
       if (m_currentSampleIndex < 0) {
         std::cerr << "ParticleSampleReadPhasespaceBinary: A phasespace file has not been read." << std::endl;
         std::exit(EXIT_FAILURE);
@@ -243,11 +259,11 @@ namespace {
   class ParticleSampleFactory: ParticleSampleFactoryBase {
     virtual ParticleSampleBase* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
       if (type == "phase1" || type == "phase") {
-        ParticleSampleReadPhasespaceData* psamp = new ParticleSampleReadPhasespaceData(inputfile);
+        ParticleSampleReadPhasespaceData* psamp = new ParticleSampleReadPhasespaceData(ctx, inputfile);
         if (type == "phase1") psamp->setNumberOfSamples(1);
         return psamp;
       } else if (type == "phbin") {
-        return new ParticleSampleReadPhasespaceBinary(inputfile);
+        return new ParticleSampleReadPhasespaceBinary(ctx, inputfile);
       }
 
       return 0;

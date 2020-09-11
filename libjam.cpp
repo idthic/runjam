@@ -150,6 +150,7 @@ namespace libjam {
       std::exit(1);
     }
   }
+  void   setFNAME(int i, std::string const& v) { setFNAME(i, v.c_str()); }
 
   struct Jydat2 {
     int    KCHG[7][500];

@@ -48,8 +48,7 @@ runjam_OBJS := \
   $(OBJDIR)/spectra/ParticleSampleHydrojet.o \
   $(OBJDIR)/spectra/ParticleSampleRead.o \
   $(OBJDIR)/spectra/ParticleSamplePhasespace.o \
-  $(OBJDIR)/spectra/ParticleSampleViscous.o \
-  $(OBJDIR)/RunJam.o
+  $(OBJDIR)/spectra/ParticleSampleViscous.o
 runjam_LIBS := -ljam $(LIBS)
 
 directories += $(OBJDIR) $(OBJDIR)/util $(OBJDIR)/spectra $(OBJDIR)/jam $(OBJDIR)/ksh

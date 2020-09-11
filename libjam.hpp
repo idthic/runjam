@@ -1,6 +1,7 @@
 // -*- mode: c++ -*-
 #ifndef runjam_jam_Jam1_h
 #define runjam_jam_Jam1_h
+#include <string>
 
 namespace idt {
 namespace libjam {
@@ -33,6 +34,7 @@ namespace libjam {
 
   char*  getFNAME(int i);
   void   setFNAME(int i, const char* v);
+  void   setFNAME(int i, std::string const& v);
 
   int    getKCHG(int ip, int i);
   double getPMAS(int ip, int i);
