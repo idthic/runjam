@@ -46,6 +46,7 @@ public:
     double mu;
     int    bf;
     int    anti;
+    std::string key;
     std::vector<int> pdg_codes;
   };
 

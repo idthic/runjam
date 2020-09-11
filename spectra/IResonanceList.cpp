@@ -183,27 +183,28 @@ void ResonanceListPCE::initialize(int kineticTemp, int eos_pce, std::string cons
   while (std::getline(fdata, line)) {
     iline++;
 
-    // 空行・コメント行はスキップ
+    // Skip empty lines and comment lines
     std::size_t pos = line.find_first_not_of(" \t");
     if (pos == std::string::npos || line[pos] == '#') continue;
 
     std::istringstream istr(line);
     resonance record;
     int bftype, pdgcode;
-    std::string resonance_name;
-    istr >> record.mass
-         >> record.deg
-         >> record.degeff
-         >> record.mu
-         >> bftype
-         >> record.anti
-         >> resonance_name;
+    std::string name;
+    istr >> record.mass >> record.deg >> record.degeff
+         >> record.mu >> bftype >> record.anti
+         >> record.key >> name;
     while (istr >> pdgcode)
       record.pdg_codes.push_back(pdgcode);
     if (record.pdg_codes.empty()) {
       std::cerr << fname_rlist << ":" << iline << ": invalid format." << std::endl;
       std::exit(1);
     }
+
+    // // check
+    // std::cout << record.key;
+    // for (auto const pdg : record.pdg_codes) std::cout << " " << pdg;
+    // std::cout << std::endl;
 
     record.mass /= hbarc_MeVfm; // fm^{-1}
     record.mu   /= hbarc_MeVfm; // fm^{-1}

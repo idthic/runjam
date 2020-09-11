@@ -5,6 +5,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 #ifdef _OPENMP
 # include <omp.h>
@@ -52,7 +53,7 @@ namespace {
     std::vector<std::ifstream> cache_ifsNeg;
 
   public:
-    ParticleSampleHydrojet(runjam_context const& ctx, std::string const& cachedir, std::string* outf,
+    ParticleSampleHydrojet(runjam_context const& ctx, std::string const& cachedir, std::string suffix,
       int kin, int eos_pce, std::string const& fn_resodata);
     ~ParticleSampleHydrojet();
 
@@ -118,7 +119,7 @@ namespace {
   };
 
   ParticleSampleHydrojet::ParticleSampleHydrojet(
-    runjam_context const& ctx, std::string const& cachedir, std::string* outf,
+    runjam_context const& ctx, std::string const& cachedir, std::string suffix,
     int kintmp, int eos_pce, std::string const& fn_resodata
   ):
     HydroSpectrum(kintmp, eos_pce), rlist(kintmp, eos_pce, fn_resodata)
@@ -128,10 +129,10 @@ namespace {
     int const nreso_loop = this->rlist.numberOfResonances();
     this->cache_fname.resize(nreso_loop);
     for (int i = 0; i < nreso_loop; i++) {
-      if (cachedir.size() >0)
-        cache_fname[i] = cachedir + "/" + outf[i];
-      else
-        cache_fname[i] = outf[i];
+      std::ostringstream sstr;
+      if (cachedir.size() > 0) sstr << cachedir << "/";
+      sstr << "ELEMENT." << rlist[i].key << suffix;
+      cache_fname[i] = sstr.str();
     }
 
     cache_available = false;
@@ -597,165 +598,11 @@ namespace {
     this->plist.push_back(part);
   }
 
-static std::string elementOutputFilenames[151] = {
-  "ELEMENT.A0.PC170",
-  "ELEMENT.DELTA.PC170",
-  "ELEMENT.DELTABAR.PC170",
-  "ELEMENT.ETA.PC170",
-  "ELEMENT.ETAP.PC170",
-  "ELEMENT.F0.PC170",
-  "ELEMENT.KBAR.PC170",//previously "ELEMENT.K0S.PC170"
-  "ELEMENT.KSTAR.PC170",
-  "ELEMENT.KSTARBAR.PC170",
-  "ELEMENT.LAMBDA.PC170",
-  "ELEMENT.LAMBDABAR.PC170",
-  "ELEMENT.OMEGA.PC170",
-  "ELEMENT.PHI.PC170",
-  "ELEMENT.RHO.PC170",
-  "ELEMENT.SIGMA.PC170",
-  "ELEMENT.SIGMAB.PC170",
-  "ELEMENT.SIGMABBAR.PC170",
-  "ELEMENT.PI.PC170",
-  "ELEMENT.K.PC170",
-  "ELEMENT.PRO.PC170",
-  "ELEMENT.PBAR.PC170",
-  "ELEMENT.A1_1260.PC170",
-  "ELEMENT.A2_1320.PC170",
-  "ELEMENT.B1_1235.PC170",
-  "ELEMENT.PI_1300.PC170",
-  "ELEMENT.PI2_1670.PC170",
-  "ELEMENT.RHO_1465.PC170",
-  "ELEMENT.F2_1270.PC170",
-  "ELEMENT.F2P_1525.PC170",
-  "ELEMENT.H1_1170.PC170",
-  "ELEMENT.F0P.PC170",
-  "ELEMENT.H1P.PC170",
-  "ELEMENT.ETA_1295.PC170",
-  "ELEMENT.F1_1285.PC170",
-  "ELEMENT.F1_1420.PC170",
-  "ELEMENT.F0_1300.PC170",
-  "ELEMENT.OMEGA_1420.PC170",
-  "ELEMENT.F1_1510.PC170",
-  "ELEMENT.OMEGA_1600.PC170",
-  "ELEMENT.K1_1270.PC170",
-  "ELEMENT.K1BAR_1270.PC170",
-  "ELEMENT.K2S_1430.PC170",
-  "ELEMENT.K2SBAR_1430.PC170",
-  "ELEMENT.K0S_1430.PC170",
-  "ELEMENT.K0SBAR_1430.PC170",
-  "ELEMENT.K1_1400.PC170",
-  "ELEMENT.K1BAR_1400.PC170",
-  "ELEMENT.KSTAR_1410.PC170",
-  "ELEMENT.KSTARBAR_1410.PC170",
-  "ELEMENT.N_1440.PC170",
-  "ELEMENT.NBAR_1440.PC170",
-  "ELEMENT.N_1520.PC170",
-  "ELEMENT.NBAR_1520.PC170",
-  "ELEMENT.N_1535.PC170",
-  "ELEMENT.NBAR_1535.PC170",
-  "ELEMENT.N_1650.PC170",
-  "ELEMENT.NBAR_1650.PC170",
-  "ELEMENT.DELTA_1600.PC170",
-  "ELEMENT.DELTABAR_1600.PC170",
-  "ELEMENT.DELTA_1620.PC170",
-  "ELEMENT.DELTABAR_1620.PC170",
-  "ELEMENT.LAMBDA_1405.PC170",
-  "ELEMENT.LAMBDABAR_1405.PC170",
-  "ELEMENT.LAMBDA_1520.PC170",
-  "ELEMENT.LAMBDABAR_1520.PC170",
-  "ELEMENT.LAMBDA_1600.PC170",
-  "ELEMENT.LAMBDABAR_1600.PC170",
-  "ELEMENT.LAMBDA_1670.PC170",
-  "ELEMENT.LAMBDABAR_1670.PC170",
-  "ELEMENT.SIGMAB_1385.PC170",
-  "ELEMENT.SIGMABBAR_1385.PC170",
-  "ELEMENT.SIGMAB_1660.PC170",
-  "ELEMENT.SIGMABBAR_1660.PC170",
-  "ELEMENT.SIGMAB_1670.PC170",
-  "ELEMENT.SIGMABBAR_1670.PC170",
-  "ELEMENT.XI.PC170",
-  "ELEMENT.XIBAR.PC170",
-  "ELEMENT.XI_1530.PC170",
-  "ELEMENT.XIBAR_1530.PC170",
-  "ELEMENT.OMEGAB.PC170",
-  "ELEMENT.OMEGABBAR.PC170",
-  "ELEMENT.PHI_1680.PC170",
-  "ELEMENT.RHO_1700.PC170",
-  "ELEMENT.KSTAR_1680.PC170",
-  "ELEMENT.KSTARBAR_1680.PC170",
-  "ELEMENT.K_3_1780.PC170",
-  "ELEMENT.K_3BAR_1780.PC170",
-  "ELEMENT.K_2_1770.PC170",
-  "ELEMENT.K_2BAR_1770.PC170",
-  "ELEMENT.K_2_1820.PC170",
-  "ELEMENT.K_2BAR_1820.PC170",
-  "ELEMENT.N_1675.PC170",
-  "ELEMENT.NBAR_1675.PC170",
-  "ELEMENT.N_1680.PC170",
-  "ELEMENT.NBAR_1680.PC170",
-  "ELEMENT.N_1700.PC170",
-  "ELEMENT.NBAR_1700.PC170",
-  "ELEMENT.N_1710.PC170",
-  "ELEMENT.NBAR_1710.PC170",
-  "ELEMENT.N_1720.PC170",
-  "ELEMENT.NBAR_1720.PC170",
-  "ELEMENT.N_1990.PC170",
-  "ELEMENT.NBAR_1990.PC170",
-  "ELEMENT.DELTA_1700.PC170",
-  "ELEMENT.DELTABAR_1700.PC170",
-  "ELEMENT.DELTA_1900.PC170",
-  "ELEMENT.DELTABAR_1900.PC170",
-  "ELEMENT.DELTA_1905.PC170",
-  "ELEMENT.DELTABAR_1905.PC170",
-  "ELEMENT.DELTA_1910.PC170",
-  "ELEMENT.DELTABAR_1910.PC170",
-  "ELEMENT.DELTA_1920.PC170",
-  "ELEMENT.DELTABAR_1920.PC170",
-  "ELEMENT.DELTA_1930.PC170",
-  "ELEMENT.DELTABAR_1930.PC170",
-  "ELEMENT.DELTA_1950.PC170",
-  "ELEMENT.DELTABAR_1950.PC170",
-  "ELEMENT.LAMBDA_1690.PC170",
-  "ELEMENT.LAMBDABAR_1690.PC170",
-  "ELEMENT.LAMBDA_1800.PC170",
-  "ELEMENT.LAMBDABAR_1800.PC170",
-  "ELEMENT.LAMBDA_1810.PC170",
-  "ELEMENT.LAMBDABAR_1810.PC170",
-  "ELEMENT.LAMBDA_1820.PC170",
-  "ELEMENT.LAMBDABAR_1820.PC170",
-  "ELEMENT.LAMBDA_1830.PC170",
-  "ELEMENT.LAMBDABAR_1830.PC170",
-  "ELEMENT.LAMBDA_1890.PC170",
-  "ELEMENT.LAMBDABAR_1890.PC170",
-  "ELEMENT.LAMBDA_2100.PC170",
-  "ELEMENT.LAMBDABAR_2100.PC170",
-  "ELEMENT.LAMBDA_2110.PC170",
-  "ELEMENT.LAMBDABAR_2110.PC170",
-  "ELEMENT.SIGMAB_1750.PC170",
-  "ELEMENT.SIGMABBAR_1750.PC170",
-  "ELEMENT.SIGMAB_1775.PC170",
-  "ELEMENT.SIGMABBAR_1775.PC170",
-  "ELEMENT.SIGMAB_1915.PC170",
-  "ELEMENT.SIGMABBAR_1915.PC170",
-  "ELEMENT.SIGMAB_1940.PC170",
-  "ELEMENT.SIGMABBAR_1940.PC170",
-  "ELEMENT.SIGMAB_2030.PC170",
-  "ELEMENT.SIGMABBAR_2030.PC170",
-  "ELEMENT.XI_1690.PC170",
-  "ELEMENT.XIBAR_1690.PC170",
-  "ELEMENT.XI_1820.PC170",
-  "ELEMENT.XIBAR_1820.PC170",
-  "ELEMENT.XI_1950.PC170",
-  "ELEMENT.XIBAR_1950.PC170",
-  "ELEMENT.XI_2030.PC170",
-  "ELEMENT.XIBAR_2030.PC170",
-};
-
   class ParticleSampleFactory: ParticleSampleFactoryRegistered {
     virtual IParticleSample* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
       if (type != "hydrojet.original") return 0;
 
-      std::string const indir = ctx.indir();
+      std::string const cachedir = ctx.indir();
       int const kintmp = ctx.kintmp();
       int const eospce = ctx.eospce();
       std::string const resodata = ctx.resodata();
@@ -763,7 +610,7 @@ static std::string elementOutputFilenames[151] = {
       std::string const fn_position_dat = inputfile + "/position.dat";
 
       ParticleSampleHydrojet* psamp
-        = new ParticleSampleHydrojet(ctx, indir, elementOutputFilenames, kintmp, eospce, resodata);
+        = new ParticleSampleHydrojet(ctx, cachedir, ".PC170", kintmp, eospce, resodata);
       psamp->setDtau(ctx.get_config("hydrojet_deltat", 0.3));
       psamp->setDx(ctx.get_config("hydrojet_deltax", 0.3));
       psamp->setDy(ctx.get_config("hydrojet_deltay", 0.3));
