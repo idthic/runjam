@@ -125,16 +125,16 @@ struct PhasespaceBinaryWriter: public FileWriterBase {
 };
 
 class IndexedPhasespaceDataWriter: public IObserver {
-  std::string outdir;
+  std::string outdir, suffix;
   std::size_t index;
   std::vector<char> filename;
 public:
-  IndexedPhasespaceDataWriter(std::string const& outdir, std::size_t startIndex):
-    outdir(outdir), index(startIndex) {}
+  IndexedPhasespaceDataWriter(std::string const& outdir, std::string const& suffix, std::size_t startIndex):
+    outdir(outdir), suffix(suffix), index(startIndex) {}
   virtual void initialize() override {}
   virtual void process_event() {
-    filename.resize(outdir.size() + 50);
-    std::sprintf(&filename[0], "%s/dens%06zd_phasespace0.dat", outdir.c_str(), index++);
+    filename.resize(outdir.size() + suffix.size() + 50);
+    std::sprintf(&filename[0], "%s/dens%06zd%s", outdir.c_str(), index++, suffix.c_str());
     std::ofstream ofs(&filename[0]);
     PhasespaceDataWriter::writePhasespaceData(ofs);
     ofs << -999 << std::endl;
@@ -164,12 +164,12 @@ public:
     cfg_phi_decays = ctx.get_config("runjam_phi_decays", true);
     cfg_weakdecay  = ctx.get_config("runjam_switch_weak_decay", false);
 
-    if (ctx.get_config("runjam_output_phdat0", false)) {
+    if (ctx.get_config("runjam_output_phdat0", true)) {
       std::string filename = cfg_outdir + "/phasespace0.dat";
       ctx.read_config(filename, "runjam_fname_phdat0");
       onbefore.emplace_back(new PhasespaceDataWriter(filename));
     }
-    if (ctx.get_config("runjam_output_phdat", false)) {
+    if (ctx.get_config("runjam_output_phdat", true)) {
       std::string filename = cfg_outdir + "/phasespace.dat";
       ctx.read_config(filename, "runjam_fname_phdat");
       onafter.emplace_back(new PhasespaceDataWriter(filename));
@@ -186,11 +186,13 @@ public:
     }
     if (ctx.get_config("runjam_output_phdat0_indexed", false)) {
       int const startIndex = ctx.get_config("runjam_output_index_start", 0);
-      onbefore.emplace_back(new IndexedPhasespaceDataWriter(cfg_outdir, startIndex));
+      std::string suffix = "_phasespace0.dat";
+      onbefore.emplace_back(new IndexedPhasespaceDataWriter(cfg_outdir, suffix, startIndex));
     }
     if (ctx.get_config("runjam_output_phdat_indexed", false)) {
       int const startIndex = ctx.get_config("runjam_output_index_start", 0);
-      onafter.emplace_back(new IndexedPhasespaceDataWriter(cfg_outdir, startIndex));
+      std::string suffix = "_phasespace.dat";
+      onafter.emplace_back(new IndexedPhasespaceDataWriter(cfg_outdir, suffix, startIndex));
     }
   }
 
