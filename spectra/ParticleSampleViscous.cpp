@@ -895,7 +895,7 @@ namespace {
 
   public:
     SurfaceParticleSampler(HypersurfaceElementC0Lrf const* surface) {
-      this->m_overSamplingFactor=1.0;
+      this->m_overSamplingFactor = 1.0;
       this->initialize(surface);
 
       this->m_dominating = NULL;

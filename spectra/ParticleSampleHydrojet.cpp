@@ -18,21 +18,26 @@ namespace {
   static const std::size_t HYDRO2JAM_ITERATION_MAX = 20;
   static const double HYDRO2JAM_TEMPERATURE_MIN = 0.01; // 2014-07-30 (unit: [/fm])
 
+  // static const double HYDRO2JAM_FACRANMAX = 1.6;
+  // static const double HYDRO2JAM_FACRANMAX = 1.7;// 2010-06-28, lower switching T, larger radial flow
+  // static const double HYDRO2JAM_FACRANMAX = 1.8;// 2019-08-27, LHC, larger radial flow
+  static const double HYDRO2JAM_FACRANMAX = 2.0; // 2014-07-30 for RFH
+
   class ParticleSampleHydrojet: public ElementReso, public IParticleSample {
   private:
-    std::vector<std::ifstream> resDataPos;
-    std::vector<std::ifstream> resDataNeg;
-
     std::vector<Particle*> plist;
+
+    bool flag_negative_contribution = false;
     int    baryonfree;
     double tmpf;
     double mubf;
     double meanf;
-
-    bool mode_delayed_cooperfrye;
-
     bool cfg_reverse_particles;
     bool cfg_shuffle_particles;
+
+    bool mode_delayed_cooperfrye;
+    std::vector<std::ifstream> resDataPos;
+    std::vector<std::ifstream> resDataNeg;
 
   public:
     ParticleSampleHydrojet(runjam_context const& ctx, std::string const& dir, std::string* outf, int kin, int eos_pce, std::string const& fname);
@@ -43,10 +48,9 @@ namespace {
 
   private:
     bool tryOpenCooperFryeCache();
-  public:
-    void initialize(std::string const& fn, std::string const& fn_p);
-    void analyze(std::string fn, std::string fn_p);
-    void finish();
+    void initialize();
+    void analyze(double oversamplingFactor);
+    void finalize();
 
   private:
     double dx, dy, dh, dtau;
@@ -70,8 +74,13 @@ namespace {
       this->fn_freezeout_dat = fn_freezeout_dat;
       this->fn_position_dat = fn_position_dat;
     }
+    void updateWithOverSampling(double oversamplingFactor) {
+      this->initialize();
+      this->analyze(oversamplingFactor);
+      this->finalize();
+    }
     virtual void update() override {
-      this->analyze(this->fn_freezeout_dat, this->fn_position_dat);
+      this->updateWithOverSampling(1.0);
     }
 
   private:
@@ -79,7 +88,7 @@ namespace {
       double vx, double vy, double vz,
       double ds0, double dsx, double dsy,
       double dsz, int ir, int ipos,
-      double tau, double xx, double yy, double eta);
+      double tau, double xx, double yy, double eta, int reflection = 0);
     void putParticle(
       double px, double py, double pz,
       double e, double m, int ir, double tau, double x,
@@ -123,7 +132,6 @@ ParticleSampleHydrojet::~ParticleSampleHydrojet() {
 
 bool ParticleSampleHydrojet::tryOpenCooperFryeCache() {
   int const nreso_loop = rlist.numberOfResonances();
-  // if(baryonfree)nreso_loop = 20;
 
   resDataPos.clear();
   for (int i = 0; i < nreso_loop; i++) {
@@ -146,28 +154,24 @@ failed:
   return false;
 }
 
-void ParticleSampleHydrojet::initialize(std::string const& fn_freezeout_dat, std::string const& fn_position_dat) {
+void ParticleSampleHydrojet::initialize() {
   // Open files for input.
-  openFDataFile(fn_freezeout_dat);
-  openPDataFile(fn_position_dat);
+  openFDataFile(this->fn_freezeout_dat);
+  openPDataFile(this->fn_position_dat);
 
   std::cout << "ParticleSampleHydrojet.cpp(ParticleSampleHydrojet::initialize): checking Cooper-Frye cache files (.POS/.NEG)... " << std::flush;
   if (this->tryOpenCooperFryeCache()) {
     std::cout << "yes" << std::endl;
     return;
+  } else {
+    std::cout << "no (incomplete).\n";
+    std::cout << "ParticleSampleHydrojet.cpp(ParticleSampleHydrojet::initialize): entering delayed Cooper-Frye evaluation mode." << std::endl;
+    mode_delayed_cooperfrye = true;
   }
-
-  std::cout
-    << "no(incomplete).\n"
-    << "ParticleSampleHydrojet.cpp(ParticleSampleHydrojet::initialize): entering delayed Cooper-Frye evaluation mode." << std::endl;
-  mode_delayed_cooperfrye = true;
 }
 
-void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string fn_position_dat) {
+void ParticleSampleHydrojet::analyze(double oversamplingFactor) {
   int const nreso_loop = rlist.numberOfResonances();
-
-  // Open files.
-  initialize(fn_freezeout_dat, fn_position_dat);
 
   if (plist.size() > 0) {
     std::vector<Particle*>::iterator cp;
@@ -176,10 +180,6 @@ void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string f
   }
 
   double ran;
-  int nsamp = 1;
-  int ipos = 1;
-  double numResPos;
-  double numResNeg;
 
   while (!readFData()) {
     if (!baryonfree) {
@@ -203,6 +203,7 @@ void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string f
 
     // Loop over all particles.
     for (int ir = 0; ir < nreso_loop; ir++) {
+      double numResPos, numResNeg;
       if (!mode_delayed_cooperfrye) {
         resDataPos[ir] >> numResPos;
         if (numResPos > 1.0)
@@ -231,101 +232,58 @@ void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string f
         numResPos = npos * rlist[ir].deg;
         numResNeg = nneg * rlist[ir].deg;
       }
+      numResPos *= oversamplingFactor;
+      numResNeg *= oversamplingFactor;
 
-      if (bulk == 1) {
-        ds0 = dss * cosh(hh);
-        dsz = -dss * sinh(hh);
-      } else {
-        ds0 = dss * sinh(hh);
-        dsz = -dss * cosh(hh);
+      int reflection_count, reflection_step;
+      switch (iw % 4) {
+      case 1: // iw = 1, 5
+        // reflection = 0, 1, 2, 3
+        reflection_count = 4;
+        reflection_step = 1;
+        break;
+      case 2: // iw = 2, 6
+        // reflection = 0, 2
+        reflection_count = 2;
+        reflection_step = 2;
+        break;
+      case 3: // iw = 3, 7
+        // reflection = 0, 1
+        reflection_count = 2;
+        reflection_step = 1;
+        break;
+      default: // iw = 4, 8
+        // reflection = 0
+        reflection_count = 1;
+        reflection_step = 1;
+        break;
       }
 
-      for (int isamp = 0; isamp < nsamp; isamp++) {
-        if ((iw == 1)  ||  (iw == 5)) {
-          //out going
-          ipos = 1;
-          ran = idt::util::urand();
-          if (ran < numResPos)
-            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
-          ran = idt::util::urand();
-          if (ran < numResPos)
-            generateParticle(vx, -vy, yv, ds0, dsx, -dsy, dsz, ir, ipos, tau, xx, -yy, eta);
-          ran = idt::util::urand();
-          if (ran < numResPos)
-            generateParticle(-vx, vy, -yv, ds0, -dsx, dsy, -dsz, ir, ipos, tau, -xx, yy, -eta);
-          ran = idt::util::urand();
-          if (ran < numResPos)
-            generateParticle(-vx, -vy, -yv, ds0, -dsx, -dsy, -dsz, ir, ipos, tau, -xx, -yy, -eta);
+      if (bulk == 1) {
+        ds0 = dss * std::cosh(hh);
+        dsz = -dss * std::sinh(hh);
+      } else {
+        ds0 = dss * std::sinh(hh);
+        dsz = -dss * std::cosh(hh);
+      }
 
-          //in coming
-          ipos = 0;
-          ran = idt::util::urand();
-          if (ran < numResNeg)
-            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
-          ran = idt::util::urand();
-          if (ran < numResNeg)
-            generateParticle(vx, -vy, yv, ds0, dsx, -dsy, dsz, ir, ipos, tau, xx, -yy, eta);
-          ran = idt::util::urand();
-          if (ran < numResNeg)
-            generateParticle(-vx, vy, -yv, ds0, -dsx, dsy, -dsz, ir, ipos, tau, -xx, yy, -eta);
-          ran = idt::util::urand();
-          if (ran < numResNeg)
-            generateParticle(-vx, -vy, -yv, ds0, -dsx, -dsy, -dsz, ir, ipos, tau, -xx, -yy, -eta);
+      // positive contribution
+      {
+        int const ipos = 1;
+        int const n = idt::util::irand_poisson(numResPos * reflection_count);
+        for (int i = 0; i < n; i++) {
+          int const reflection = idt::util::irand(reflection_count) * reflection_step;
+          generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta, reflection);
+        }
+      }
 
-        } else if ((iw == 3)  ||  (iw == 7)) {
-
-          //out going
-          ipos = 1;
-          ran = idt::util::urand();
-          if (ran < numResPos)
-            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
-          ran = idt::util::urand();
-          if (ran < numResPos)
-            generateParticle(-vx, vy, -yv, ds0, -dsx, dsy, -dsz, ir, ipos, tau, -xx, yy, -eta);
-
-          //in coming
-          ipos = 0;
-          ran = idt::util::urand();
-          if (ran < numResNeg)
-            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
-          ran = idt::util::urand();
-          if (ran < numResNeg)
-            generateParticle(-vx, vy, -yv, ds0, -dsx, dsy, -dsz, ir, ipos, tau, -xx, yy, -eta);
-
-        } else if ((iw == 2)  ||  (iw == 6)) {
-
-          //out going
-          ipos = 1;
-          ran = idt::util::urand();
-          if (ran < numResPos)
-            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
-          ran = idt::util::urand();
-          if (ran < numResPos)
-            generateParticle(vx, -vy, yv, ds0, dsx, -dsy, dsz, ir, ipos, tau, xx, -yy, eta);
-
-          //in coming
-          ipos = 0;
-          ran = idt::util::urand();
-          if (ran < numResNeg)
-            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
-          ran = idt::util::urand();
-          if (ran < numResNeg)
-            generateParticle(vx, -vy, yv, ds0, dsx, -dsy, dsz, ir, ipos, tau, xx, -yy, eta);
-
-        } else if ((iw == 4)  ||  (iw == 8)) {
-
-          //out going
-          ipos = 1;
-          ran = idt::util::urand();
-          if (ran < numResPos)
-            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
-
-          //in coming
-          ipos = 0;
-          ran = idt::util::urand();
-          if (ran < numResNeg)
-            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta);
-
+      // negative contribution
+      if (flag_negative_contribution) {
+        int const ipos = 0;
+        int const n = idt::util::irand_poisson(numResNeg * reflection_count);
+        for (int i = 0; i < n; i++) {
+          int const reflection = idt::util::irand(reflection_count) * reflection_step;
+          generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta, reflection);
         }
       }
     }
@@ -339,12 +297,9 @@ void ParticleSampleHydrojet::analyze(std::string fn_freezeout_dat, std::string f
     std::random_shuffle(this->plist.begin(), this->plist.end());
 #endif
   }
-
-  finish();
 }
 
-void ParticleSampleHydrojet::finish()
-{
+void ParticleSampleHydrojet::finalize() {
   closeFDataFile();
   closePDataFile();
   if (!mode_delayed_cooperfrye) {
@@ -355,8 +310,25 @@ void ParticleSampleHydrojet::finish()
 
 void ParticleSampleHydrojet::generateParticle(double vx, double vy, double yv,
 	  double ds0, double dsx, double dsy, double dsz, int ir, int ipos,
-	  double tau, double x0, double y0, double eta0)
+	  double tau, double x0, double y0, double eta0, int reflection)
 {
+  // Note: surface element
+  //   dsx = tau*dy*deta*dtau
+  //   dsy = tau*dx*deta*dtau
+  //   dss = dtau*dx*dy
+  if (reflection & 1) {
+    vy = -vy;
+    dsy = -dsy;
+    y0 = -y0;
+  }
+  if (reflection & 2) {
+    vx = -vx;
+    yv = -yv;
+    dsx = -dsx;
+    dsz = -dsz;
+    x0 = -x0;
+    eta0 = -eta0;
+  }
 
   double p[58], pw[58];
 
@@ -384,24 +356,16 @@ void ParticleSampleHydrojet::generateParticle(double vx, double vy, double yv,
     = kashiwa::IntegrateByGaussLegendre<38>(0.0, ptmid, integrand)
     + kashiwa::IntegrateByGaussLaguerre<20>(ptmid, 1.0, integrand);
 
-  double ranemis;
-  // double facranmax = 1.6;
-  // double facranmax = 1.7;//06/28/2010, lower switching T, larger radial flow
-  // double facranmax = 1.8;//08/27/2019, LHC, larger radial flow
-  double facranmax = 2.0; // 2014-07-30 for RFH
-  double ranmax = dx * dy * dh * tau * facranmax;
-
-  // surface:
-  //dsx = tau*dy*deta*dtau
-  //dsy = tau*dx*deta*dtau
-  //dss = dtau*dx*dy
+  double ranmax = dx * dy * dh * tau * HYDRO2JAM_FACRANMAX;
   if (bulk == 0) {
     if (dsx != 0.0 || dsy != 0.0) {
-      ranmax = dx * dh * tau * dtau * facranmax;
+      ranmax = dx * dh * tau * dtau * HYDRO2JAM_FACRANMAX;
     } else {
-      ranmax = dtau * dx * dy * facranmax;
+      ranmax = dtau * dx * dy * HYDRO2JAM_FACRANMAX;
     }
   }
+
+  double ranemis;
   do {
     do {
       // Generate momentum [0:6GeV/c] according to Bose/Fermi
@@ -429,14 +393,14 @@ void ParticleSampleHydrojet::generateParticle(double vx, double vy, double yv,
 
       // random variable on unit sphere
       double r2 = -2 * idt::util::urand() + 1;
-      double theta = acos(r2);
-      double phd = 2 * M_PI * idt::util::urand();
+      double theta = std::acos(r2);
+      double phi = 2 * M_PI * idt::util::urand();
 
       // uniform random number on surface
-      double prxd = ppp * sin(theta) * cos(phd);
-      double pryd = ppp * sin(theta) * sin(phd);
-      double przd = ppp * cos(theta);
-      double erd = sqrt(ppp * ppp + mres2);
+      double prxd = ppp * std::sin(theta) * std::cos(phi);
+      double pryd = ppp * std::sin(theta) * std::sin(phi);
+      double przd = ppp * std::cos(theta);
+      double erd = std::sqrt(ppp * ppp + mres2);
 
       //Lorentz transformation by flow velocity
       double ddd = gamma * (erd + (prxd * vx + pryd * vy + przd * vz) * gamma/(1. + gamma));
@@ -446,8 +410,8 @@ void ParticleSampleHydrojet::generateParticle(double vx, double vy, double yv,
       pry = pryd + vy * ddd;
       prz = przd + vz * ddd;
 
-      double prt = sqrt(prx * prx + pry * pry);
-      er = sqrt(prt * prt + prz * prz + mres2);
+      double prt = std::sqrt(prx * prx + pry * pry);
+      er = std::sqrt(prt * prt + prz * prz + mres2);
 
       //	double mrt = sqrt(prt * prt + mres2);
       //	double yr = log((er + prz) / (er - prz)) * 0.5;
@@ -461,9 +425,9 @@ void ParticleSampleHydrojet::generateParticle(double vx, double vy, double yv,
     if (prds / pu / gamma > ranmax) {
       std::cout
         << "Warning: prds/pu/gamma is greater than maximum random number. "
-        << "Please increase 'facranmax'"
+        << "Please increase 'HYDRO2JAM_FACRANMAX'"
         << " at least "
-        << prds / pu / gamma / ranmax * facranmax
+        << prds / pu / gamma / ranmax * HYDRO2JAM_FACRANMAX
         << " [at ParticleSampleHydrojet::generateParticle]"
         << std::endl;
     }
