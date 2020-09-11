@@ -46,7 +46,7 @@ namespace {
           if (!(is >> px >> py >> pz >> e >> em >> ir >> tau >> rx >> ry >> eta))
             goto error_invalid_format;
 
-          int const pdg = rlist.generatePDGCode(ir);
+          int const pdg = rlist[ir].generatePDGCode();
           this->addParticleTauEta(pdg, px, py, pz, em, rx, ry, tau, eta);
         }
 

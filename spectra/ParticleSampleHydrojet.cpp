@@ -95,7 +95,7 @@ namespace {
     void generateParticle(
       double vx, double vy, double vz,
       double ds0, double dsx, double dsy,
-      double dsz, int ir, int ipos,
+      double dsz, ResonanceRecord const& reso, int ipos,
       double tau, double xx, double yy, double eta, int reflection = 0);
     void updateWithOverSampling(double oversamplingFactor) {
       this->base::clearParticleList();
@@ -112,7 +112,7 @@ namespace {
     runjam_context const& ctx, std::string const& cachedir, std::string suffix,
     int kintmp, int eos_pce, std::string const& fn_resodata
   ): base(ctx), rlist(kintmp, eos_pce, fn_resodata), m_hf(kintmp, eos_pce) {
-    int const nreso_loop = this->rlist.numberOfResonances();
+    int const nreso_loop = this->rlist.size();
     this->cache_fname.resize(nreso_loop);
     for (int i = 0; i < nreso_loop; i++) {
       std::ostringstream sstr;
@@ -164,8 +164,7 @@ namespace {
       std::exit(1);
     }
 
-    ResonanceListPCE::resonance& recreso = this->rlist[ireso];
-
+    ResonanceRecord& recreso = this->rlist[ireso];
     m_hf.openFDataFile(fn_freezeout_dat);
 
     //---------------------------------------------------------------------------
@@ -223,13 +222,13 @@ namespace {
   }
 
   void ParticleSampleHydrojet::createCooperFryeCache() {
-    int const nreso_loop = this->rlist.numberOfResonances();
+    int const nreso_loop = this->rlist.size();
     for(int ireso = 0; ireso < nreso_loop; ireso++)
       this->createCooperFryeCache(ireso);
   }
 
   bool ParticleSampleHydrojet::openCooperFryeCacheForRead() {
-    int const nreso_loop = rlist.numberOfResonances();
+    int const nreso_loop = this->rlist.size();
 
     cache_ifsPos.clear();
     for (int i = 0; i < nreso_loop; i++) {
@@ -269,7 +268,7 @@ namespace {
   }
 
   void ParticleSampleHydrojet::analyze(double oversamplingFactor) {
-    int const nreso_loop = rlist.numberOfResonances();
+    int const nreso_loop = this->rlist.size();
 
     double ran;
 
@@ -277,14 +276,14 @@ namespace {
       m_hf.readPData();
 
       if (!cfg_baryon_disable) {
-        for (int i = 0; i < nreso_loop; i++) {
-          rlist[i].mu = 0.0;
-          if (rlist[i].bf == 1) {
+        for (ResonanceRecord& reso: rlist) {
+          reso.mu = 0.0;
+          if (reso.bf == 1) {
             double const mub = cfg_baryon_mubf * sqrt(1.0 - m_hf.tf * m_hf.tf / cfg_baryon_tmpf / cfg_baryon_tmpf);
             double const mean_field = cfg_baryon_meanf * m_hf.nbf;
-            rlist[i].mu   = mub - mean_field;
-            if (rlist[i].anti) rlist[i].mu = -mub + mean_field;
-            // if (rlist[i].anti) rlist[i].mu = -mub - mean_field;
+            reso.mu   = mub - mean_field;
+            if (reso.anti) reso.mu = -mub + mean_field;
+            // if (reso.anti) reso.mu = -mub - mean_field;
           }
         }
       }
@@ -296,17 +295,19 @@ namespace {
       }
 
       // Loop over all particles.
-      for (int ir = 0; ir < nreso_loop; ir++) {
+      for (int ireso = 0; ireso < nreso_loop; ireso++) {
+        ResonanceRecord const& reso = rlist[ireso];
+
         double numResPos, numResNeg;
         if (cache_available) {
-          cache_ifsPos[ir] >> numResPos;
+          cache_ifsPos[ireso] >> numResPos;
           if (numResPos > 1.0)
-            std::cout << "Suspicious fluid element! ireso =" << ir
+            std::cout << "Suspicious fluid element! ireso =" << ireso
                       << " " << numResPos << std::endl;
 
-          cache_ifsNeg[ir] >> numResNeg;
+          cache_ifsNeg[ireso] >> numResNeg;
           if (numResNeg > 1.0)
-            std::cout << "Suspicious fluid element! ireso =" << ir << std::endl;
+            std::cout << "Suspicious fluid element! ireso =" << ireso << std::endl;
         } else {
           double npos = 0.0;
           double nneg = 0.0;
@@ -316,15 +317,15 @@ namespace {
           kashiwa::phys::vector4 ds(m_hf.ds0, -m_hf.dsx, -m_hf.dsy, -m_hf.dsz);
           double beta = 1.0 / m_hf.tf;
 
-          if (rlist[ir].bf == -1) {
-            idt::runjam::IntegrateBosonCooperFrye(npos, nneg, u, ds, beta, rlist[ir].mass, rlist[ir].mu);
+          if (reso.bf == -1) {
+            idt::runjam::IntegrateBosonCooperFrye(npos, nneg, u, ds, beta, reso.mass, reso.mu);
           } else {
-            idt::runjam::IntegrateFermionCooperFrye(npos, nneg, u, ds, beta, rlist[ir].mass, rlist[ir].mu);
+            idt::runjam::IntegrateFermionCooperFrye(npos, nneg, u, ds, beta, reso.mass, reso.mu);
           }
 
-          double n = (nneg + npos) * rlist[ir].degeff;
-          numResPos = npos * rlist[ir].deg;
-          numResNeg = nneg * rlist[ir].deg;
+          double n = (nneg + npos) * reso.degeff;
+          numResPos = npos * reso.deg;
+          numResNeg = nneg * reso.deg;
         }
         numResPos *= oversamplingFactor;
         numResNeg *= oversamplingFactor;
@@ -367,7 +368,7 @@ namespace {
           int const n = idt::util::irand_poisson(numResPos * reflection_count);
           for (int i = 0; i < n; i++) {
             int const reflection = idt::util::irand(reflection_count) * reflection_step;
-            generateParticle(m_hf.vx, m_hf.vy, m_hf.yv, m_hf.ds0, m_hf.dsx, m_hf.dsy, m_hf.dsz, ir, ipos, m_hf.tau, m_hf.xx, m_hf.yy, m_hf.eta, reflection);
+            generateParticle(m_hf.vx, m_hf.vy, m_hf.yv, m_hf.ds0, m_hf.dsx, m_hf.dsy, m_hf.dsz, reso, ipos, m_hf.tau, m_hf.xx, m_hf.yy, m_hf.eta, reflection);
           }
         }
 
@@ -377,7 +378,7 @@ namespace {
           int const n = idt::util::irand_poisson(numResNeg * reflection_count);
           for (int i = 0; i < n; i++) {
             int const reflection = idt::util::irand(reflection_count) * reflection_step;
-            generateParticle(m_hf.vx, m_hf.vy, m_hf.yv, m_hf.ds0, m_hf.dsx, m_hf.dsy, m_hf.dsz, ir, ipos, m_hf.tau, m_hf.xx, m_hf.yy, m_hf.eta, reflection);
+            generateParticle(m_hf.vx, m_hf.vy, m_hf.yv, m_hf.ds0, m_hf.dsx, m_hf.dsy, m_hf.dsz, reso, ipos, m_hf.tau, m_hf.xx, m_hf.yy, m_hf.eta, reflection);
           }
         }
       }
@@ -403,7 +404,7 @@ namespace {
   }
 
   void ParticleSampleHydrojet::generateParticle(double vx, double vy, double yv,
-  	  double ds0, double dsx, double dsy, double dsz, int ir, int ipos,
+  	  double ds0, double dsx, double dsy, double dsz, ResonanceRecord const& reso, int ipos,
   	  double tau, double x0, double y0, double eta0, int reflection)
   {
     // Note: surface element
@@ -431,15 +432,15 @@ namespace {
     double const dy = getDy();
     double const dh = getDh();
     double const dtau = getDtau();
-    double const vz = tanh(yv);
-    double const gamma =  cosh(yv) / sqrt(1.0 - (vx * vx + vy * vy) * cosh(yv) * cosh(yv));
+    double const vz = std::tanh(yv);
+    double const gamma =  std::cosh(yv) / std::sqrt(1.0 - (vx * vx + vy * vy) * std::cosh(yv) * std::cosh(yv));
     double const beta = 1.0 / m_hf.tf;
-    double const mres = rlist[ir].mass;
+    double const mres = reso.mass;
     double const mres2 = mres*mres;
     double prds, prx, pry, prz, er, pu;
 
-    double const mu = rlist[ir].mu;
-    double const sgn = rlist[ir].bf;
+    double const mu = reso.mu;
+    double const sgn = reso.bf;
     auto integrand = [mres2, beta, mu, sgn] (double const p) {
       double const energy = std::sqrt(p * p + mres2);
       double const x = (energy - mu) * beta;
@@ -469,8 +470,8 @@ namespace {
         double pmin = 0.0;
         double ppp = (pmax + pmin) * 0.5;
 
-        double const mu = rlist[ir].mu;
-        double const sgn = rlist[ir].bf;
+        double const mu = reso.mu;
+        double const sgn = reso.bf;
         for (int id = 0; id < HYDRO2JAM_ITERATION_MAX; id++) {
           ppp = (pmax + pmin) * 0.5;
           double const fp = kashiwa::IntegrateByGaussLegendre<12>(0.0, ppp,
@@ -549,7 +550,7 @@ namespace {
     //   は negative contribution による粒子。元々の hydrojet では
     //   ipos=0 の粒子もファイルに出力する機能があった。
     if (ipos) {
-      int const pdg = rlist.generatePDGCode(ir);
+      int const pdg = reso.generatePDGCode();
       double const px_GeV = prx * hbarc_GeVfm;
       double const py_GeV = pry * hbarc_GeVfm;
       double const pz_GeV = prz * hbarc_GeVfm;

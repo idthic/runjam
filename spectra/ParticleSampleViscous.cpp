@@ -553,11 +553,11 @@ namespace {
         }
       };
     public:
-      void initializeData(IResonanceList* reso, int ir, double beta) {
+      void initializeData(ResonanceRecord const& reso, double beta) {
         CFIntegrator eval;
-        this->bmass = beta * reso->mass(ir);
+        this->bmass = beta * reso.mass;
         eval.bmass = this->bmass;
-        eval.sign = reso->statisticsSign(ir);
+        eval.sign = -reso.bf;
         eval.xsig = this->bmass;
         eval.vsig = 0.0;
         eval.integrateBulk(
@@ -670,26 +670,26 @@ namespace {
     class TotalCDFInterpolater {
       double m_beta;
       std::vector<CFInterpolater1> m_data;
-      void initialize(IResonanceList* reso, double beta) {
+      void initialize(ResonanceList* rlist, double beta) {
         this->m_beta = beta;
-        this->m_data.resize(reso->numberOfResonances());
-        for (int ir = 0, irN = reso->numberOfResonances(); ir < irN; ir++) {
-          m_data[ir].initializeData(reso, ir, beta);
-        }
+        this->m_data.resize(rlist->size());
+        std::size_t ireso = 0;
+        for (ResonanceRecord const& reso: *rlist)
+          m_data[ireso++].initializeData(reso, beta);
       }
     public:
-      TotalCDFInterpolater(IResonanceList* reso, double beta) {
-        this->initialize(reso, beta);
+      TotalCDFInterpolater(ResonanceList* rlist, double beta) {
+        this->initialize(rlist, beta);
       }
 
       double beta() const { return this->m_beta; }
 
-      double IsotropicPartTotalCDF(int ir, double xsig, double dsig0, double dsig_abs, double piMax_2enthalpy) const {
-        return this->m_data[ir].IsotropicPartTotalCDF(xsig, dsig0, dsig_abs, piMax_2enthalpy);
+      double IsotropicPartTotalCDF(int ireso, double xsig, double dsig0, double dsig_abs, double piMax_2enthalpy) const {
+        return this->m_data[ireso].IsotropicPartTotalCDF(xsig, dsig0, dsig_abs, piMax_2enthalpy);
       }
 #ifdef ParticleSampleViscous20150330_InterpolateUCDF
-      double IsotropicPartUCDF(int ir, double xsig, double dsig0, double dsig_abs, double piMax_2enthalpy, double x) const {
-        return this->m_data[ir].IsotropicPartUCDF(xsig, dsig0, dsig_abs, piMax_2enthalpy, x);
+      double IsotropicPartUCDF(int ireso, double xsig, double dsig0, double dsig_abs, double piMax_2enthalpy, double x) const {
+        return this->m_data[ireso].IsotropicPartUCDF(xsig, dsig0, dsig_abs, piMax_2enthalpy, x);
       }
 #endif
     };
@@ -1121,9 +1121,10 @@ namespace {
     }
 
   public:
-    void SampleResonance(std::vector<Particle*>& plist, IResonanceList const* reso, int ireso) {
-      double const _sign  = reso->statisticsSign(ireso);
-      double const _bmass = beta * reso->mass(ireso);
+    void SampleResonance(std::vector<Particle*>& plist, ResonanceList const* rlist, int ireso) {
+      ResonanceRecord const& reso = (*rlist)[ireso];
+      double const _sign  = -reso.bf;
+      double const _bmass = beta * reso.mass;
       //double const _bmu   = beta * surface->chemicalPotential(ireso); //□mu not supported
 
       // update ireso, sign, bmass, xsig, totalIntegral
@@ -1163,7 +1164,7 @@ namespace {
 
       // nlambda = <n> = Poisson 分布期待値
       double const nlambda1 = totalIntegral * (1.0 / (8 * M_PI * M_PI)) * (temperature * temperature * temperature);
-      double const nlambda = nlambda1 * reso->numberOfDegrees(ireso) * this->m_overSamplingFactor;
+      double const nlambda = nlambda1 * reso.deg * this->m_overSamplingFactor;
       int const n = idt::util::irand_poisson(nlambda);
       if (n == 0) return;
 
@@ -1183,7 +1184,7 @@ namespace {
       for (int i = 0; i < n; i++) {
         if (m_dominating && idt::util::urand() >= prob) continue;
         if (generateParticleSample(&particle)) {
-          particle.pdg = reso->generatePDGCode(ireso);
+          particle.pdg = reso.generatePDGCode();
           particle.e = -1.0; // onshell (JAM初期化時に jam->jamMass() で自動決定させる)
           plist.push_back(new Particle(particle));
         }
@@ -1200,7 +1201,7 @@ namespace runjam {
   void SampleParticlesC0lrf(
     std::vector<Particle*>& plist,
     HypersurfaceElementC0Lrf const& surface,
-    IResonanceList const* rlist,
+    ResonanceList const* rlist,
     double overSamplingFactor,
     bool turnsOffViscousEffect
   ) {
@@ -1208,7 +1209,7 @@ namespace runjam {
     sampler.setOverSamplingFactor(overSamplingFactor);
     sampler.setTurnsOffViscousEffect(turnsOffViscousEffect);
 
-    int const iresoN = rlist->numberOfResonances();
+    int const iresoN = rlist->size();
     for (int ireso = 0; ireso < iresoN; ireso++)
       sampler.SampleResonance(plist, rlist, ireso);
 
@@ -1216,8 +1217,9 @@ namespace runjam {
     //   mass の単位は 197.32 [MeV fm] で割ってある
     //   mass [/fm] = M [MeV] / 197.32 [MeV fm] という事。
     // {
-    //   for (int ireso = 0; ireso < iresoN; ireso++)
-    //     std::cerr << "mass[" << ireso << "]=" << rlist->mass(ireso) * hbarc_MeVfm << std::endl;
+    //   std::size_t ireso = 0;
+    //   for (ResonanceRecord const& reso: *rlist)
+    //     std::cerr << "mass[" << ireso++ << "]=" << reso.mass * hbarc_MeVfm << std::endl;
     //   std::exit(2);
     // }
   }
@@ -1355,7 +1357,7 @@ namespace {
           else if (surface.m_temperature < switchingTemperature)
             sampler.setDominatingCDFInterpolater(&interp);
 
-          int const iresoN = rlist.numberOfResonances();
+          int const iresoN = rlist.size();
           for (int ireso = 0; ireso < iresoN; ireso++)
             sampler.SampleResonance(plist, &rlist, ireso);
         }
@@ -1566,8 +1568,8 @@ namespace {
         }
         c2++;
 
-        int const iresoN = rlist.numberOfResonances();
-        for (int ireso = 0; ireso < iresoN; ireso++)
+        int const nreso = rlist.size();
+        for (int ireso = 0; ireso < nreso; ireso++)
           sampler.SampleResonance(plist, &rlist, ireso);
       }
 
@@ -1625,19 +1627,12 @@ namespace {
 namespace idt {
 namespace runjam {
 namespace {
-  class DummyResonanceList: public IResonanceList {
+  class DummyResonanceList: public ResonanceList {
   public:
-    virtual int numberOfResonances() const { return 2; }
-    virtual double mass(int ir) const { return 135 / hbarc_MeVfm; }
-    virtual double statisticsSign(int ir) const { return ir == 0 ? +1.0 : -1.0; }
-
-    virtual double chemicalPotential(int ir) const { return 0.0; }
-    virtual int numberOfDegrees(int ir) const { return 1; }
-
-  private:
-    std::vector<int> m_dummy_pdg_codes;
-  public:
-    virtual int generatePDGCode(int ireso) const override { return ireso; }
+    DummyResonanceList() {
+      data.push_back(ResonanceRecord {135 / hbarc_MeVfm, 1.0, 1.0, 0.0, +1, 0});
+      data.push_back(ResonanceRecord {135 / hbarc_MeVfm, 1.0, 1.0, 0.0, -1, 0});
+    }
   };
 }
 
@@ -1651,7 +1646,7 @@ namespace {
 ///   Otherwise, returns EXIT_FAILURE or the program exits depending
 ///   on the argument `debug'.
 int checkViscousCooperFryeInterpolated(bool debug) {
-  DummyResonanceList reso;
+  DummyResonanceList rlist;
 
   ViscousCooperFryeIntegrator a;
   double const temperature = 155 / hbarc_MeVfm;
@@ -1661,10 +1656,10 @@ int checkViscousCooperFryeInterpolated(bool debug) {
   a.piMax_2enthalpy = 0.5;
   a.vsig            = std::abs(a.dsig0) < a.dsig_abs ? std::abs(a.dsig0) / a.dsig_abs : -1.0;
 
-  a.bmass = beta * reso.mass(0);
-  a.sign  = reso.statisticsSign(0);
+  a.bmass = beta * rlist[0].mass;
+  a.sign  = -rlist[0].bf;
 
-  interpolation::TotalCDFInterpolater interp(&reso, beta);
+  interpolation::TotalCDFInterpolater interp(&rlist, beta);
 
   static const int N = 1000;
   for (int it = 0; it < N; it++) {

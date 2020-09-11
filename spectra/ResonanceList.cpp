@@ -10,7 +10,65 @@
 namespace idt {
 namespace runjam {
 
-ResonanceListPCE::resonance ResonanceListPCE::resT[5][21] = {
+  int ResonanceRecord::generatePDGCode() const {
+    auto const& codes = this->pdg_codes;
+    if (codes.size() == 1)
+      return codes[0];
+    else
+      return codes[idt::util::irand(codes.size())];
+  }
+
+  void ResonanceList::readFile(std::string const& fn_resodata) {
+    std::ifstream ifs(fn_resodata.c_str());
+    if (!ifs)  {
+      std::cerr << "ResonanceList: failed to open the file '" << fn_resodata << "'." << std::endl;
+      std::exit(1);
+    }
+
+    this->data.clear();
+    this->data.reserve(151);
+
+    std::string line;
+    int iline = 0;
+    while (std::getline(ifs, line)) {
+      iline++;
+
+      // Skip empty lines and comment lines
+      std::size_t pos = line.find_first_not_of(" \t");
+      if (pos == std::string::npos || line[pos] == '#') continue;
+
+      std::istringstream istr(line);
+      ResonanceRecord reso;
+      int bftype, pdg;
+      std::string name;
+      istr >> reso.mass >> reso.deg >> reso.degeff
+           >> reso.mu >> bftype >> reso.anti
+           >> reso.key >> name;
+      while (istr >> pdg)
+        reso.pdg_codes.push_back(pdg);
+      if (reso.pdg_codes.empty()) {
+        std::cerr << fn_resodata << ":" << iline << ": invalid format." << std::endl;
+        std::exit(1);
+      }
+
+      // // check
+      // std::cout << reso.key;
+      // for (auto const pdg : reso.pdg_codes) std::cout << " " << pdg;
+      // std::cout << std::endl;
+
+      reso.mass /= hbarc_MeVfm; // fm^{-1}
+      reso.mu   /= hbarc_MeVfm; // fm^{-1}
+      reso.bf   = bftype == 1 ? -1: bftype == 2 ? 1 : bftype;
+      data.emplace_back(reso);
+    }
+
+    if (data.empty()) {
+      std::cerr << fn_resodata << ": empty." << std::endl;
+      std::exit(1);
+    }
+  }
+
+ResonanceRecord ResonanceListPCE::resT[5][21] = {
   //degeff is "effective degree of freedom" which means
   //the d.o.f. for decay into pi^-
   //Note that Lambda bar doesn't decay into pi^-.
@@ -142,17 +200,16 @@ ResonanceListPCE::resonance ResonanceListPCE::resT[5][21] = {
   }
 };
 
-ResonanceListPCE::ResonanceListPCE(runjam_context const& ctx) {
+ResonanceListPCE::ResonanceListPCE(runjam_context const& ctx): base(ctx) {
   int const eospce = ctx.eospce();
   int const kintmp = ctx.kintmp();
-  std::string const resodata = ctx.resodata();
-  initialize(kintmp, eospce, resodata);
+  initialize(kintmp, eospce, ctx.resodata());
 }
-ResonanceListPCE::ResonanceListPCE(int kineticTemp, int eos_pce, std::string const& fname_rlist) {
-  initialize(kineticTemp, eos_pce, fname_rlist);
+ResonanceListPCE::ResonanceListPCE(int kineticTemp, int eos_pce, std::string const& fn_resodata): base(fn_resodata) {
+  initialize(kineticTemp, eos_pce, fn_resodata);
 }
 
-void ResonanceListPCE::initialize(int kineticTemp, int eos_pce, std::string const& fname_rlist) {
+void ResonanceListPCE::initialize(int kineticTemp, int eos_pce, std::string const& fn_resodata) {
   int nreso_check;
   switch (eos_pce) {
   case 0: nreso_check = 21; break;
@@ -163,59 +220,8 @@ void ResonanceListPCE::initialize(int kineticTemp, int eos_pce, std::string cons
   case 5: nreso_check = 21; break;
   case 6: nreso_check = -1; break; // no-check
   }
-
-  if (fname_rlist.size() <= 0) {
-    std::cerr << "ResonanceListPCE::.ctor! something is wrong: Resonance table not available " << std::endl;
-    std::exit(1);
-  }
-
-  std::ifstream fdata(fname_rlist.c_str(), std::ios::in);
-  if (!fdata)  {
-    std::cerr << "ResonanceListPCE::.ctor! unable to open file " << fname_rlist << std::endl;
-    std::exit(1);
-  }
-
-  this->data.clear();
-  this->data.reserve(151);
-
-  std::string line;
-  int iline = 0;
-  while (std::getline(fdata, line)) {
-    iline++;
-
-    // Skip empty lines and comment lines
-    std::size_t pos = line.find_first_not_of(" \t");
-    if (pos == std::string::npos || line[pos] == '#') continue;
-
-    std::istringstream istr(line);
-    resonance record;
-    int bftype, pdgcode;
-    std::string name;
-    istr >> record.mass >> record.deg >> record.degeff
-         >> record.mu >> bftype >> record.anti
-         >> record.key >> name;
-    while (istr >> pdgcode)
-      record.pdg_codes.push_back(pdgcode);
-    if (record.pdg_codes.empty()) {
-      std::cerr << fname_rlist << ":" << iline << ": invalid format." << std::endl;
-      std::exit(1);
-    }
-
-    // // check
-    // std::cout << record.key;
-    // for (auto const pdg : record.pdg_codes) std::cout << " " << pdg;
-    // std::cout << std::endl;
-
-    record.mass /= hbarc_MeVfm; // fm^{-1}
-    record.mu   /= hbarc_MeVfm; // fm^{-1}
-    record.bf   = bftype == 1 ? -1: bftype == 2 ? 1 : bftype;
-    data.emplace_back(record);
-  }
-  if (data.empty()) {
-    std::cerr << fname_rlist << ": empty." << std::endl;
-    std::exit(1);
-  } else if (nreso_check >= 0 && data.size() != nreso_check) {
-    std::cerr << fname_rlist << ": unexpected number of resonances"
+  if (nreso_check >= 0 && data.size() != nreso_check) {
+    std::cerr << fn_resodata << ": unexpected number of resonances"
               << " [" << data.size() << ", expected: " << nreso_check << ", eospce = " << eos_pce << "]."
               << std::endl;
     std::exit(1);
@@ -229,30 +235,16 @@ void ResonanceListPCE::initialize(int kineticTemp, int eos_pce, std::string cons
     }
 
     for (int i = 0; i < data.size(); i++) {
-      resonance& recdst = data[i];
-      resonance& recsrc = resT[itemp][i];
-
-      recdst.mu = recsrc.mu;
-      // recdst.mass = recsrc.mass;
-      // recdst.deg    = recsrc.deg;
-      // recdst.degeff = recsrc.degeff;
-      // recdst.bf     = recsrc.bf;
-      // recdst.anti   = recsrc.anti;
-
-      recdst.mu /= hbarc_MeVfm;
-      // recdst.mass /= hbarc_MeVfm;
-      // if (recdst.bf == 1) recdst.bf = -1;
-      // if (recdst.bf == 2) recdst.bf = 1;
+      ResonanceRecord& reso1 = data[i];
+      ResonanceRecord& reso2 = resT[itemp][i];
+      reso1.mu = reso2.mu / hbarc_MeVfm;
+      // reso1.mass   = reso2.mass / hbarc_MeVfm;
+      // reso1.deg    = reso2.deg;
+      // reso1.degeff = reso2.degeff;
+      // reso1.bf     = reso2.bf == 1 ? -1 : reso2.bf == 2 ? 1 : reso2.bf;
+      // reso1.anti   = reso2.anti;
     }
   }
-}
-
-int ResonanceListPCE::generatePDGCode(int ireso) const {
-  auto const& codes = this->data[ireso].pdg_codes;
-  if (codes.size() == 1)
-    return codes[0];
-  else
-    return codes[idt::util::irand(codes.size())];
 }
 
 }
