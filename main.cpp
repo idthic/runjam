@@ -31,7 +31,7 @@ void doCascade(runjam_context const& ctx, std::string const& type, std::string c
 
   std::cout << "jam event generation start" << std::endl;
 
-  IParticleSample* psamp = CreateParticleSample(ctx, type, inputfile);
+  ParticleSampleBase* psamp = CreateParticleSample(ctx, type, inputfile);
   if (!psamp) {
     std::cerr << "runjam: failed to initialize ParticleSample of type '" << type << "'." <<  std::endl;
     std::exit(1);
@@ -110,7 +110,7 @@ void doGeneratePhasespace0(runjam_context const& ctx, std::string const& type, s
   ctx1.set_value("runjam_nevent", 1);
   ctx1.set_value("runjam_oversampling_factor", nevent * ntest);
 
-  IParticleSample* psamp = CreateParticleSample(ctx1, type, inputfile);
+  ParticleSampleBase* psamp = CreateParticleSample(ctx1, type, inputfile);
   psamp->update();
 
   // 振り分け

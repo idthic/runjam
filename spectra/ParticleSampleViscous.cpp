@@ -1579,8 +1579,8 @@ namespace {
     }
   };
 
-  class ParticleSampleFactory: ParticleSampleFactoryRegistered {
-    virtual IParticleSample* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
+  class ParticleSampleFactory: ParticleSampleFactoryBase {
+    virtual ParticleSampleBase* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
       // ResonanceListPCE を移動する
       if (type == "c0lrf") {
         double const switchingTemperature = ctx.get_config("runjam_switching_temperature", -1.0);

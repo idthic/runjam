@@ -257,14 +257,14 @@ namespace {
     m_hf.openFDataFile(this->fn_freezeout_dat);
     m_hf.openPDataFile(this->fn_position_dat);
 
-    std::cout << "ParticleSampleHydrojet.cpp(ParticleSampleHydrojet::initialize): checking Cooper-Frye cache files (.POS/.NEG)... " << std::flush;
+    std::cout << "ParticleSampleHydrojet: checking Cooper-Frye cache files (.POS/.NEG)... " << std::flush;
     if (this->openCooperFryeCacheForRead()) {
       cache_available = true;
       std::cout << "yes" << std::endl;
       return;
     } else {
       std::cout << "no (incomplete).\n";
-      std::cout << "ParticleSampleHydrojet.cpp(ParticleSampleHydrojet::initialize): entering delayed Cooper-Frye evaluation mode." << std::endl;
+      std::cout << "ParticleSampleHydrojet: entering delayed Cooper-Frye evaluation mode." << std::endl;
     }
   }
 
@@ -561,8 +561,8 @@ namespace {
     }
   }
 
-  class ParticleSampleFactory: ParticleSampleFactoryRegistered {
-    virtual IParticleSample* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
+  class ParticleSampleFactory: ParticleSampleFactoryBase {
+    virtual ParticleSampleBase* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
       if (type != "hydrojet.original") return 0;
 
       std::string const cachedir = ctx.indir();

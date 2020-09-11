@@ -73,8 +73,8 @@ namespace {
     }
   };
 
-  class ParticleSampleFactory: ParticleSampleFactoryRegistered {
-    virtual IParticleSample* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
+  class ParticleSampleFactory: ParticleSampleFactoryBase {
+    virtual ParticleSampleBase* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
       if (type != "psample") return 0;
       return new ParticleSampleRead(inputfile);
     }

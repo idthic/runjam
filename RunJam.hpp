@@ -40,8 +40,8 @@ public:
   void   setWeakDecay() {jam->setMSTC(42,0);}  //=0: allow weak decays
   void   unsetWeakDecay() {jam->setMSTC(42,1);}  //=1:no weak decays
   void   setMSTC(int i,int j) {jam->setMSTC(i,j);}
-  void   generateEvent(IParticleSample* psamp, std::string const& cascadeMode);
-  void   initJam(IParticleSample* psamp);
+  void   generateEvent(ParticleSampleBase* psamp, std::string const& cascadeMode);
+  void   initJam(ParticleSampleBase* psamp);
   void   cmCorrection();
   void   printPhaseSpaceData(std::ofstream& output);
 

@@ -25,24 +25,7 @@ namespace runjam {
     double pz;
   };
 
-  class IParticleSample {
-  public:
-    virtual ~IParticleSample() {}
-
-    virtual void setAdviceNumberOfExpectedEvents(int nEvents) {}
-
-    /// @fn void update();
-    /// \~en generates a resonance distribution
-    /// \~ja 粒子分布の生成を実行します。
-    virtual void update() = 0;
-
-    /// @fn std::vector<Particle*> const& getParticleList() const;
-    /// \~en retrieves the generated resonance distribution.
-    /// \~ja 生成した粒子分布を取得します。
-    virtual std::vector<Particle*> const& getParticleList() const = 0;
-  };
-
-  class ParticleSampleBase: public IParticleSample {
+  class ParticleSampleBase {
   protected:
     std::vector<Particle*> plist;
 
@@ -63,8 +46,22 @@ namespace runjam {
 
   public:
     ParticleSampleBase() {}
+
     virtual ~ParticleSampleBase() { this->clearParticleList(); }
+
+    /// @fn void setAdviceNumberOfExpectedEvents(int nEvents);
+    /// このインスタンスを用いて生成すると予想されるイベントの数を指定します。
+    virtual void setAdviceNumberOfExpectedEvents(int nEvents) {}
+
+    /// @fn std::vector<Particle*> const& getParticleList() const;
+    /// \~en retrieves the generated resonance distribution.
+    /// \~ja 生成した粒子分布を取得します。
     virtual std::vector<Particle*> const& getParticleList() const { return this->plist; }
+
+    /// @fn void update();
+    /// \~en generates a resonance distribution
+    /// \~ja 粒子分布の生成を実行します。
+    virtual void update() = 0;
 
   private:
     // コピー禁止
@@ -80,16 +77,6 @@ namespace runjam {
 
   class OversampledParticleSampleBase: public ParticleSampleBase {
     typedef ParticleSampleBase base;
-
-  private:
-    double m_overSamplingFactor;
-  public:
-    void setOverSamplingFactor(double value) {
-      this->m_overSamplingFactor = value;
-    }
-    double getOverSamplingFactor() const {
-      return this->m_overSamplingFactor;
-    }
 
     // 実装: 複数事象一括生成について。
     //
@@ -110,22 +97,32 @@ namespace runjam {
     //   plist も解放・クリアされる。
 
   private:
-    int numberOfExpectedEvents;
-    int indexOfCachedEvents;
-    std::vector<std::vector<Particle*> > pcache;
-
+    double m_overSamplingFactor;
   public:
-    virtual std::vector<Particle*> const& getParticleList() const {
-      if (this->indexOfCachedEvents >= 0)
-        return this->pcache[indexOfCachedEvents];
-      else
-        return this->plist;
+    void setOverSamplingFactor(double value) {
+      this->m_overSamplingFactor = value;
+    }
+    double getOverSamplingFactor() const {
+      return this->m_overSamplingFactor;
     }
 
+  private:
+    int numberOfExpectedEvents;
   public:
     virtual void setAdviceNumberOfExpectedEvents(int nEvents) override {
       this->numberOfExpectedEvents = nEvents;
       this->indexOfCachedEvents = -1;
+    }
+
+  private:
+    int indexOfCachedEvents;
+    std::vector<std::vector<Particle*> > pcache;
+  public:
+    virtual std::vector<Particle*> const& getParticleList() const override {
+      if (this->indexOfCachedEvents >= 0)
+        return this->pcache[indexOfCachedEvents];
+      else
+        return this->plist;
     }
 
   public:
@@ -134,6 +131,7 @@ namespace runjam {
       this->setAdviceNumberOfExpectedEvents(0);
     }
 
+  public:
     virtual void updateWithOverSampling(double overSamplingFactor) = 0;
 
     virtual void update() {
@@ -163,20 +161,16 @@ namespace runjam {
     }
   };
 
-  class IParticleSampleFactory {
+  class ParticleSampleFactoryBase {
   public:
-    virtual IParticleSample* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) = 0;
-    virtual ~IParticleSampleFactory() {}
+    virtual ParticleSampleBase* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) = 0;
+    virtual ~ParticleSampleFactoryBase() {}
   protected:
-    void Register(IParticleSampleFactory* factory);
+    ParticleSampleFactoryBase() { Register(this); }
+    void Register(ParticleSampleFactoryBase* factory);
   };
 
-  class ParticleSampleFactoryRegistered: public IParticleSampleFactory {
-  protected:
-    ParticleSampleFactoryRegistered() { Register(this); }
-  };
-
-  IParticleSample* CreateParticleSample(runjam_context const& ctx, std::string const& type, std::string const& inputfile);
+  ParticleSampleBase* CreateParticleSample(runjam_context const& ctx, std::string const& type, std::string const& inputfile);
 
 }
 }

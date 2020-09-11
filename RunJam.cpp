@@ -202,7 +202,7 @@ void RunJam::printPhaseSpaceData(std::ofstream& output) {
   }
 }
 
-void RunJam::initJam(IParticleSample* psamp) {
+void RunJam::initJam(ParticleSampleBase* psamp) {
   std::vector<Particle*> const& plist = psamp->getParticleList();
 
   std::vector<Particle*>::const_iterator mp;
@@ -331,7 +331,7 @@ void RunJam::cmCorrection() {
   }
 }
 
-void RunJam::generateEvent(IParticleSample* psamp, std::string const& cascadeMode) {
+void RunJam::generateEvent(ParticleSampleBase* psamp, std::string const& cascadeMode) {
   int const nevent = this->nevent;
   aveNumberPart1 = 0.0;
   aveNumberPart2 = 0.0;
