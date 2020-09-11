@@ -12,6 +12,7 @@ namespace runjam {
 namespace {
 
   class ParticleSampleReadPhasespaceData: public ParticleSampleBase {
+    typedef ParticleSampleBase base;
     std::string fname_phasespace_dat;
 
   private:
@@ -39,27 +40,35 @@ namespace {
     }
 
   private:
-    std::vector<std::vector<Particle*> > pcache;
-  private:
-    virtual std::vector<Particle*> const& getParticleList() const {
+    std::vector<std::size_t> pcache;
+    void checkCacheAvailability() {
       if (m_currentSampleIndex < 0) {
         std::cerr << "ParticleSampleReadPhasespaceData: A phasespace file has not been read." << std::endl;
         std::exit(EXIT_FAILURE);
-      } else if (m_currentSampleIndex >= this->pcache.size()) {
+      } else if (m_currentSampleIndex >= this->pcache.size() - 1) {
         std::cerr << "ParticleSampleReadPhasespaceData: No more samples." << std::endl;
         std::exit(EXIT_FAILURE);
       }
-
-      return this->pcache[m_currentSampleIndex];
+    }
+  public:
+    virtual Particle* begin() override {
+      this->checkCacheAvailability();
+      return base::begin() + pcache[m_currentSampleIndex];
+    }
+    virtual Particle* end() override {
+      this->checkCacheAvailability();
+      return base::begin() + pcache[m_currentSampleIndex + 1];
     }
 
+  private:
     void readPhasespaceDat() {
       this->clearParticleList();
 
       bool eventCountKnown = m_numberOfSamples >= 0;
       this->pcache.clear();
+      this->pcache.emplace_back(0);
       if (eventCountKnown)
-        this->pcache.reserve(this->m_numberOfSamples);
+        this->pcache.reserve(this->m_numberOfSamples + 1);
 
       int iline;
       {
@@ -79,7 +88,6 @@ namespace {
 
           if (npart < 0) goto error_invalid_format;
 
-          this->pcache.resize(isample + 1);
           for (int i = 0; i < npart; i++) {
             iline++;
             if (!std::getline(ifs, line)) goto error_invalid_format;
@@ -92,8 +100,8 @@ namespace {
               )) goto error_invalid_format;
 
             this->addParticleMinkowski(kf, px, py, pz, m, x, y, z, t);
-            this->pcache[isample].push_back(this->plist.back());
           }
+          this->pcache.emplace_back(base::plist.size());
         }
 
         // 最終行の中身が -999 かどうかチェックする。
@@ -132,6 +140,7 @@ namespace {
   };
 
   class ParticleSampleReadPhasespaceBinary: public ParticleSampleBase {
+    typedef ParticleSampleBase base;
     std::string fname_phasespace_bin;
 
   private:
@@ -161,27 +170,35 @@ namespace {
     }
 
   private:
-    std::vector<std::vector<Particle*> > pcache;
-  private:
-    virtual std::vector<Particle*> const& getParticleList() const override {
+    std::vector<std::size_t> pcache;
+    void checkCacheAvailability() {
       if (m_currentSampleIndex < 0) {
         std::cerr << "ParticleSampleReadPhasespaceBinary: A phasespace file has not been read." << std::endl;
         std::exit(EXIT_FAILURE);
-      } else if (m_currentSampleIndex >= this->pcache.size()) {
+      } else if (m_currentSampleIndex >= this->pcache.size() - 1) {
         std::cerr << "ParticleSampleReadPhasespaceBinary: No more samples." << std::endl;
         std::exit(EXIT_FAILURE);
       }
-
-      return this->pcache[m_currentSampleIndex];
+    }
+  public:
+    virtual Particle* begin() override {
+      this->checkCacheAvailability();
+      return base::begin() + pcache[m_currentSampleIndex];
+    }
+    virtual Particle* end() override {
+      this->checkCacheAvailability();
+      return base::begin() + pcache[m_currentSampleIndex + 1];
     }
 
+  private:
     void readPhasespaceBin() {
       this->clearParticleList();
 
       bool eventCountKnown = m_numberOfSamples >= 0;
       this->pcache.clear();
+      this->pcache.emplace_back();
       if (eventCountKnown)
-        this->pcache.reserve(this->m_numberOfSamples);
+        this->pcache.reserve(this->m_numberOfSamples + 1);
 
       std::ifstream ifs(this->fname_phasespace_bin.c_str(), std::ios::binary);
       int isample = 0;
@@ -204,7 +221,6 @@ namespace {
           if (!ifs.read((char*) &nhadron, sizeof nhadron))
             goto error_invalid_format;
 
-          this->pcache.resize(isample + 1);
           for (std::uint32_t i = 0; i < nhadron; i++) {
             std::int32_t ks, kf;
             float px, py, pz, m;
@@ -220,8 +236,8 @@ namespace {
             if (!ifs.read((char*) &z, sizeof z)) goto error_invalid_format;
             if (!ifs.read((char*) &t, sizeof t)) goto error_invalid_format;
             this->addParticleMinkowski(kf, px, py, pz, m, x, y, z, t);
-            this->pcache[isample].push_back(this->plist.back());
           }
+          this->pcache.emplace_back(base::plist.size());
         }
 
         if (eventCountKnown && isample != m_numberOfSamples)

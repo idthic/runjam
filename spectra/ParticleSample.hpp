@@ -27,10 +27,11 @@ namespace runjam {
 
   class ParticleSampleBase {
   protected:
-    std::vector<Particle*> plist;
+    std::vector<Particle> plist;
 
   protected:
     void clearParticleList();
+    void shuffleParticleList();
 
     /// @param[in] px [GeV/c] momentum in the x-direction
     /// @param[in] py [GeV/c] momentum in the y-direction
@@ -55,10 +56,16 @@ namespace runjam {
 
     virtual double getOverSamplingFactor() const = 0;
 
-    /// @fn std::vector<Particle*> const& getParticleList() const;
-    /// \~en retrieves the generated resonance distribution.
-    /// \~ja 生成した粒子分布を取得します。
-    virtual std::vector<Particle*> const& getParticleList() const { return this->plist; }
+    /// @fn Particle* begin();
+    /// @fn Particle* end();
+    /// @fn Particle const* begin() const;
+    /// @fn Particle const* end() const;
+    /// \~en retrieves the generated particle iterators.
+    /// \~ja 生成した粒子集合のイテレータを取得します。
+    virtual Particle* begin() { return &plist[0]; }
+    virtual Particle* end() { return &plist[0] + plist.size(); }
+    Particle const* begin() const { return const_cast<ParticleSampleBase*>(this)->begin(); }
+    Particle const* end() const { return const_cast<ParticleSampleBase*>(this)->end(); }
 
     /// @fn void update();
     /// \~en generates a resonance distribution
@@ -88,11 +95,14 @@ namespace runjam {
     //   が要求されている時に update が呼ばれると一括生成が実行され、
     //   numberOfExpectedEvents は 0 にクリアされる。
     //
-    // 2 一括生成された粒子は base::plist に保持され寿命が管理される。
-    //   同時に、事象 #ievent の粒子一覧は pcache[ievent] に記録される。
-    //   pcache.size()>0 の時、一括生成された事象が未だ残っている事を
-    //   表す。(pcache.size()>0 の間 base::plist には一括生成された全
-    //   粒子が格納されている事になる。)
+
+    // 2 一括生成された粒子は base::plist に保持される。事象 #ievent
+    //   の粒子一覧は base::plist 内の一区間として表現される。その範囲
+    //   は [prange[ievent], prange[ievent]) になる。"pcached.size() >
+    //   0" の時、一括生成された事象が未だ残っている事を表す。
+    //   ("pcache.size() > 0" の間 base::plist には一括生成された全粒
+    //   子が格納されている事になる。)
+
     //
     // 3 pcache の事象を使い切ると pcache はクリアされる。この場合は通
     //   常の 1 事象の生成が行われる。その過程で、今迄一括生成の全粒子
@@ -118,13 +128,19 @@ namespace runjam {
 
   private:
     int indexOfCachedEvents;
-    std::vector<std::vector<Particle*> > pcache;
+    std::vector<std::size_t> pcache;
   public:
-    virtual std::vector<Particle*> const& getParticleList() const override {
+    virtual Particle* begin() override {
       if (this->indexOfCachedEvents >= 0)
-        return this->pcache[indexOfCachedEvents];
+        return base::begin() + pcache[indexOfCachedEvents];
       else
-        return this->plist;
+        return base::begin();
+    }
+    virtual Particle* end() override {
+      if (this->indexOfCachedEvents >= 0)
+        return base::begin() + pcache[indexOfCachedEvents + 1];
+      else
+        return base::end();
     }
 
   public:
@@ -138,8 +154,8 @@ namespace runjam {
 
     virtual void update() {
       // 一括生成済の時
-      if (this->pcache.size() > 0) {
-        if (++this->indexOfCachedEvents < this->pcache.size())
+      if (this->pcache.size() > 1) {
+        if (++this->indexOfCachedEvents < this->pcache.size() - 1)
           return;
 
         this->pcache.clear();
@@ -150,10 +166,19 @@ namespace runjam {
       if (this->numberOfExpectedEvents > 0) {
         int ncache = this->numberOfExpectedEvents;
         this->updateWithOverSampling(this->m_overSamplingFactor * ncache);
-        this->pcache.resize(ncache, std::vector<Particle*>());
-        for (std::vector<Particle*>::const_iterator i = this->base::plist.begin(); i != this->base::plist.end(); ++i)
-          this->pcache[idt::util::irand(ncache)].push_back(*i);
 
+        // 二項分布で各イベントの粒子数を決定する
+        this->pcache.clear();
+        this->pcache.reserve(ncache + 1);
+        this->pcache.emplace_back(0);
+        std::size_t pos = 0, size = base::plist.size();
+        for (; ncache > 1; ncache--) {
+          pos += idt::util::irand_binomial(size - pos, 1.0 / ncache);
+          this->pcache.emplace_back(pos);
+        }
+        this->pcache.emplace_back(size);
+
+        this->shuffleParticleList();
         this->numberOfExpectedEvents = 0;
         this->indexOfCachedEvents = 0;
         return;

@@ -65,26 +65,44 @@ bool application_context::read_config(bool& value, const char* key) const {
 }
 
 
-static std::mt19937 random_engine;
+static std::mt19937 eng;
+
+std::mt19937& random_engine() {
+  return eng;
+}
 
 void set_random_seed(int seed) {
-  random_engine.seed(seed);
+  eng.seed(seed);
 }
 
 double urand() {
   static std::uniform_real_distribution<double> dist(0.0, 1.0);
-  return dist(random_engine);
+  return dist(eng);
 }
 
 int irand(int n) {
   std::uniform_int_distribution<int> dist(0, n - 1);
-  return dist(random_engine);
+  return dist(eng);
+}
+std::size_t irand(std::size_t n) {
+  std::uniform_int_distribution<std::size_t> dist(0, n - 1);
+  return dist(eng);
 }
 
 int irand_poisson(double lambda){
   std::poisson_distribution<int> dist(lambda);
-  return dist(random_engine);
+  return dist(eng);
 }
+
+int irand_binomial(int trial, double probability) {
+  std::binomial_distribution<int> dist(trial, probability);
+  return dist(eng);
+}
+std::size_t irand_binomial(std::size_t trial, double probability) {
+  std::binomial_distribution<std::size_t> dist(trial, probability);
+  return dist(eng);
+}
+
 
 }
 }

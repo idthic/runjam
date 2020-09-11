@@ -57,17 +57,17 @@ struct PhasespaceDataWriter: public FileWriterBase {
     ofs << nv << "  " << numberTestParticle << std::endl;
     for (int i = 1; i <= nv; i++) {
       //if(libjam::getK(1,i) > 10) continue;
-      int ks=libjam::getK(1,i);
-      int kf=libjam::getK(2,i);
-      double px=libjam::getP(1,i);
-      double py=libjam::getP(2,i);
-      double pz=libjam::getP(3,i);
-      //double pe=libjam::getP(4,i);
-      double m = libjam::getP(5,i);
-      double x=libjam::getR(1,i);
-      double y=libjam::getR(2,i);
-      double z=libjam::getR(3,i);
-      double t=libjam::getR(4,i);
+      int ks = libjam::getK(1, i);
+      int kf = libjam::getK(2, i);
+      double px = libjam::getP(1, i);
+      double py = libjam::getP(2, i);
+      double pz = libjam::getP(3, i);
+      //double pe=libjam::getP(4, i);
+      double m = libjam::getP(5, i);
+      double x = libjam::getR(1, i);
+      double y = libjam::getR(2, i);
+      double z = libjam::getR(3, i);
+      double t = libjam::getR(4, i);
       ofs << std::setw(5) << ks
           << std::setw(10) << kf
           << std::setw(14) << px
@@ -276,15 +276,15 @@ public:
     double averageParticleNumber0 = 0.0;
     double averageParticleNumber = 0.0;
     for (int iev = 1; iev <= nevent; iev++) {
-      double const ntest = psamp->getOverSamplingFactor();
       psamp->update();
+      double const ntest = psamp->getOverSamplingFactor();
       libjam::setMSTC(5, ntest);
-      setParticlesInJam(psamp);
+      writeParticlesToJam(psamp->begin(), psamp->end());
 
       if (iev % nprint == 0) {
         std::cout
           << "runjam:iev=" << iev << ": "
-          << "sampling done. The number of initial test particles is nv=" << libjam::getNV() << "." << std::endl;
+          << "sampling done. The initial test-particle number is nv=" << libjam::getNV() << "." << std::endl;
       }
 
       averageParticleNumber0 += (double) libjam::getNV() / ntest;
@@ -309,7 +309,7 @@ public:
         if (iev % nprint == 0) {
           std::cout
             << "runjam:iev=" << iev << ": "
-            << "cascade done. the average collision number is "
+            << "cascade done. The average collision number is "
             << (libjam::getMSTD(41) + libjam::getMSTD(42)) / ntest << "." << std::endl;
         }
       }
@@ -333,18 +333,14 @@ public:
       << averageParticleNumber << " (after JAM)" << std::endl;
   }
 
-  void setParticlesInJam(ParticleSampleBase* psamp) {
-    std::vector<Particle*> const& plist = psamp->getParticleList();
-
+  void writeParticlesToJam(Particle const* begin, Particle const* end) {
     int nv = 0;
     int nbary = 0;
     int nmeson = 0;
 
-    std::vector<Particle*>::const_iterator mp;
-    for (mp = plist.begin(); mp != plist.end(); mp++) {
-      Particle const* const particle = *mp;
-
-      int kf = particle->pdg;
+    for (; begin != end; ++begin) {
+      Particle const& particle = *begin;
+      int kf = particle.pdg;
       if (kf == 0) continue;
 
       int kc = libjam::jamComp(kf);      // internal particle code.
@@ -374,14 +370,14 @@ public:
       libjam::setK(10, nv, 0);
       libjam::setK(11, nv, 0);
 
-      double const x  = particle->x;
-      double const y  = particle->y;
-      double const z  = particle->z;
-      double const t  = particle->t;
-      double const px = particle->px;
-      double const py = particle->py;
-      double const pz = particle->pz;
-      double pe = particle->e;
+      double const x  = particle.x;
+      double const y  = particle.y;
+      double const z  = particle.z;
+      double const t  = particle.t;
+      double const px = particle.px;
+      double const py = particle.py;
+      double const pz = particle.pz;
+      double pe = particle.e;
       double pm;
       if (pe < 0.0) {
         pm = libjam::jamMass(kf);
@@ -483,20 +479,20 @@ void doCascade(runjam_context const& ctx, std::string const& type, std::string c
   delete psamp;
 }
 
-void savePhasespaceData(std::string fname, std::vector<Particle*> plist) {
+void savePhasespaceData(std::string fname, Particle* begin, Particle* end) {
   std::FILE* f = std::fopen(fname.c_str(), "w");
   if (!f) {
     std::cerr << "runjam: failed to open the file '" << fname << "'" << std::endl;
     return;
   }
 
-  int const nhadron = plist.size();
-  std::fprintf(f, "%-4d 1\n", nhadron);
-  for (std::vector<Particle*>::iterator i = plist.begin(); i != plist.end(); ++i) {
-    Particle* particle = *i;
+  std::size_t const nhadron = end - begin;
+  std::fprintf(f, "%-4zd 1\n", nhadron);
+  for (; begin != end; begin++) {
+    Particle& particle = *begin;
 
     // (1) kf ... PDG particle code
-    int kf = particle->pdg;
+    int kf = particle.pdg;
     if (kf == 0) {
       std::cerr << "runjam: invalid value of kf (PDG particle code)." << std::endl;
       std::exit(EXIT_FAILURE);
@@ -509,10 +505,10 @@ void savePhasespaceData(std::string fname, std::vector<Particle*> plist) {
       || libjam::getMDCY(kc,2) == 0 || libjam::getMDCY(kc,3) == 0) ks = 1;
 
     // (3) px,py,pz,m
-    double const px = particle->px;
-    double const py = particle->py;
-    double const pz = particle->pz;
-    double pe = particle->e;
+    double const px = particle.px;
+    double const py = particle.py;
+    double const pz = particle.pz;
+    double pe = particle.e;
     double m;
     if (pe < 0.0) {
       // onshell jamMass を用いて決定
@@ -523,10 +519,10 @@ void savePhasespaceData(std::string fname, std::vector<Particle*> plist) {
     }
 
     // (3) x,y,z,t
-    double const x = particle->x;
-    double const y = particle->y;
-    double const z = particle->z;
-    double const t = particle->t;
+    double const x = particle.x;
+    double const y = particle.y;
+    double const z = particle.z;
+    double const t = particle.t;
 
     std::fprintf(
       f, "%5d %9d %13.6g %13.6g %13.6g %13.6g %13.6g %13.6g %13.6g %13.6g\n",
@@ -538,28 +534,16 @@ void savePhasespaceData(std::string fname, std::vector<Particle*> plist) {
 
 void doGeneratePhasespace0(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
   int const nevent = ctx.nevent(1000);
-  int const ibase = ctx.get_config("runjam_output_index_start", 0);
-  double const ntest = ctx.get_config("runjam_oversampling_factor", 1.0);
   std::string const outdir = ctx.outdir();
+  int const ibase = ctx.get_config("runjam_output_index_start", 0);
 
-  runjam_context ctx1(ctx);
-  ctx1.set_value("runjam_nevent", 1);
-  ctx1.set_value("runjam_oversampling_factor", nevent * ntest);
-
-  ParticleSampleBase* psamp = CreateParticleSample(ctx1, type, inputfile);
-  psamp->update();
-
-  // 振り分け
-  std::vector<Particle*> const& plist = psamp->getParticleList();
-  std::vector<std::vector<Particle*> > phases((std::size_t) nevent);
-  for (std::vector<Particle*>::const_iterator i = plist.begin(); i != plist.end(); ++i)
-    phases[idt::util::irand(nevent)].push_back(*i);
-
-  // 保存
+  ParticleSampleBase* const psamp = CreateParticleSample(ctx, type, inputfile);
+  if (nevent > 0) psamp->setAdviceNumberOfExpectedEvents(nevent);
   for (int i = 0; i < nevent; i++) {
     std::vector<char> fn(outdir.size() + 50);
     std::sprintf(&fn[0], "%s/dens%06d_phasespace0.dat", outdir.c_str(), ibase + i);
-    savePhasespaceData(&fn[0], phases[i]);
+    psamp->update();
+    savePhasespaceData(&fn[0], psamp->begin(), psamp->end());
   }
 
   delete psamp;

@@ -385,13 +385,7 @@ namespace {
     }
 
     // 2013/04/30, KM, shuffle the particle list
-    if (this->cfg_shuffle_particles) {
-#if __cplusplus >= 201703L
-      std::shuffle(this->plist.begin(), this->plist.end(), RandomURGB());
-#else
-      std::random_shuffle(this->plist.begin(), this->plist.end());
-#endif
-    }
+    if (this->cfg_shuffle_particles) this->shuffleParticleList();
   }
 
   void ParticleSampleHydrojet::finalize() {

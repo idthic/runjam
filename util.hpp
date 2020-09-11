@@ -1,5 +1,6 @@
 #ifndef runjam_util_hpp
 #define runjam_util_hpp
+#include <cstddef>
 #include <map>
 #include <string>
 
@@ -54,12 +55,18 @@ namespace util {
 }
 }
 
+#include <random>
+
 namespace idt {
 namespace util {
+  std::mt19937& random_engine();
   void set_random_seed(int seed);
   double urand(); // double [0,1)
   int irand(int n); // int [0,n)
+  std::size_t irand(std::size_t n); // int [0,n)
   int irand_poisson(double lambda);
+  int irand_binomial(int trial, double probability);
+  std::size_t irand_binomial(std::size_t trial, double probability);
 }
 }
 

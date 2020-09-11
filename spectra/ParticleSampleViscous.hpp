@@ -34,7 +34,7 @@ namespace runjam {
   };
 
   void SampleParticlesC0lrf(
-    std::vector<Particle*>& plist,
+    std::vector<Particle>& plist,
     HypersurfaceElementC0Lrf const& surface,
     ResonanceList const* rlist,
     double overSamplingFactor = 1.0,
