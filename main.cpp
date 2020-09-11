@@ -41,9 +41,9 @@ void doCascade(runjam_context const& ctx, std::string const& type, std::string c
   delete psamp;
 
   std::cout
-    << "Average initial particle number from hydrojet:"
-    << " before decay= " << runjam.getIniAverageParticleNumber1()
-    << " after decay= " << runjam.getIniAverageParticleNumber2()
+    << "runjam: the average number of hadrons are "
+    << runjam.getIniAverageParticleNumber1() << " (before JAM) -> "
+    << " nhadron_after_cascade=" << runjam.getIniAverageParticleNumber2() << " (after JAM)"
     << std::endl;
 }
 

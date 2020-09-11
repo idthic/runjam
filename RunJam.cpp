@@ -392,7 +392,7 @@ void RunJam::generateEvent(IParticleSample* psamp, std::string const& cascadeMod
       }
     }
 
-    aveNumberPart1 += (double) jam->getNV() / (nevent * numberTestParticle);
+    aveNumberPart2 += (double) jam->getNV() / (nevent * numberTestParticle);
 
     if (ofs.is_open())
       printPhaseSpaceData(ofs); // output the distribution to phasespace0.dat
