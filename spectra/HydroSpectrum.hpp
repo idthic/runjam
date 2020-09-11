@@ -17,7 +17,6 @@ protected:
   double  mpi, mk, mpro; // masses of pions, kaons and protons.
   double  mupi, muk, mup; // chemical potentials.
   int co; //=1: v1  =2:v2  =3: v3
-  int baryonfree;
   int kineticTemp;
 
   int fin;

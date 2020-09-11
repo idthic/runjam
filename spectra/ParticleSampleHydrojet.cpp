@@ -38,26 +38,27 @@ namespace {
     std::vector<Particle*> plist;
 
     bool flag_negative_contribution = false;
-    int    baryonfree;
-    double tmpf;
-    double mubf;
-    double meanf;
+
+    int    cfg_baryon_disable;
+    double cfg_baryon_tmpf;  // [unit: fm^{-1}]
+    double cfg_baryon_mubf;  // [unit: fm^{-1}]
+    double cfg_baryon_meanf;
     bool cfg_reverse_particles;
     bool cfg_shuffle_particles;
 
-    bool mode_delayed_cooperfrye;
-    std::vector<std::ifstream> resDataPos;
-    std::vector<std::ifstream> resDataNeg;
-
-    std::vector<std::string>   elemFile;
+    bool cache_available;
+    std::vector<std::string>   cache_fname;
+    std::vector<std::ifstream> cache_ifsPos;
+    std::vector<std::ifstream> cache_ifsNeg;
 
   public:
-    ParticleSampleHydrojet(runjam_context const& ctx, std::string const& cachedir, std::string* outf, int kin, int eos_pce, std::string const& fname);
+    ParticleSampleHydrojet(runjam_context const& ctx, std::string const& cachedir, std::string* outf,
+      int kin, int eos_pce, std::string const& fn_resodata);
     ~ParticleSampleHydrojet();
 
-    void setBaryonFree(int i) { baryonfree = i; }
-    void setTMPF(double t) { tmpf = t / hbarc_GeVfm; }
-    void setMUBF(double m) { mubf = m / hbarc_GeVfm; }
+    void setBaryonFree(int i) { cfg_baryon_disable = i; }
+    void setTMPF(double t) { cfg_baryon_tmpf = t / hbarc_GeVfm; }
+    void setMUBF(double m) { cfg_baryon_mubf = m / hbarc_GeVfm; }
 
   private:
     bool openCooperFryeCacheForRead();
@@ -116,45 +117,48 @@ namespace {
       double yy, double eta, int ipos);
   };
 
-ParticleSampleHydrojet::ParticleSampleHydrojet(runjam_context const& ctx, std::string const& cachedir, std::string* outf, int kintmp, int eos_pce, std::string const& fname):
-  HydroSpectrum(kintmp, eos_pce), rlist(kintmp, eos_pce, fname)
-{
-	plist.clear();
+  ParticleSampleHydrojet::ParticleSampleHydrojet(
+    runjam_context const& ctx, std::string const& cachedir, std::string* outf,
+    int kintmp, int eos_pce, std::string const& fn_resodata
+  ):
+    HydroSpectrum(kintmp, eos_pce), rlist(kintmp, eos_pce, fn_resodata)
+  {
+  	plist.clear();
 
-  int const nreso_loop = this->rlist.numberOfResonances();
-  this->elemFile.resize(nreso_loop);
-  for (int i = 0; i < nreso_loop; i++) {
-    if (cachedir.size() >0)
-      elemFile[i] = cachedir + "/" + outf[i];
-    else
-      elemFile[i] = outf[i];
+    int const nreso_loop = this->rlist.numberOfResonances();
+    this->cache_fname.resize(nreso_loop);
+    for (int i = 0; i < nreso_loop; i++) {
+      if (cachedir.size() >0)
+        cache_fname[i] = cachedir + "/" + outf[i];
+      else
+        cache_fname[i] = outf[i];
+    }
+
+    cache_available = false;
+
+    // constants
+  	cfg_baryon_tmpf = 0.16 / hbarc_GeVfm;
+  	cfg_baryon_mubf = 1.6 / hbarc_GeVfm;
+  	cfg_baryon_meanf = 0.45 / hbarc_GeVfm;
+
+    // 2013/04/23, KM, reverse z axis
+    this->cfg_reverse_particles = ctx.get_config("hydrojet_reverse_particles", false);
+    if (this->cfg_reverse_particles)
+      std::cout << "ParticleSampleHydrojet: ReverseParticleList mode enabled!" << std::endl;
+
+    // 2013/04/30, KM, shuffle the particle list
+    this->cfg_shuffle_particles = ctx.get_config("hydrojet_shuffle_particles", false);
+    if (this->cfg_shuffle_particles)
+      std::cout << "ParticleSampleHydrojet: ShuffleParticleList mode enabled!" << std::endl;
   }
 
-  mode_delayed_cooperfrye = false;
-
-  // constants
-	tmpf = 0.16 / hbarc_GeVfm;
-	mubf = 1.6 / hbarc_GeVfm;
-	meanf = 0.45 / hbarc_GeVfm;
-
-  // 2013/04/23, KM, reverse z axis
-  this->cfg_reverse_particles = ctx.get_config("hydrojet_reverse_particles", false);
-  if (this->cfg_reverse_particles)
-    std::cout << "ParticleSampleHydrojet: ReverseParticleList mode enabled!" << std::endl;
-
-  // 2013/04/30, KM, shuffle the particle list
-  this->cfg_shuffle_particles = ctx.get_config("hydrojet_shuffle_particles", false);
-  if (this->cfg_shuffle_particles)
-    std::cout << "ParticleSampleHydrojet: ShuffleParticleList mode enabled!" << std::endl;
-}
-
-ParticleSampleHydrojet::~ParticleSampleHydrojet() {
-  if (plist.size() > 0) {
-    std::vector<Particle*>::iterator cp;
-    for (cp = plist.begin(); cp != plist.end();cp++) delete *cp;
-    plist.clear();
+  ParticleSampleHydrojet::~ParticleSampleHydrojet() {
+    if (plist.size() > 0) {
+      std::vector<Particle*>::iterator cp;
+      for (cp = plist.begin(); cp != plist.end();cp++) delete *cp;
+      plist.clear();
+    }
   }
-}
 
   // 一度に 151x2 のファイルを開いて書き込むとディスクに悪いので共鳴毎に処理する。
   void ParticleSampleHydrojet::createCooperFryeCache(int ireso) {
@@ -164,20 +168,20 @@ ParticleSampleHydrojet::~ParticleSampleHydrojet() {
     // open output files
     std::ofstream ostr_elm;
     if (ireso < 21) {
-      ostr_elm.open((elemFile[ireso]).c_str());
+      ostr_elm.open((cache_fname[ireso]).c_str());
       if (!ostr_elm) {
-        std::cerr << "ParticleSampleHydrojet::createCooperFryeCache! failed to create file " << elemFile[ireso] << std::endl;
+        std::cerr << "ParticleSampleHydrojet::createCooperFryeCache! failed to create file " << cache_fname[ireso] << std::endl;
         std::exit(1);
       }
     }
-    std::ofstream ostr_pos((elemFile[ireso] + ".POS").c_str());
+    std::ofstream ostr_pos((cache_fname[ireso] + ".POS").c_str());
     if (!ostr_pos) {
-      std::cerr << "ParticleSampleHydrojet::createCooperFryeCache! failed to create file " << elemFile[ireso] << ".POS" << std::endl;
+      std::cerr << "ParticleSampleHydrojet::createCooperFryeCache! failed to create file " << cache_fname[ireso] << ".POS" << std::endl;
       std::exit(1);
     }
-    std::ofstream ostr_neg((elemFile[ireso] + ".NEG").c_str());
+    std::ofstream ostr_neg((cache_fname[ireso] + ".NEG").c_str());
     if (!ostr_neg) {
-      std::cerr << "ParticleSampleHydrojet::createCooperFryeCache! failed to create file " << elemFile[ireso] << ".NEG" << std::endl;
+      std::cerr << "ParticleSampleHydrojet::createCooperFryeCache! failed to create file " << cache_fname[ireso] << ".NEG" << std::endl;
       std::exit(1);
     }
 
@@ -187,13 +191,15 @@ ParticleSampleHydrojet::~ParticleSampleHydrojet() {
 
     //---------------------------------------------------------------------------
     while (!readFData()) {
-      if (!baryonfree) {
+      if (!cfg_baryon_disable) {
         recreso.mu = 0.0;
-        if (recreso.bf == 1) recreso.mu = mubf * sqrt(1.0 - tf * tf / tmpf / tmpf) - meanf * nbf;
-        if (recreso.anti) recreso.mu = -mubf * sqrt(1.0 - tf * tf / tmpf / tmpf) + meanf * nbf;
-        //if (recreso.anti) recreso.mu = -mubf * sqrt(1.0 - tf * tf / tmpf / tmpf) - meanf * nbf;
-        //if (recreso.bf==1) recreso.mu = mub;
-        //if (recreso.anti) recreso.mu = -mub;
+        if (recreso.bf == 1) {
+          double const mub = cfg_baryon_mubf * sqrt(1.0 - tf * tf / cfg_baryon_tmpf / cfg_baryon_tmpf);
+          double const mean_field = cfg_baryon_meanf * nbf;
+          recreso.mu   = mub - mean_field;
+          if (recreso.anti) recreso.mu = -mub + mean_field;
+          // if (recreso.anti) recreso.mu = -mub - mean_field;
+        }
       }
 
       if (tf == 0.0) {
@@ -243,351 +249,353 @@ ParticleSampleHydrojet::~ParticleSampleHydrojet() {
       this->createCooperFryeCache(ireso);
   }
 
-bool ParticleSampleHydrojet::openCooperFryeCacheForRead() {
-  int const nreso_loop = rlist.numberOfResonances();
+  bool ParticleSampleHydrojet::openCooperFryeCacheForRead() {
+    int const nreso_loop = rlist.numberOfResonances();
 
-  resDataPos.clear();
-  for (int i = 0; i < nreso_loop; i++) {
-    std::string fnpos = elemFile[i] + ".POS";
-    resDataPos.emplace_back(fnpos.c_str());
-    if (!resDataPos.back()) goto failed;
-  }
-
-  resDataNeg.clear();
-  for (int i = 0; i < nreso_loop; i++) {
-    std::string fnneg = elemFile[i] + ".NEG";
-    resDataNeg.emplace_back(fnneg.c_str());
-    if (!resDataNeg.back()) goto failed;
-  }
-  return true;
-
-failed:
-  resDataPos.clear();
-  resDataNeg.clear();
-  return false;
-}
-
-void ParticleSampleHydrojet::initialize() {
-  // Open files for input.
-  openFDataFile(this->fn_freezeout_dat);
-  openPDataFile(this->fn_position_dat);
-
-  std::cout << "ParticleSampleHydrojet.cpp(ParticleSampleHydrojet::initialize): checking Cooper-Frye cache files (.POS/.NEG)... " << std::flush;
-  if (this->openCooperFryeCacheForRead()) {
-    std::cout << "yes" << std::endl;
-    return;
-  } else {
-    std::cout << "no (incomplete).\n";
-    std::cout << "ParticleSampleHydrojet.cpp(ParticleSampleHydrojet::initialize): entering delayed Cooper-Frye evaluation mode." << std::endl;
-    mode_delayed_cooperfrye = true;
-  }
-}
-
-void ParticleSampleHydrojet::analyze(double oversamplingFactor) {
-  int const nreso_loop = rlist.numberOfResonances();
-
-  if (plist.size() > 0) {
-    std::vector<Particle*>::iterator cp;
-    for(cp = plist.begin(); cp != plist.end();cp++) delete *cp;
-    plist.clear();
-  }
-
-  double ran;
-
-  while (!readFData()) {
-    if (!baryonfree) {
-      for (int i = 0; i < nreso_loop; i++) {
-        rlist[i].mu = 0.0;
-        if (rlist[i].bf == 1) rlist[i].mu = mubf * sqrt(1.0 - tf * tf / tmpf / tmpf) - meanf * nbf;
-        if (rlist[i].anti) rlist[i].mu = -mubf * sqrt(1.0 - tf * tf / tmpf / tmpf) + meanf * nbf;
-        //if (rlist[i].anti) rlist[i].mu = -mubf * sqrt(1.0 - tf * tf / tmpf / tmpf) - meanf * nbf;
-        //if (rlist[i].bf == 1) rlist[i].mu = mub;
-        //if (rlist[i].anti) rlist[i].mu = -mub;
-      }
+    cache_ifsPos.clear();
+    for (int i = 0; i < nreso_loop; i++) {
+      std::string fnpos = cache_fname[i] + ".POS";
+      cache_ifsPos.emplace_back(fnpos.c_str());
+      if (!cache_ifsPos.back()) goto failed;
     }
 
-    readPData();
-
-    if (tf < HYDRO2JAM_TEMPERATURE_MIN) {
-      if (tf == 0.0)
-        std::cerr << "ParticleSampleHydrojet! (warning) zero temperature surface." << std::endl;
-      continue;
+    cache_ifsNeg.clear();
+    for (int i = 0; i < nreso_loop; i++) {
+      std::string fnneg = cache_fname[i] + ".NEG";
+      cache_ifsNeg.emplace_back(fnneg.c_str());
+      if (!cache_ifsNeg.back()) goto failed;
     }
+    return true;
 
-    // Loop over all particles.
-    for (int ir = 0; ir < nreso_loop; ir++) {
-      double numResPos, numResNeg;
-      if (!mode_delayed_cooperfrye) {
-        resDataPos[ir] >> numResPos;
-        if (numResPos > 1.0)
-          std::cout << "Suspicious fluid element! ireso =" << ir
-                    << " " << numResPos << std::endl;
-
-        resDataNeg[ir] >> numResNeg;
-        if (numResNeg > 1.0)
-          std::cout << "Suspicious fluid element! ireso =" << ir << std::endl;
-      } else {
-        double npos = 0.0;
-        double nneg = 0.0;
-
-        double gamma = 1.0 / sqrt(1.0 - vx * vx - vy * vy - vz * vz);
-        kashiwa::phys::vector4 u(gamma, vx * gamma, vy * gamma, vz * gamma);
-        kashiwa::phys::vector4 ds(ds0, -dsx, -dsy, -dsz);
-        double beta = 1.0 / tf;
-
-        if (rlist[ir].bf == -1) {
-          idt::runjam::IntegrateBosonCooperFrye(npos, nneg, u, ds, beta, rlist[ir].mass, rlist[ir].mu);
-        } else {
-          idt::runjam::IntegrateFermionCooperFrye(npos, nneg, u, ds, beta, rlist[ir].mass, rlist[ir].mu);
-        }
-
-        double n = (nneg + npos) * rlist[ir].degeff;
-        numResPos = npos * rlist[ir].deg;
-        numResNeg = nneg * rlist[ir].deg;
-      }
-      numResPos *= oversamplingFactor;
-      numResNeg *= oversamplingFactor;
-
-      int reflection_count, reflection_step;
-      switch (iw % 4) {
-      case 1: // iw = 1, 5
-        // reflection = 0, 1, 2, 3
-        reflection_count = 4;
-        reflection_step = 1;
-        break;
-      case 2: // iw = 2, 6
-        // reflection = 0, 2
-        reflection_count = 2;
-        reflection_step = 2;
-        break;
-      case 3: // iw = 3, 7
-        // reflection = 0, 1
-        reflection_count = 2;
-        reflection_step = 1;
-        break;
-      default: // iw = 4, 8
-        // reflection = 0
-        reflection_count = 1;
-        reflection_step = 1;
-        break;
-      }
-
-      if (bulk == 1) {
-        ds0 = dss * std::cosh(hh);
-        dsz = -dss * std::sinh(hh);
-      } else {
-        ds0 = dss * std::sinh(hh);
-        dsz = -dss * std::cosh(hh);
-      }
-
-      // positive contribution
-      {
-        int const ipos = 1;
-        int const n = idt::util::irand_poisson(numResPos * reflection_count);
-        for (int i = 0; i < n; i++) {
-          int const reflection = idt::util::irand(reflection_count) * reflection_step;
-          generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta, reflection);
-        }
-      }
-
-      // negative contribution
-      if (flag_negative_contribution) {
-        int const ipos = 0;
-        int const n = idt::util::irand_poisson(numResNeg * reflection_count);
-        for (int i = 0; i < n; i++) {
-          int const reflection = idt::util::irand(reflection_count) * reflection_step;
-          generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta, reflection);
-        }
-      }
-    }
+  failed:
+    cache_ifsPos.clear();
+    cache_ifsNeg.clear();
+    return false;
   }
 
-  // 2013/04/30, KM, shuffle the particle list
-  if (this->cfg_shuffle_particles) {
-#if __cplusplus >= 201703L
-    std::shuffle(this->plist.begin(), this->plist.end(), RandomURGB());
-#else
-    std::random_shuffle(this->plist.begin(), this->plist.end());
-#endif
-  }
-}
+  void ParticleSampleHydrojet::initialize() {
+    // Open files for input.
+    openFDataFile(this->fn_freezeout_dat);
+    openPDataFile(this->fn_position_dat);
 
-void ParticleSampleHydrojet::finalize() {
-  closeFDataFile();
-  closePDataFile();
-  if (!mode_delayed_cooperfrye) {
-    resDataPos.clear();
-    resDataNeg.clear();
-  }
-}
-
-void ParticleSampleHydrojet::generateParticle(double vx, double vy, double yv,
-	  double ds0, double dsx, double dsy, double dsz, int ir, int ipos,
-	  double tau, double x0, double y0, double eta0, int reflection)
-{
-  // Note: surface element
-  //   dsx = tau*dy*deta*dtau
-  //   dsy = tau*dx*deta*dtau
-  //   dss = dtau*dx*dy
-  if (reflection & 1) {
-    vy = -vy;
-    dsy = -dsy;
-    y0 = -y0;
-  }
-  if (reflection & 2) {
-    vx = -vx;
-    yv = -yv;
-    dsx = -dsx;
-    dsz = -dsz;
-    x0 = -x0;
-    eta0 = -eta0;
-  }
-
-  double p[58], pw[58];
-
-  double const ptmid = 1e3 / hbarc_MeVfm;
-  double const dx = getDx();
-  double const dy = getDy();
-  double const dh = getDh();
-  double const dtau = getDtau();
-  double const vz = tanh(yv);
-  double const gamma =  cosh(yv) / sqrt(1.0 - (vx * vx + vy * vy) * cosh(yv) * cosh(yv));
-  double const beta= 1./tf;
-  double const mres = rlist[ir].mass;
-  double const mres2 = mres*mres;
-  double prds, prx, pry, prz, er, pu;
-
-  double const mu = rlist[ir].mu;
-  double const sgn = rlist[ir].bf;
-  auto integrand = [mres2, beta, mu, sgn] (double const p) {
-    double const energy = std::sqrt(p * p + mres2);
-    double const x = (energy - mu) * beta;
-    if (x >= 30.0) return 0.0;
-    return p * p / (std::exp(x) + sgn);
-  };
-  double const fm
-    = kashiwa::IntegrateByGaussLegendre<38>(0.0, ptmid, integrand)
-    + kashiwa::IntegrateByGaussLaguerre<20>(ptmid, 1.0, integrand);
-
-  double ranmax = dx * dy * dh * tau * HYDRO2JAM_FACRANMAX;
-  if (bulk == 0) {
-    if (dsx != 0.0 || dsy != 0.0) {
-      ranmax = dx * dh * tau * dtau * HYDRO2JAM_FACRANMAX;
+    std::cout << "ParticleSampleHydrojet.cpp(ParticleSampleHydrojet::initialize): checking Cooper-Frye cache files (.POS/.NEG)... " << std::flush;
+    if (this->openCooperFryeCacheForRead()) {
+      cache_available = true;
+      std::cout << "yes" << std::endl;
+      return;
     } else {
-      ranmax = dtau * dx * dy * HYDRO2JAM_FACRANMAX;
+      std::cout << "no (incomplete).\n";
+      std::cout << "ParticleSampleHydrojet.cpp(ParticleSampleHydrojet::initialize): entering delayed Cooper-Frye evaluation mode." << std::endl;
     }
   }
 
-  double ranemis;
-  do {
-    do {
-      // Generate momentum [0:6GeV/c] according to Bose/Fermi
-      // distribution in local rest frame using bisection method
-      double r1 = idt::util::urand() * fm;
-      double pmax = 6000.0 / hbarc_MeVfm;
-      double pmin = 0.0;
-      double ppp = (pmax + pmin) * 0.5;
+  void ParticleSampleHydrojet::analyze(double oversamplingFactor) {
+    int const nreso_loop = rlist.numberOfResonances();
 
-      double const mu = rlist[ir].mu;
-      double const sgn = rlist[ir].bf;
-      for (int id = 0; id < HYDRO2JAM_ITERATION_MAX; id++) {
-        ppp = (pmax + pmin) * 0.5;
-        double const fp = kashiwa::IntegrateByGaussLegendre<12>(0.0, ppp,
-          [beta, mu, mres2, sgn] (double p) {
-            double energy = std::sqrt(p * p + mres2);
-            double aaa = (energy - mu) * beta;
-            return aaa < 100.0 ? p * p / (std::exp(aaa) + sgn) : 0.0;
-          });
-        if (fp > r1)
-          pmax = ppp;
-        else
-          pmin = ppp;
+    if (plist.size() > 0) {
+      std::vector<Particle*>::iterator cp;
+      for(cp = plist.begin(); cp != plist.end();cp++) delete *cp;
+      plist.clear();
+    }
+
+    double ran;
+
+    while (!readFData()) {
+      if (!cfg_baryon_disable) {
+        for (int i = 0; i < nreso_loop; i++) {
+          rlist[i].mu = 0.0;
+          if (rlist[i].bf == 1) {
+            double const mub = cfg_baryon_mubf * sqrt(1.0 - tf * tf / cfg_baryon_tmpf / cfg_baryon_tmpf);
+            double const mean_field = cfg_baryon_meanf * nbf;
+            rlist[i].mu   = mub - mean_field;
+            if (rlist[i].anti) rlist[i].mu = -mub + mean_field;
+            // if (rlist[i].anti) rlist[i].mu = -mub - mean_field;
+          }
+        }
       }
 
-      // random variable on unit sphere
-      double r2 = -2 * idt::util::urand() + 1;
-      double theta = std::acos(r2);
-      double phi = 2 * M_PI * idt::util::urand();
+      readPData();
 
-      // uniform random number on surface
-      double prxd = ppp * std::sin(theta) * std::cos(phi);
-      double pryd = ppp * std::sin(theta) * std::sin(phi);
-      double przd = ppp * std::cos(theta);
-      double erd = std::sqrt(ppp * ppp + mres2);
+      if (tf < HYDRO2JAM_TEMPERATURE_MIN) {
+        if (tf == 0.0)
+          std::cerr << "ParticleSampleHydrojet! (warning) zero temperature surface." << std::endl;
+        continue;
+      }
 
-      //Lorentz transformation by flow velocity
-      double ddd = gamma * (erd + (prxd * vx + pryd * vy + przd * vz) * gamma/(1. + gamma));
+      // Loop over all particles.
+      for (int ir = 0; ir < nreso_loop; ir++) {
+        double numResPos, numResNeg;
+        if (cache_available) {
+          cache_ifsPos[ir] >> numResPos;
+          if (numResPos > 1.0)
+            std::cout << "Suspicious fluid element! ireso =" << ir
+                      << " " << numResPos << std::endl;
 
-      //Momentum in lab. frame
-      prx = prxd + vx * ddd;
-      pry = pryd + vy * ddd;
-      prz = przd + vz * ddd;
+          cache_ifsNeg[ir] >> numResNeg;
+          if (numResNeg > 1.0)
+            std::cout << "Suspicious fluid element! ireso =" << ir << std::endl;
+        } else {
+          double npos = 0.0;
+          double nneg = 0.0;
 
-      double prt = std::sqrt(prx * prx + pry * pry);
-      er = std::sqrt(prt * prt + prz * prz + mres2);
+          double gamma = 1.0 / sqrt(1.0 - vx * vx - vy * vy - vz * vz);
+          kashiwa::phys::vector4 u(gamma, vx * gamma, vy * gamma, vz * gamma);
+          kashiwa::phys::vector4 ds(ds0, -dsx, -dsy, -dsz);
+          double beta = 1.0 / tf;
 
-      //	double mrt = sqrt(prt * prt + mres2);
-      //	double yr = log((er + prz) / (er - prz)) * 0.5;
+          if (rlist[ir].bf == -1) {
+            idt::runjam::IntegrateBosonCooperFrye(npos, nneg, u, ds, beta, rlist[ir].mass, rlist[ir].mu);
+          } else {
+            idt::runjam::IntegrateFermionCooperFrye(npos, nneg, u, ds, beta, rlist[ir].mass, rlist[ir].mu);
+          }
 
-      pu = gamma * (er - vx * prx - vy * pry - vz * prz); //pu = erd
-      prds = er * ds0 + prx * dsx + pry * dsy + prz * dsz;
-      if (!ipos) prds = -(er * ds0 + prx * dsx + pry * dsy + prz * dsz);
+          double n = (nneg + npos) * rlist[ir].degeff;
+          numResPos = npos * rlist[ir].deg;
+          numResNeg = nneg * rlist[ir].deg;
+        }
+        numResPos *= oversamplingFactor;
+        numResNeg *= oversamplingFactor;
 
-    } while (prds < 0.0);
+        int reflection_count, reflection_step;
+        switch (iw % 4) {
+        case 1: // iw = 1, 5
+          // reflection = 0, 1, 2, 3
+          reflection_count = 4;
+          reflection_step = 1;
+          break;
+        case 2: // iw = 2, 6
+          // reflection = 0, 2
+          reflection_count = 2;
+          reflection_step = 2;
+          break;
+        case 3: // iw = 3, 7
+          // reflection = 0, 1
+          reflection_count = 2;
+          reflection_step = 1;
+          break;
+        default: // iw = 4, 8
+          // reflection = 0
+          reflection_count = 1;
+          reflection_step = 1;
+          break;
+        }
 
-    if (prds / pu / gamma > ranmax) {
-      std::cout
-        << "Warning: prds/pu/gamma is greater than maximum random number. "
-        << "Please increase 'HYDRO2JAM_FACRANMAX'"
-        << " at least "
-        << prds / pu / gamma / ranmax * HYDRO2JAM_FACRANMAX
-        << " [at ParticleSampleHydrojet::generateParticle]"
-        << std::endl;
+        if (bulk == 1) {
+          ds0 = dss * std::cosh(hh);
+          dsz = -dss * std::sinh(hh);
+        } else {
+          ds0 = dss * std::sinh(hh);
+          dsz = -dss * std::cosh(hh);
+        }
+
+        // positive contribution
+        {
+          int const ipos = 1;
+          int const n = idt::util::irand_poisson(numResPos * reflection_count);
+          for (int i = 0; i < n; i++) {
+            int const reflection = idt::util::irand(reflection_count) * reflection_step;
+            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta, reflection);
+          }
+        }
+
+        // negative contribution
+        if (flag_negative_contribution) {
+          int const ipos = 0;
+          int const n = idt::util::irand_poisson(numResNeg * reflection_count);
+          for (int i = 0; i < n; i++) {
+            int const reflection = idt::util::irand(reflection_count) * reflection_step;
+            generateParticle(vx, vy, yv, ds0, dsx, dsy, dsz, ir, ipos, tau, xx, yy, eta, reflection);
+          }
+        }
+      }
     }
 
-    ranemis = ranmax * idt::util::urand();
-
-  } while (ranemis > prds / pu / gamma);
-
-  //↓ は bulk emission の時だけしか正しく無い気がする by KM
-  //Uniformly distributed in a fluid element in coordinate space
-  double ran1 = idt::util::urand();
-  double ran2 = idt::util::urand();
-  double ran3 = idt::util::urand();
-  double xx = x0 + dx * (ran1 - 0.5);
-  double yy = y0 + dy * (ran2 - 0.5);
-  double eta= eta0 + dh * (ran3 - 0.5);
-
-  // 2013/04/23, KM, reverse z axis
-  if (this->cfg_reverse_particles) {
-    prz = -prz;
-    eta = -eta;
+    // 2013/04/30, KM, shuffle the particle list
+    if (this->cfg_shuffle_particles) {
+  #if __cplusplus >= 201703L
+      std::shuffle(this->plist.begin(), this->plist.end(), RandomURGB());
+  #else
+      std::random_shuffle(this->plist.begin(), this->plist.end());
+  #endif
+    }
   }
 
-  putParticle(prx, pry, prz, er, mres, ir, tau, xx, yy, eta, ipos);
-}
+  void ParticleSampleHydrojet::finalize() {
+    closeFDataFile();
+    closePDataFile();
+    if (cache_available) {
+      cache_ifsPos.clear();
+      cache_ifsNeg.clear();
+    }
+  }
 
-void ParticleSampleHydrojet::putParticle(double px, double py, double pz,
-	double e, double m, int ir, double tau, double x,
-	double y, double eta, int ipos)
-{
-  // Note: ipos=1 の時が positive contribution による粒子。ipos=0 の時
-  //   は negative contribution による粒子。元々の hydrojet では
-  //   ipos=0 の粒子もファイルに出力する機能があった。
-  if (!ipos) return;
+  void ParticleSampleHydrojet::generateParticle(double vx, double vy, double yv,
+  	  double ds0, double dsx, double dsy, double dsz, int ir, int ipos,
+  	  double tau, double x0, double y0, double eta0, int reflection)
+  {
+    // Note: surface element
+    //   dsx = tau*dy*deta*dtau
+    //   dsy = tau*dx*deta*dtau
+    //   dss = dtau*dx*dy
+    if (reflection & 1) {
+      vy = -vy;
+      dsy = -dsy;
+      y0 = -y0;
+    }
+    if (reflection & 2) {
+      vx = -vx;
+      yv = -yv;
+      dsx = -dsx;
+      dsz = -dsz;
+      x0 = -x0;
+      eta0 = -eta0;
+    }
 
-  Particle* part = new Particle(rlist.generatePDGCode(ir));
-  part->px = px * hbarc_GeVfm;
-  part->py = py * hbarc_GeVfm;
-  part->pz = pz * hbarc_GeVfm;
-  //part->setPe(std::sqrt(m*m+px*px+py*py+pz*pz)*hbarc_GeVfm);
-  part->e = -1.0; // onshell (JAM初期化時に jam->jamMass() で自動決定させる)
-  part->x = x;
-  part->y = y;
-  part->t = tau * std::cosh(eta);
-  part->z = tau * std::sinh(eta);
-  this->plist.push_back(part);
-}
+    double p[58], pw[58];
+
+    double const ptmid = 1e3 / hbarc_MeVfm;
+    double const dx = getDx();
+    double const dy = getDy();
+    double const dh = getDh();
+    double const dtau = getDtau();
+    double const vz = tanh(yv);
+    double const gamma =  cosh(yv) / sqrt(1.0 - (vx * vx + vy * vy) * cosh(yv) * cosh(yv));
+    double const beta= 1./tf;
+    double const mres = rlist[ir].mass;
+    double const mres2 = mres*mres;
+    double prds, prx, pry, prz, er, pu;
+
+    double const mu = rlist[ir].mu;
+    double const sgn = rlist[ir].bf;
+    auto integrand = [mres2, beta, mu, sgn] (double const p) {
+      double const energy = std::sqrt(p * p + mres2);
+      double const x = (energy - mu) * beta;
+      if (x >= 30.0) return 0.0;
+      return p * p / (std::exp(x) + sgn);
+    };
+    double const fm
+      = kashiwa::IntegrateByGaussLegendre<38>(0.0, ptmid, integrand)
+      + kashiwa::IntegrateByGaussLaguerre<20>(ptmid, 1.0, integrand);
+
+    double ranmax = dx * dy * dh * tau * HYDRO2JAM_FACRANMAX;
+    if (bulk == 0) {
+      if (dsx != 0.0 || dsy != 0.0) {
+        ranmax = dx * dh * tau * dtau * HYDRO2JAM_FACRANMAX;
+      } else {
+        ranmax = dtau * dx * dy * HYDRO2JAM_FACRANMAX;
+      }
+    }
+
+    double ranemis;
+    do {
+      do {
+        // Generate momentum [0:6GeV/c] according to Bose/Fermi
+        // distribution in local rest frame using bisection method
+        double r1 = idt::util::urand() * fm;
+        double pmax = 6000.0 / hbarc_MeVfm;
+        double pmin = 0.0;
+        double ppp = (pmax + pmin) * 0.5;
+
+        double const mu = rlist[ir].mu;
+        double const sgn = rlist[ir].bf;
+        for (int id = 0; id < HYDRO2JAM_ITERATION_MAX; id++) {
+          ppp = (pmax + pmin) * 0.5;
+          double const fp = kashiwa::IntegrateByGaussLegendre<12>(0.0, ppp,
+            [beta, mu, mres2, sgn] (double p) {
+              double energy = std::sqrt(p * p + mres2);
+              double aaa = (energy - mu) * beta;
+              return aaa < 100.0 ? p * p / (std::exp(aaa) + sgn) : 0.0;
+            });
+          if (fp > r1)
+            pmax = ppp;
+          else
+            pmin = ppp;
+        }
+
+        // random variable on unit sphere
+        double r2 = -2 * idt::util::urand() + 1;
+        double theta = std::acos(r2);
+        double phi = 2 * M_PI * idt::util::urand();
+
+        // uniform random number on surface
+        double prxd = ppp * std::sin(theta) * std::cos(phi);
+        double pryd = ppp * std::sin(theta) * std::sin(phi);
+        double przd = ppp * std::cos(theta);
+        double erd = std::sqrt(ppp * ppp + mres2);
+
+        //Lorentz transformation by flow velocity
+        double ddd = gamma * (erd + (prxd * vx + pryd * vy + przd * vz) * gamma/(1. + gamma));
+
+        //Momentum in lab. frame
+        prx = prxd + vx * ddd;
+        pry = pryd + vy * ddd;
+        prz = przd + vz * ddd;
+
+        double prt = std::sqrt(prx * prx + pry * pry);
+        er = std::sqrt(prt * prt + prz * prz + mres2);
+
+        //	double mrt = sqrt(prt * prt + mres2);
+        //	double yr = log((er + prz) / (er - prz)) * 0.5;
+
+        pu = gamma * (er - vx * prx - vy * pry - vz * prz); //pu = erd
+        prds = er * ds0 + prx * dsx + pry * dsy + prz * dsz;
+        if (!ipos) prds = -(er * ds0 + prx * dsx + pry * dsy + prz * dsz);
+
+      } while (prds < 0.0);
+
+      if (prds / pu / gamma > ranmax) {
+        std::cout
+          << "Warning: prds/pu/gamma is greater than maximum random number. "
+          << "Please increase 'HYDRO2JAM_FACRANMAX'"
+          << " at least "
+          << prds / pu / gamma / ranmax * HYDRO2JAM_FACRANMAX
+          << " [at ParticleSampleHydrojet::generateParticle]"
+          << std::endl;
+      }
+
+      ranemis = ranmax * idt::util::urand();
+
+    } while (ranemis > prds / pu / gamma);
+
+    //↓ は bulk emission の時だけしか正しく無い気がする by KM
+    //Uniformly distributed in a fluid element in coordinate space
+    double ran1 = idt::util::urand();
+    double ran2 = idt::util::urand();
+    double ran3 = idt::util::urand();
+    double xx = x0 + dx * (ran1 - 0.5);
+    double yy = y0 + dy * (ran2 - 0.5);
+    double eta= eta0 + dh * (ran3 - 0.5);
+
+    // 2013/04/23, KM, reverse z axis
+    if (this->cfg_reverse_particles) {
+      prz = -prz;
+      eta = -eta;
+    }
+
+    putParticle(prx, pry, prz, er, mres, ir, tau, xx, yy, eta, ipos);
+  }
+
+  void ParticleSampleHydrojet::putParticle(double px, double py, double pz,
+  	double e, double m, int ir, double tau, double x,
+  	double y, double eta, int ipos)
+  {
+    // Note: ipos=1 の時が positive contribution による粒子。ipos=0 の時
+    //   は negative contribution による粒子。元々の hydrojet では
+    //   ipos=0 の粒子もファイルに出力する機能があった。
+    if (!ipos) return;
+
+    Particle* part = new Particle(rlist.generatePDGCode(ir));
+    part->px = px * hbarc_GeVfm;
+    part->py = py * hbarc_GeVfm;
+    part->pz = pz * hbarc_GeVfm;
+    //part->setPe(std::sqrt(m*m+px*px+py*py+pz*pz)*hbarc_GeVfm);
+    part->e = -1.0; // onshell (JAM初期化時に jam->jamMass() で自動決定させる)
+    part->x = x;
+    part->y = y;
+    part->t = tau * std::cosh(eta);
+    part->z = tau * std::sinh(eta);
+    this->plist.push_back(part);
+  }
 
 static std::string elementOutputFilenames[151] = {
   "ELEMENT.A0.PC170",
@@ -743,28 +751,28 @@ static std::string elementOutputFilenames[151] = {
   "ELEMENT.XIBAR_2030.PC170",
 };
 
-class ParticleSampleFactory: ParticleSampleFactoryRegistered {
-  virtual IParticleSample* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
-    if (type != "hydrojet.original") return 0;
+  class ParticleSampleFactory: ParticleSampleFactoryRegistered {
+    virtual IParticleSample* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
+      if (type != "hydrojet.original") return 0;
 
-    std::string const indir = ctx.indir();
-    int const kintmp = ctx.kintmp();
-    int const eospce = ctx.eospce();
-    std::string const resodata = ctx.resodata();
-    std::string const fn_freezeout_dat = inputfile + "/freezeout.dat";
-    std::string const fn_position_dat = inputfile + "/position.dat";
+      std::string const indir = ctx.indir();
+      int const kintmp = ctx.kintmp();
+      int const eospce = ctx.eospce();
+      std::string const resodata = ctx.resodata();
+      std::string const fn_freezeout_dat = inputfile + "/freezeout.dat";
+      std::string const fn_position_dat = inputfile + "/position.dat";
 
-    ParticleSampleHydrojet* psamp
-      = new ParticleSampleHydrojet(ctx, indir, elementOutputFilenames, kintmp, eospce, resodata);
-    psamp->setDtau(ctx.get_config("hydrojet_deltat", 0.3));
-    psamp->setDx(ctx.get_config("hydrojet_deltax", 0.3));
-    psamp->setDy(ctx.get_config("hydrojet_deltay", 0.3));
-    psamp->setDh(ctx.get_config("hydrojet_deltah", 0.3));
+      ParticleSampleHydrojet* psamp
+        = new ParticleSampleHydrojet(ctx, indir, elementOutputFilenames, kintmp, eospce, resodata);
+      psamp->setDtau(ctx.get_config("hydrojet_deltat", 0.3));
+      psamp->setDx(ctx.get_config("hydrojet_deltax", 0.3));
+      psamp->setDy(ctx.get_config("hydrojet_deltay", 0.3));
+      psamp->setDh(ctx.get_config("hydrojet_deltah", 0.3));
 
-    psamp->setBaryonFree(ctx.get_config("hydrojet_baryonfree", 1));
-    psamp->setHypersurfaceFilenames(fn_freezeout_dat, fn_position_dat);
-    return psamp;
-  }
-} instance;
+      psamp->setBaryonFree(ctx.get_config("hydrojet_baryonfree", 1));
+      psamp->setHypersurfaceFilenames(fn_freezeout_dat, fn_position_dat);
+      return psamp;
+    }
+  } instance;
 
 }
