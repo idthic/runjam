@@ -109,6 +109,7 @@ namespace {
       "  --hydrojet-dh,    hydrojet_deltah=NUM [0.3]     delta eta\n"
       "  hydrojet_reverse_particles=BOOL [false]         (debug) perform z-reflection\n"
       "  hydrojet_shuffle_particles=BOOL [false]         (debug) shuffle particles\n"
+      "  hydrojet_rotate_freezeout=BOOL [false]          (debug) rotate freezeout data\n"
       "\n"
       " Other options\n"
       "  --help          show this help\n"

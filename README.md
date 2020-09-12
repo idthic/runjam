@@ -64,8 +64,6 @@ The list of particles
 - reorganize mode options
   - rename option `runjam_cascade_mode` -> `runjam_mode`
   - remove option `runjam_decay_only`
-- rename option: `ParticleSample_ReverseParticleList` -> `hydrojet_reverse_particles`
-- rename option: `ParticleSample_ReverseParticleList` -> `hydrojet_shuffle_particles`
 - fix bugs that some options did not work because of option name typos:
   - `runjam_switch_weak_decay`
   - `--hydrojet-dt, hydrojet_deltat`
@@ -86,6 +84,10 @@ The list of particles
   - new option `runjam_output_phbin_indexed`
   - new option `runjam_output_phbin0_indexed`
   - rename option `runjam_ievent_begin` -> `runjam_output_index_start`
+- ParticleSampleHydrojet: rename debug options
+  - rename option `ParticleSample_ReverseParticleList` -> `hydrojet_reverse_particles`
+  - rename option `ParticleSample_ReverseParticleList` -> `hydrojet_shuffle_particles`
+  - rename option `HydroSpectrum__RotateFreezeoutData` -> `hydrojet_rotate_freezeout`
 
 ## Changes 0.1..0.2
 

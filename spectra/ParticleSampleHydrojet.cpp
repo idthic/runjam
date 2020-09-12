@@ -17,6 +17,7 @@
 #endif
 
 #include <util.hpp>
+#include <args.hpp>
 #include <ksh/integrator.hpp>
 #include <spectra/ResonanceList.hpp>
 #include <spectra/ParticleSample.hpp>
@@ -152,7 +153,7 @@ namespace {
     std::ifstream eccdata;
 
   private:
-    bool fRotateFreezeoutData;
+    bool cfg_rotate_freezeout;
 
   private:
     static constexpr double mPion = 139.0;
@@ -162,7 +163,7 @@ namespace {
     static constexpr double mProton  = 939.0;
 
   public:
-    HypersurfaceReader(int kint, int eos_pce);
+    HypersurfaceReader(runjam_context const& ctx, int kint, int eos_pce);
 
     void openFDataFile(std::string const& fn_freezeout_dat);
     void openPDataFile(std::string const& fn_position_dat);
@@ -191,7 +192,7 @@ namespace {
     //double thermaldist(double mt, double yy, double mu, int iw, int sgn);
   };
 
-  HypersurfaceReader::HypersurfaceReader(int kint, int eos_pce) {
+  HypersurfaceReader::HypersurfaceReader(runjam_context const& ctx, int kint, int eos_pce) {
     kineticTemp = kint;
 
     fin  = -1;
@@ -277,12 +278,9 @@ namespace {
     //     ^^^^^^^---> V3
 
     // KM, 2013/04/20, initializes the flag to rotate the data in freezeout.dat
-    {
-      const char* env = std::getenv("HypersurfaceReader_RotateFreezeoutData");
-      this->fRotateFreezeoutData = env && std::atoi(env);
-      if (this->fRotateFreezeoutData)
-        std::cout << "HypersurfaceReader: RotateFreezeoutData mode enabled!" << std::endl;
-    }
+    this->cfg_rotate_freezeout = ctx.get_config("hydrojet_rotate_freezeout", false);
+    if (cfg_rotate_freezeout)
+      std::cout << "HypersurfaceReader: RotateFreezeoutData mode enabled!" << std::endl;
   }
 
   double HypersurfaceReader::thermaldist(double ee, double pz, double mu, int iw, int sgn) {
@@ -390,7 +388,7 @@ namespace {
     fdata >> iw;
 
     // 2013/04/20, KM, reverse data
-    if (this->fRotateFreezeoutData) {
+    if (this->cfg_rotate_freezeout) {
       // hh = -hh;
       // if (bulk != 1)
       //   dss = -dss;
@@ -426,7 +424,7 @@ namespace {
     pdata >> eta;
 
     // 2013/04/20, KM, reverse data
-    if (this->fRotateFreezeoutData) {
+    if (this->cfg_rotate_freezeout) {
       eta=-eta;
     }
 
@@ -543,7 +541,7 @@ namespace {
   ParticleSampleHydrojet::ParticleSampleHydrojet(
     runjam_context const& ctx, std::string const& cachedir, std::string suffix,
     int kintmp, int eos_pce, std::string const& fn_resodata
-  ): base(ctx), rlist(kintmp, eos_pce, fn_resodata), m_hf(kintmp, eos_pce) {
+  ): base(ctx), rlist(kintmp, eos_pce, fn_resodata), m_hf(ctx, kintmp, eos_pce) {
     int const nreso_loop = this->rlist.size();
     this->cache_fname.resize(nreso_loop);
     for (int i = 0; i < nreso_loop; i++) {
