@@ -1582,7 +1582,7 @@ namespace {
   };
 
   class ParticleSampleFactory: ParticleSampleFactoryBase {
-    virtual ParticleSampleBase* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
+    virtual std::unique_ptr<ParticleSampleBase> CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
       // ResonanceListPCE を移動する
       if (type == "c0lrf") {
         double const switchingTemperature = ctx.get_config("runjam_switching_temperature", -1.0);
@@ -1592,7 +1592,7 @@ namespace {
         if (switchingTemperature > 0.0)
           psamp->setSwitchingTemperature(switchingTemperature);
         psamp->setTurnsOffViscousEffect(turnsOffViscousEffect);
-        return psamp;
+        return std::unique_ptr<ParticleSampleBase>(psamp);
 
       } else if (type == "hydrojet") {
         double const switchingTemperature = ctx.get_config("runjam_switching_temperature", -1.0);
@@ -1608,11 +1608,10 @@ namespace {
         psamp->setDy(deltay);
         if (switchingTemperature > 0.0)
           psamp->setSwitchingTemperature(switchingTemperature);
-        return psamp;
-
+        return std::unique_ptr<ParticleSampleBase>(psamp);
       }
 
-      return 0;
+      return nullptr;
     }
   } instance;
 

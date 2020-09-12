@@ -553,8 +553,8 @@ namespace {
   }
 
   class ParticleSampleFactory: ParticleSampleFactoryBase {
-    virtual ParticleSampleBase* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
-      if (type != "hydrojet.original") return 0;
+    virtual std::unique_ptr<ParticleSampleBase> CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
+      if (type != "hydrojet.original") return nullptr;
 
       std::string const cachedir = ctx.indir();
       int const kintmp = ctx.kintmp();
@@ -572,7 +572,7 @@ namespace {
 
       psamp->setBaryonFree(ctx.get_config("hydrojet_baryonfree", 1));
       psamp->setHypersurfaceFilenames(fn_freezeout_dat, fn_position_dat);
-      return psamp;
+      return std::unique_ptr<ParticleSampleBase>(psamp);
     }
   } instance;
 

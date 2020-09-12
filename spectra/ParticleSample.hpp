@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <memory>
 #include <args.hpp>
 
 namespace idt {
@@ -222,14 +223,14 @@ namespace runjam {
 
   class ParticleSampleFactoryBase {
   public:
-    virtual ParticleSampleBase* CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) = 0;
+    virtual std::unique_ptr<ParticleSampleBase> CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) = 0;
     virtual ~ParticleSampleFactoryBase() {}
   protected:
     ParticleSampleFactoryBase() { Register(this); }
     void Register(ParticleSampleFactoryBase* factory);
   };
 
-  ParticleSampleBase* CreateParticleSample(runjam_context const& ctx, std::string const& type, std::string const& inputfile);
+  std::unique_ptr<ParticleSampleBase> CreateParticleSample(runjam_context const& ctx, std::string const& type, std::string const& inputfile);
 
 }
 }

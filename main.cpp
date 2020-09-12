@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <memory>
 
 #include "config.hpp"
 #include "args.hpp"
@@ -308,11 +309,11 @@ public:
   }
 
 public:
-  void  generateEvent(ParticleSampleBase* psamp, std::string const& cascadeMode) {
+  void  generateEvent(ParticleSampleBase& psamp, std::string const& cascadeMode) {
     int const nevent = this->cfg_nevent;
 
     if (nevent > 0)
-      psamp->setAdviceNumberOfExpectedEvents(nevent);
+      psamp.setAdviceNumberOfExpectedEvents(nevent);
 
     bool const flagSampleOnly = cascadeMode == "sample";
     bool const flagDecayOnly = cascadeMode == "decay";
@@ -327,12 +328,12 @@ public:
     double averageParticleNumber0 = 0.0;
     double averageParticleNumber = 0.0;
     for (int iev = 1; iev <= nevent; iev++) {
-      psamp->update();
-      forceJamMass(*psamp);
+      psamp.update();
+      forceJamMass(psamp);
       //psamp->adjustCenterOfMassByLorentzBoost();
-      double const ntest = psamp->getOverSamplingFactor();
+      double const ntest = psamp.getOverSamplingFactor();
       libjam::setMSTC(5, ntest);
-      storeParticlesInJam(psamp->begin(), psamp->end());
+      storeParticlesInJam(psamp.begin(), psamp.end());
 
       if (iev % nprint == 0) {
         std::cout
@@ -455,7 +456,7 @@ public:
 };
 
 void doCascade(runjam_context const& ctx, std::string const& type, std::string const& inputfile, std::string const& cascadeMode) {
-  ParticleSampleBase* psamp = CreateParticleSample(ctx, type, inputfile);
+  std::unique_ptr<ParticleSampleBase> psamp = CreateParticleSample(ctx, type, inputfile);
   if (!psamp) {
     std::cerr << "runjam: failed to initialize ParticleSample of type '" << type << "'." <<  std::endl;
     std::exit(1);
@@ -464,14 +465,13 @@ void doCascade(runjam_context const& ctx, std::string const& type, std::string c
   Program prog(ctx);
   std::cout << "runjam: JAM hadronic cascade start" << std::endl;
   prog.initializeJam();
-  prog.generateEvent(psamp, cascadeMode);
+  prog.generateEvent(*psamp, cascadeMode);
   prog.finalizeJam();
   std::cout << "runjam: JAM hadronic cascade end" << std::endl;
-  delete psamp;
 }
 
 void doGeneratePhasespace0(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
-  ParticleSampleBase* psamp = CreateParticleSample(ctx, type, inputfile);
+  std::unique_ptr<ParticleSampleBase> psamp = CreateParticleSample(ctx, type, inputfile);
   if (!psamp) {
     std::cerr << "runjam: failed to initialize ParticleSample of type '" << type << "'." <<  std::endl;
     std::exit(1);
@@ -498,7 +498,6 @@ void doGeneratePhasespace0(runjam_context const& ctx, std::string const& type, s
     writePhasespaceData(f, psamp->begin(), psamp->end());
     std::fclose(f);
   }
-  delete psamp;
 }
 
 //-----------------------------------------------------------------------------
