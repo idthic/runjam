@@ -142,6 +142,23 @@ public:
   virtual void finalize() override {}
 };
 
+void resolveMass(Particle* begin, Particle* end) {
+  while (begin != end) {
+    Particle& part = *begin++;
+    if (part.pdg == 0) continue;
+    double const px = part.px;
+    double const py = part.py;
+    double const pz = part.pz;
+    double const e = part.e;
+    if (e < 0.0) {
+      double const m = libjam::jamMass(part.pdg);
+      part.mass = m;
+      part.e = std::sqrt(px * px + py * py + pz * pz + m * m);
+    } else {
+      part.mass = std::sqrt(e * e - (px * px + py * py + pz * pz));
+    }
+  }
+}
 
 class Program {
 private:
@@ -277,6 +294,8 @@ public:
     double averageParticleNumber = 0.0;
     for (int iev = 1; iev <= nevent; iev++) {
       psamp->update();
+      resolveMass(psamp->begin(), psamp->end());
+      //adjustCenterOfMassByLorentzBoost(psamp->begin(), psamp->end());
       double const ntest = psamp->getOverSamplingFactor();
       libjam::setMSTC(5, ntest);
       writeParticlesToJam(psamp->begin(), psamp->end());
@@ -288,9 +307,6 @@ public:
       }
 
       averageParticleNumber0 += (double) libjam::getNV() / ntest;
-
-      //...C.M.correction.
-      //performCMCorrectionJam(nv);
 
       for (auto const& observer: onbefore)
         observer->process_event();
@@ -340,16 +356,15 @@ public:
 
     for (; begin != end; ++begin) {
       Particle const& particle = *begin;
-      int kf = particle.pdg;
+      int const kf = particle.pdg;
       if (kf == 0) continue;
 
-      int kc = libjam::jamComp(kf);      // internal particle code.
-      int ibary = libjam::getBaryonNumber(kc, kf);  // baryon number
+      int const kc = libjam::jamComp(kf);      // internal particle code.
+      int const ibary = libjam::getBaryonNumber(kc, kf);  // baryon number
       if (ibary == 0)
         nmeson++;
       else
         nbary++;
-
       nv++;
 
       //...Zero the vector.
@@ -358,6 +373,7 @@ public:
       int ks = 2;
       if (libjam::getPMAS(kc, 2) <= 1e-7 || libjam::getMDCY(kc, 1) == 0
          || libjam::getMDCY(kc, 2) == 0 || libjam::getMDCY(kc, 3) == 0) ks = 1;
+
       libjam::setK(1,  nv, ks);
       libjam::setK(2,  nv, kf);
       libjam::setK(3,  nv, 0);
@@ -374,17 +390,11 @@ public:
       double const y  = particle.y;
       double const z  = particle.z;
       double const t  = particle.t;
-      double const px = particle.px;
-      double const py = particle.py;
-      double const pz = particle.pz;
-      double pe = particle.e;
-      double pm;
-      if (pe < 0.0) {
-        pm = libjam::jamMass(kf);
-        pe = std::sqrt(px * px + py * py + pz * pz + pm * pm);
-      } else {
-        pm = std::sqrt(pe * pe - (px * px + py * py + pz * pz));
-      }
+      double const px = particle.px  ;
+      double const py = particle.py  ;
+      double const pz = particle.pz  ;
+      double const pe = particle.e   ;
+      double const pm = particle.mass;
 
       libjam::setP(1, nv, px);
       libjam::setP(2, nv, py);
@@ -397,66 +407,20 @@ public:
       libjam::setR(3, nv, z);
       libjam::setR(4, nv, t);
       libjam::setR(5, nv, t); // formation time
-
-      // Vertex
-      libjam::setV(1, nv, x);
-      libjam::setV(2, nv, y);
-      libjam::setV(3, nv, z);
-      libjam::setV(4, nv, t);
+      libjam::setV(1, nv, x); // vertex
+      libjam::setV(2, nv, y); // vertex
+      libjam::setV(3, nv, z); // vertex
+      libjam::setV(4, nv, t); // vertex
 
       // Set resonance decay time.
-      libjam::setV(5, nv, 1.0e+35);
-      if (libjam::getK(1, nv) == 2)
-        libjam::setV(5, nv, t + libjam::jamDecayTime(1, kf, kc, ks, pm, pe));
+      double decayTime = 1.0e+35;
+      if (ks == 2) decayTime = t + libjam::jamDecayTime(1, kf, kc, ks, pm, pe);
+      libjam::setV(5, nv, decayTime);
     }
 
     libjam::setNV(nv);          // set total number of particles
     libjam::setNBARY(nbary);    // set total number of baryons
     libjam::setNMESON(nmeson);  // set total number of mesons
-  }
-
-  void performCMCorrectionJam() {
-    double cx = 0.0;
-    double cy = 0.0;
-    double cz = 0.0;
-    double px = 0.0;
-    double py = 0.0;
-    double pz = 0.0;
-    double s = 0.0;
-    int const nv = libjam::getNV();
-    for (int i = 1; i <= nv; i++) {
-      px += libjam::getP(1, i);
-      py += libjam::getP(2, i);
-      pz += libjam::getP(3, i);
-      cx += libjam::getR(1, i) * libjam::getP(5, i);
-      cy += libjam::getR(2, i) * libjam::getP(5, i);
-      cz += libjam::getR(3, i) * libjam::getP(5, i);
-      s  += libjam::getP(5, i);
-    }
-    cx = -cx / s;
-    cy = -cy / s;
-    cz = -cz / s;
-    px = -px / nv;
-    py = -py / nv;
-    pz = -pz / nv;
-
-    for (int i = 1;i <= nv; i++) {
-      libjam::setR(1, i, libjam::getR(1, i) + cx);
-      libjam::setR(2, i, libjam::getR(2, i) + cy);
-      libjam::setR(3, i, libjam::getR(3, i) + cz);
-      libjam::setV(1, i, libjam::getR(1, i));
-      libjam::setV(2, i, libjam::getR(2, i));
-      libjam::setV(3, i, libjam::getR(3, i));
-      double const p1 = libjam::getP(1,i) + px;
-      double const p2 = libjam::getP(2,i) + py;
-      double const p3 = libjam::getP(3,i) + pz;
-      double const m  = libjam::getP(5,i);
-      double const e = sqrt(m*m + p1*p1 + p2*p2 + p3*p3);
-      libjam::setP(1, i, p1);
-      libjam::setP(2, i, p2);
-      libjam::setP(3, i, p3);
-      libjam::setP(4, i, e);
-    }
   }
 };
 
@@ -508,15 +472,8 @@ void savePhasespaceData(std::string fname, Particle* begin, Particle* end) {
     double const px = particle.px;
     double const py = particle.py;
     double const pz = particle.pz;
-    double pe = particle.e;
-    double m;
-    if (pe < 0.0) {
-      // onshell jamMass を用いて決定
-      m = libjam::jamMass(kf);
-      pe = std::sqrt(px*px+py*py+pz*pz+m*m);
-    } else {
-      m = std::sqrt(pe*pe-(px*px+py*py+pz*pz));
-    }
+    double const pe = particle.e;
+    double const m = particle.mass;
 
     // (3) x,y,z,t
     double const x = particle.x;
@@ -543,6 +500,7 @@ void doGeneratePhasespace0(runjam_context const& ctx, std::string const& type, s
     std::vector<char> fn(outdir.size() + 50);
     std::sprintf(&fn[0], "%s/dens%06d_phasespace0.dat", outdir.c_str(), ibase + i);
     psamp->update();
+    resolveMass(psamp->begin(), psamp->end());
     savePhasespaceData(&fn[0], psamp->begin(), psamp->end());
   }
 

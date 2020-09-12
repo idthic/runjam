@@ -4,23 +4,19 @@
 #include <cmath>
 #include <cstdio>
 #include <ksh/integrator.hpp>
-#include <ksh/phys/Minkowski.hpp>
 #include "IntegratedCooperFrye.hpp"
-
-namespace ksh = kashiwa;
 
 namespace idt {
 namespace runjam {
 //NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 
-  typedef kashiwa::phys::vector4 vector4;
   static double const sqrtTangentLowerBound = 0;
   static double const sqrtTangentUpperBound = std::sqrt(M_PI/2);
 
   template<int BF>
   struct BFTraits {
     static double Integral2(double xsig, double bmu) {
-      return ksh::IntegrateByGaussLegendre<100>(sqrtTangentLowerBound, sqrtTangentUpperBound, [=](double t) -> double {
+      return kashiwa::IntegrateByGaussLegendre<100>(sqrtTangentLowerBound, sqrtTangentUpperBound, [=](double t) -> double {
         double tantt = std::tan(t * t);
         double jacob = 2*t*(tantt * tantt + 1);
         double x = tantt + xsig;
@@ -29,7 +25,7 @@ namespace runjam {
       });
     }
     static double IntegralP(double xsig, double bmu, double bmass) {
-      return ksh::IntegrateByGaussLegendre<100>(sqrtTangentLowerBound, sqrtTangentUpperBound, [=](double t) -> double {
+      return kashiwa::IntegrateByGaussLegendre<100>(sqrtTangentLowerBound, sqrtTangentUpperBound, [=](double t) -> double {
         double tantt = std::tan(t * t);
         double jacob = 2 * t * (tantt * tantt + 1);
         double x = tantt + xsig;

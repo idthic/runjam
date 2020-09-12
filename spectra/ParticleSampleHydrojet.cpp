@@ -13,7 +13,6 @@
 
 #include <util.hpp>
 #include <ksh/integrator.hpp>
-#include <ksh/phys/Minkowski.hpp>
 #include <spectra/ResonanceList.hpp>
 #include <spectra/ParticleSample.hpp>
 #include <spectra/IntegratedCooperFrye.hpp>
@@ -193,8 +192,8 @@ namespace {
       double nneg = 0.0;
 
       double const gamma = 1.0 / sqrt(1.0 - m_hf.vx * m_hf.vx - m_hf.vy * m_hf.vy - m_hf.vz * m_hf.vz);
-      kashiwa::phys::vector4 u(gamma, m_hf.vx * gamma, m_hf.vy * gamma, m_hf.vz * gamma);
-      kashiwa::phys::vector4 ds(m_hf.ds0, -m_hf.dsx, -m_hf.dsy, -m_hf.dsz);
+      vector4 u {gamma, m_hf.vx * gamma, m_hf.vy * gamma, m_hf.vz * gamma};
+      vector4 ds {m_hf.ds0, -m_hf.dsx, -m_hf.dsy, -m_hf.dsz};
       double const beta = 1.0 / m_hf.tf;
 
       if (recreso.bf == -1) {
@@ -313,8 +312,8 @@ namespace {
           double nneg = 0.0;
 
           double gamma = 1.0 / sqrt(1.0 - m_hf.vx * m_hf.vx - m_hf.vy * m_hf.vy - m_hf.vz * m_hf.vz);
-          kashiwa::phys::vector4 u(gamma, m_hf.vx * gamma, m_hf.vy * gamma, m_hf.vz * gamma);
-          kashiwa::phys::vector4 ds(m_hf.ds0, -m_hf.dsx, -m_hf.dsy, -m_hf.dsz);
+          vector4 u {gamma, m_hf.vx * gamma, m_hf.vy * gamma, m_hf.vz * gamma};
+          vector4 ds {m_hf.ds0, -m_hf.dsx, -m_hf.dsy, -m_hf.dsz};
           double beta = 1.0 / m_hf.tf;
 
           if (reso.bf == -1) {

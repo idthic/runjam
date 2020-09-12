@@ -10,19 +10,91 @@
 namespace idt {
 namespace runjam {
 
+  struct vector4 {
+    double data[4];
+
+  public:
+    double& operator[](std::size_t index) { return data[index]; }
+    double const& operator[](std::size_t index) const { return data[index]; }
+
+    vector4 operator+() const { return *this; }
+    vector4 operator-() const { return {-data[0], -data[1], -data[2], -data[3]}; }
+    vector4 operator~() const { return {data[0], -data[1], -data[2], -data[3]}; }
+
+    double operator*(const vector4& rhs) const {
+      return data[0] * rhs.data[0] - data[1] * rhs.data[1] - data[2] * rhs.data[2] - data[3] * rhs.data[3];
+    }
+
+    vector4& operator*=(double scalar) {
+      data[0] *= scalar;
+      data[1] *= scalar;
+      data[2] *= scalar;
+      data[3] *= scalar;
+      return *this;
+    }
+    vector4& operator/=(double scalar) {
+      return *this *= 1.0 / scalar;
+    }
+
+    vector4& operator+=(const vector4& rhs) {
+      data[0] += rhs.data[0];
+      data[1] += rhs.data[1];
+      data[2] += rhs.data[2];
+      data[3] += rhs.data[3];
+      return *this;
+    }
+    vector4& operator-=(const vector4& rhs) {
+      data[0] -= rhs.data[0];
+      data[1] -= rhs.data[1];
+      data[2] -= rhs.data[2];
+      data[3] -= rhs.data[3];
+      return *this;
+    }
+    vector4 operator+(vector4 const& rhs) const {
+      vector4 ret(*this);
+      ret += rhs;
+      return ret;
+    }
+    vector4 operator-(vector4 const& rhs) const {
+      vector4 ret(*this);
+      ret -= rhs;
+      return ret;
+    }
+
+    void boost(vector4 const& u) {
+      vector4& p = *this;
+      double const udotp = u[1] * p[1] + u[2] * p[2] + u[3] * p[3];
+      double const coeff = udotp / (u[0] + 1) + p[0];
+      p[0] = u[0] * p[0] + udotp;
+      p[1] += u[1] * coeff;
+      p[2] += u[2] * coeff;
+      p[3] += u[3] * coeff;
+    }
+  };
+
   struct Particle {
     int pdg;
     double mass;
 
-    double x;
-    double y;
-    double z;
-    double t;
+    union {
+      vector4 pos;
+      struct {
+        double t;
+        double x;
+        double y;
+        double z;
+      };
+    };
 
-    double e ;
-    double px;
-    double py;
-    double pz;
+    union {
+      vector4 mom;
+      struct {
+        double e ;
+        double px;
+        double py;
+        double pz;
+      };
+    };
   };
 
   class ParticleSampleBase {
@@ -66,22 +138,15 @@ namespace runjam {
     virtual Particle* end() { return &plist[0] + plist.size(); }
     Particle const* begin() const { return const_cast<ParticleSampleBase*>(this)->begin(); }
     Particle const* end() const { return const_cast<ParticleSampleBase*>(this)->end(); }
+    std::size_t size() const { return end() - begin(); }
 
     /// @fn void update();
     /// \~en generates a resonance distribution
     /// \~ja 粒子分布の生成を実行します。
     virtual void update() = 0;
 
-  private:
-    // コピー禁止
-    ParticleSampleBase(ParticleSampleBase const&) {
-      std::cerr << "ParticleSampleBase(copy ctor): copy not supported!" << std::endl;
-      std::exit(1);
-    }
-    ParticleSampleBase& operator=(ParticleSampleBase const&) {
-      std::cerr << "ParticleSampleBase(copy assign): copy not supported!" << std::endl;
-      std::exit(1);
-    }
+    void adjustCenterOfMassByGalileiBoost();
+    void adjustCenterOfMassByLorentzBoost();
   };
 
   class OversampledParticleSampleBase: public ParticleSampleBase {
@@ -144,48 +209,15 @@ namespace runjam {
     }
 
   public:
-    OversampledParticleSampleBase(runjam_context const& ctx) {
-      this->m_overSamplingFactor = ctx.get_config("runjam_oversampling_factor", 1.0);
+    OversampledParticleSampleBase(runjam_context const& ctx):
+      m_overSamplingFactor(ctx.get_config("runjam_oversampling_factor", 1.0))
+    {
       this->setAdviceNumberOfExpectedEvents(0);
     }
 
   public:
     virtual void updateWithOverSampling(double overSamplingFactor) = 0;
-
-    virtual void update() {
-      // 一括生成済の時
-      if (this->pcache.size() > 1) {
-        if (++this->indexOfCachedEvents < this->pcache.size() - 1)
-          return;
-
-        this->pcache.clear();
-        this->indexOfCachedEvents = -1;
-      }
-
-      // 一括生成要求がある時
-      if (this->numberOfExpectedEvents > 0) {
-        int ncache = this->numberOfExpectedEvents;
-        this->updateWithOverSampling(this->m_overSamplingFactor * ncache);
-
-        // 二項分布で各イベントの粒子数を決定する
-        this->pcache.clear();
-        this->pcache.reserve(ncache + 1);
-        this->pcache.emplace_back(0);
-        std::size_t pos = 0, size = base::plist.size();
-        for (; ncache > 1; ncache--) {
-          pos += idt::util::irand_binomial(size - pos, 1.0 / ncache);
-          this->pcache.emplace_back(pos);
-        }
-        this->pcache.emplace_back(size);
-
-        this->shuffleParticleList();
-        this->numberOfExpectedEvents = 0;
-        this->indexOfCachedEvents = 0;
-        return;
-      }
-
-      this->updateWithOverSampling(this->m_overSamplingFactor);
-    }
+    virtual void update() override;
   };
 
   class ParticleSampleFactoryBase {
