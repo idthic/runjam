@@ -68,6 +68,7 @@ namespace libjam {
   void   finalResonanceDecay();
 
   void printParticleInformation(int i);
+  int determineStableCode(int kf);
 
 }
 }

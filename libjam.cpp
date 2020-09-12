@@ -298,5 +298,13 @@ namespace libjam {
       << std::endl;
   }
 
+  // ks: 安定粒子なら 1, 不安定粒子なら 2.
+  int determineStableCode(int kf) {
+    int const kc = libjam::jamComp(kf); // jam internal particle code.
+    if (libjam::getPMAS(kc,2) <= 1e-7 || libjam::getMDCY(kc,1) == 0
+      || libjam::getMDCY(kc,2) == 0 || libjam::getMDCY(kc,3) == 0) return 1;
+    return 2;
+  }
+
 }
 }
