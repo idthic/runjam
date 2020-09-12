@@ -109,13 +109,13 @@ namespace runjam {
     /// @param[in] py [GeV/c] momentum in the y-direction
     /// @param[in] pz [GeV/c] momentum in the z-direction
     /// @param[in] m  [GeV/c] mass 粒子番号から計算する場合は -1.0 を指定する。
-    void addParticleMinkowski(int iReso, double px, double py, double pz, double m, double x, double y, double z, double t);
+    void addParticleCartesian(int iReso, double px, double py, double pz, double m, double x, double y, double z, double t);
 
     /// @param[in] px [GeV/c] momentum in the x-direction
     /// @param[in] py [GeV/c] momentum in the y-direction
     /// @param[in] pz [GeV/c] momentum in the z-direction
     /// @param[in] m  [GeV/c] mass 粒子番号から計算する場合は -1.0 を指定する。
-    void addParticleTauEta(int iReso, double px, double py, double pz, double m, double x, double y, double tau, double eta);
+    void addParticleMilne(int iReso, double px, double py, double pz, double m, double x, double y, double tau, double eta);
 
   public:
     ParticleSampleBase() {}

@@ -50,14 +50,14 @@ namespace {
           if (is_comment_line(line)) continue;
 
           std::istringstream is(line);
-          double px,py,pz,e,em;
+          double px, py, pz, e, em;
           int ir;
           double tau,rx,ry,eta;
           if (!(is >> px >> py >> pz >> e >> em >> ir >> tau >> rx >> ry >> eta))
             goto error_invalid_format;
 
           int const pdg = rlist[ir].generatePDGCode();
-          this->addParticleTauEta(pdg, px, py, pz, em, rx, ry, tau, eta);
+          this->addParticleMilne(pdg, px, py, pz, em, rx, ry, tau, eta);
         }
 
         return;

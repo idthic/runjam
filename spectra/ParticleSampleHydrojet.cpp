@@ -547,11 +547,8 @@ namespace {
       double const px_GeV = prx * hbarc_GeVfm;
       double const py_GeV = pry * hbarc_GeVfm;
       double const pz_GeV = prz * hbarc_GeVfm;
-
-      // use jamMass (JAM初期化時に jam->jamMass() で mass と e を自動決定)
-      double const mass_GeV = -1.0; // mres * hbarc_GeVfm;
-
-      base::addParticleTauEta(pdg, px_GeV, py_GeV, pz_GeV, mass_GeV, xx, yy, eta, tau);
+      double const mass_GeV = mres * hbarc_GeVfm;
+      base::addParticleMilne(pdg, px_GeV, py_GeV, pz_GeV, mass_GeV, xx, yy, eta, tau);
     }
   }
 

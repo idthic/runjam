@@ -1185,7 +1185,7 @@ namespace {
         if (m_dominating && idt::util::urand() >= prob) continue;
         if (generateParticleSample(&particle)) {
           particle.pdg = reso.generatePDGCode();
-          particle.e = -1.0; // onshell (JAM初期化時に jam->jamMass() で自動決定させる)
+          particle.mass = reso.mass;
           plist.emplace_back(particle);
         }
       }

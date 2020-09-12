@@ -99,7 +99,7 @@ namespace {
                 &kc, &kf, &px, &py, &pz, &m, &x, &y, &z, &t
               )) goto error_invalid_format;
 
-            this->addParticleMinkowski(kf, px, py, pz, m, x, y, z, t);
+            this->addParticleCartesian(kf, px, py, pz, m, x, y, z, t);
           }
           this->pcache.emplace_back(base::plist.size());
         }
@@ -235,7 +235,7 @@ namespace {
             if (!ifs.read((char*) &y, sizeof y)) goto error_invalid_format;
             if (!ifs.read((char*) &z, sizeof z)) goto error_invalid_format;
             if (!ifs.read((char*) &t, sizeof t)) goto error_invalid_format;
-            this->addParticleMinkowski(kf, px, py, pz, m, x, y, z, t);
+            this->addParticleCartesian(kf, px, py, pz, m, x, y, z, t);
           }
           this->pcache.emplace_back(base::plist.size());
         }

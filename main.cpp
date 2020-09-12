@@ -142,9 +142,8 @@ public:
   virtual void finalize() override {}
 };
 
-void resolveMass(Particle* begin, Particle* end) {
-  while (begin != end) {
-    Particle& part = *begin++;
+void forceJamMass(ParticleSampleBase& psample) {
+  for (Particle& part: psample) {
     if (part.pdg == 0) continue;
     double const px = part.px;
     double const py = part.py;
@@ -294,8 +293,8 @@ public:
     double averageParticleNumber = 0.0;
     for (int iev = 1; iev <= nevent; iev++) {
       psamp->update();
-      resolveMass(psamp->begin(), psamp->end());
-      //adjustCenterOfMassByLorentzBoost(psamp->begin(), psamp->end());
+      forceJamMass(*psamp);
+      //psamp->adjustCenterOfMassByLorentzBoost();
       double const ntest = psamp->getOverSamplingFactor();
       libjam::setMSTC(5, ntest);
       writeParticlesToJam(psamp->begin(), psamp->end());
@@ -500,7 +499,7 @@ void doGeneratePhasespace0(runjam_context const& ctx, std::string const& type, s
     std::vector<char> fn(outdir.size() + 50);
     std::sprintf(&fn[0], "%s/dens%06d_phasespace0.dat", outdir.c_str(), ibase + i);
     psamp->update();
-    resolveMass(psamp->begin(), psamp->end());
+    forceJamMass(*psamp);
     savePhasespaceData(&fn[0], psamp->begin(), psamp->end());
   }
 

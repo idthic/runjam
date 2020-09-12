@@ -10,26 +10,25 @@
 namespace idt {
 namespace runjam {
 
-  void ParticleSampleBase::addParticleMinkowski(int pdg, double px, double py, double pz, double m, double x, double y, double z, double t) {
-    double const e = m < 0.0 ? -1.0 : std::sqrt(px * px + py * py + pz * pz + m * m);
+  void ParticleSampleBase::addParticleCartesian(int pdg, double px, double py, double pz, double m, double x, double y, double z, double t) {
     this->plist.emplace_back();
     Particle& particle = this->plist.back();
     particle.pdg = pdg;
     particle.mass = m;
+    particle.e = std::sqrt(px * px + py * py + pz * pz + m * m);
     particle.px = px;
     particle.py = py;
     particle.pz = pz;
-    particle.e = e;
+    particle.t = t;
     particle.x = x;
     particle.y = y;
     particle.z = z;
-    particle.t = t;
   }
 
-  void ParticleSampleBase::addParticleTauEta(int pdg, double px, double py, double pz, double m, double x, double y, double eta, double tau) {
+  void ParticleSampleBase::addParticleMilne(int pdg, double px, double py, double pz, double m, double x, double y, double eta, double tau) {
     double const t = tau * std::cosh(eta);
     double const z = tau * std::sinh(eta);
-    this->addParticleMinkowski(pdg, px, py, pz, m, x, y, z, t);
+    this->addParticleCartesian(pdg, px, py, pz, m, x, y, z, t);
   }
 
   void ParticleSampleBase::clearParticleList() {
