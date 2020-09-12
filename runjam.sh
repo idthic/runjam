@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Basic options
-runjam_cascade_mode=cascade
+runjam_mode=cascade
 runjam_nevent=1
 runjam_ievent_begin=0
 runjam_output_directory=jam
@@ -13,7 +13,6 @@ runjam_jamseed=
 
 # JAM options
 runjam_phi_decays=1
-runjam_decay_only=0
 
 # Note: currently this should be 0
 runjam_switch_weak_decay=0

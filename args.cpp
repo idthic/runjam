@@ -58,14 +58,13 @@ namespace {
       "  sample\n"
       "\n"
       "OPTIONS and VARIABLES\n"
-      "      runjam_cascade_mode=SUBCOMMAND\n"
+      "      runjam_mode=SUBCOMMAND\n"
       "  -n, runjam_nevent=INT [1]              number of events to process\n"
       "  -s, runjam_seed=INT [18371]            seed for random numbers in runjam\n"
       "      runjam_jamseed=INT [runjam_seed]   seed for random numbers in JAM\n"
       "  -t, runjam_oversampling_factor=NUM [1] number of test particles\n"
       "  -w, runjam_switch_weak_decay=BOOL [false] enable weak decays\n"
       "      runjam_phi_decays=BOOL [true]\n"
-      "      runjam_decay_only=BOOL [false]\n"
       "  --resodata, runjam_resodata=FILE [ResonanceJam.dat] resodata\n"
       "\n"
       " Output options\n"
@@ -281,6 +280,10 @@ namespace {
 
   public:
     int read(int argc, char** argv, runjam_commandline_arguments& args, runjam_context& ctx) {
+      args.subcommand = ctx.get_config<std::string>("runjam_mode", "cascade");
+      args.initType = "c0lrf";
+      args.initPath = "hypersurface_v1.txt";
+
       this->argc = argc;
       this->argv = argv;
       this->args = &args;
@@ -330,11 +333,6 @@ namespace {
 
 }
 
-void runjam_commandline_arguments::initialize() {
-  this->subcommand = "cascade";
-  this->initType = "c0lrf";
-  this->initPath = "hypersurface_v1.txt";
-}
 int runjam_commandline_arguments::read(int argc, char** argv, runjam_context& ctx) {
   runjam_commandline_reader reader;
   return reader.read(argc, argv, *this, ctx);

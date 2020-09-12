@@ -40,11 +40,7 @@ namespace runjam {
     std::string initType;
     std::string initPath;
 
-  private:
-    void initialize();
-
   public:
-    runjam_commandline_arguments() { this->initialize(); }
     int read(int argc, char** argv, runjam_context& ctx);
   };
 

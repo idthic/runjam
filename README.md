@@ -61,6 +61,9 @@ The list of particles
 ## Changes 0.2..0.3
 
 - change option prefix: `hydro2jam_*` -> `runjam_*`
+- reorganize mode options
+  - rename option `runjam_cascade_mode` -> `runjam_mode`
+  - remove option `runjam_decay_only`
 - rename option: `ParticleSample_ReverseParticleList` -> `hydrojet_reverse_particles`
 - rename option: `ParticleSample_ReverseParticleList` -> `hydrojet_shuffle_particles`
 - fix bugs that some options did not work because of option name typos:

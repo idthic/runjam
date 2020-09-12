@@ -985,7 +985,7 @@ namespace {
       double const x = IsotropicPartInverseUCDF((1.0 - idt::util::urand()) * totalIsotropicPartCDF);
       double const bp = std::sqrt(x * x - bmass * bmass);
       if (!std::isfinite(bp)) {
-        std::cerr << "ParticleSampleViscous.cpp(generateMomentum): beta*p nan/inf" << std::endl;
+        std::cerr << "ParticleSampleViscous (generateMomentum): beta*p nan/inf" << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -1156,7 +1156,7 @@ namespace {
       }
 
       if (std::isnan(this->totalIntegral)) {
-        std::cerr << "ParticleSampleViscous.cpp: IsotropicPartUCDF([bmass,infty]) is nan" << std::endl;
+        std::cerr << "ParticleSampleViscous: IsotropicPartUCDF([bmass,infty]) is nan" << std::endl;
         std::fprintf(stderr, "IsotropicPartCDF([bmass,infty])=%g bmass=%g xsig=%g vsig=%g\n", totalIsotropicPartCDF, bmass, xsig, vsig);
         std::fflush(stderr);
         std::exit(1);
@@ -1173,7 +1173,7 @@ namespace {
         this->totalIsotropicPartCDF = base::IsotropicPartTotalCDF();
         prob = totalIsotropicPartCDF / totalIntegral;
         if (prob > 1.0) {
-          std::cerr << "ParticleSmapleViscous.cpp (SampleResonance): BUG the dominating function actually doesn't dominate (prob=" << prob << ")." << std::endl;
+          std::cerr << "ParticleSmapleViscous (SampleResonance): BUG the dominating function actually doesn't dominate (prob=" << prob << ")." << std::endl;
           std::exit(EXIT_FAILURE);
         }
       } else {
@@ -1273,7 +1273,7 @@ namespace {
 
       std::ifstream ifs(this->fname_hypersurface.c_str());
       if (!ifs) {
-        std::cerr << "(ParticleSampleViscous::update): failed to open the hypersurface file(" << fname_hypersurface << ")." << std::endl;
+        std::cerr << "ParticleSampleViscous (c0lrf/update): failed to open the hypersurface file(" << fname_hypersurface << ")." << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -1289,7 +1289,7 @@ namespace {
         std::string type, coords;
         s >> type >> coords;
         if (type != "c0lrf" || (coords != "taueta-tilde" && coords != "taueta")) {
-          std::cerr << "(ParticleSampleViscous::update):" << fname_hypersurface << ": format not supported." << std::endl;
+          std::cerr << "ParticleSampleViscous (c0lrf/update):" << fname_hypersurface << ": format not supported." << std::endl;
           std::exit(EXIT_FAILURE);
         }
 
@@ -1299,12 +1299,12 @@ namespace {
           if (arg.compare(0, 4, "Tsw=", 4) == 0) {
             switchingTemperature = std::atof(arg.c_str() + 4);
           } else {
-            std::cerr << "(ParticleSampleViscous::update):" << fname_hypersurface << ":1: unknown argument (arg=" << arg << ")" << std::endl;
+            std::cerr << "ParticleSampleViscous (c0lrf/update):" << fname_hypersurface << ":1: unknown argument (arg=" << arg << ")" << std::endl;
             std::exit(EXIT_FAILURE);
           }
         }
       } else {
-        std::cerr << "(ParticleSampleViscous::update):" << fname_hypersurface << ": the file is empty." << std::endl;
+        std::cerr << "ParticleSampleViscous (c0lrf/update):" << fname_hypersurface << ": the file is empty." << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -1364,11 +1364,11 @@ namespace {
       }
 
       if (!completed) {
-        std::cerr << "(ParticleSampleViscous::update):" << fname_hypersurface << ": unexpected end of the file." << std::endl;
+        std::cerr << "ParticleSampleViscous (c0lrf/update):" << fname_hypersurface << ": unexpected end of the file." << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
-      std::cout << "(ParticleSampleViscous::update):" << fname_hypersurface << ": " << base::plist.size() << " particles were generated," << std::endl;
+      std::cout << "ParticleSampleViscous (c0lrf/update):" << fname_hypersurface << ": " << base::plist.size() << " particles were generated," << std::endl;
     }
 
   };
@@ -1430,18 +1430,18 @@ namespace {
       // isbulk
       int isbulk;
       if (!(ifsf >> isbulk)) {
-        std::cerr << "(ParticleSampleFromHydrojet::update):" << fname_freezeout << ": unexpected end of the file." << std::endl;
+        std::cerr << "ParticleSampleViscous (hydrojet/read):" << fname_freezeout << ": unexpected end of the file." << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
       if (isbulk < 0) {
         // end
         if (!(ifsp >> isbulk)) {
-          std::cerr << "(ParticleSampleFromHydrojet::update):" << fname_position << ": unexpected end of the file." << std::endl;
+          std::cerr << "ParticleSampleViscous (hydrojet/read):" << fname_position << ": unexpected end of the file." << std::endl;
           std::exit(EXIT_FAILURE);
         }
         if (isbulk >= 0) {
-          std::cerr << "(ParticleSampleFromHydrojet::update):" << fname_position << ": inconsistent number of the entries." << std::endl;
+          std::cerr << "ParticleSampleViscous (hydrojet/read):" << fname_position << ": inconsistent number of the entries." << std::endl;
           std::exit(EXIT_FAILURE);
         }
         return false;
@@ -1490,7 +1490,7 @@ namespace {
       double eta, mu;
       ifsf >> eta >> surface.m_temperature >> mu;
       if (mu != 0.0) {
-        std::cout << "ParticleSampleViscous.cpp (ParticleSampleFromHydrojet): a finite baryon chemical potenatial is not supported." << std::endl;
+        std::cout << "ParticleSampleViscous (hydrojet/read):" << fname_freezeout << " a finite baryon chemical potenatial is not supported." << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -1513,7 +1513,7 @@ namespace {
       int iw = 0;
       ifsf >> iw;
       if (iw != 8 && iw != 4) {
-        std::cerr << "ParticleSampleViscous.cpp (ParticleSampleFromHydrojet): not supported value: iw=" << iw << std::endl;
+        std::cerr << "ParticleSampleViscous (hydrojet/read):" << fname_freezeout << ": not supported value: iw=" << iw << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
@@ -1525,22 +1525,22 @@ namespace {
 
       std::ifstream ifsf(this->fname_freezeout.c_str());
       if (!ifsf) {
-        std::cerr << "(ParticleSampleFromHydrojet::update): failed to open the hypersurface element data (" << fname_freezeout << ")." << std::endl;
+        std::cerr << "ParticleSampleViscous (hydrojet/update): failed to open the hypersurface element data (" << fname_freezeout << ")." << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
       std::ifstream ifsp(this->fname_position.c_str());
       if (!ifsp) {
-        std::cerr << "(ParticleSampleFromHydrojet::update): failed to open the hypersurface position data (" << fname_position << ")." << std::endl;
+        std::cerr << "ParticleSampleViscous (hydrojet/update): failed to open the hypersurface position data (" << fname_position << ")." << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
       double switchingTemperature = this->m_switchingTemperature / hbarc_MeVfm; // [/fm]
 
       double const switchingBeta = 1.0 / switchingTemperature; // [/fm]
-      std::cout << "ParticleSampleViscous.cpp (interpolation): initializing table..." << std::endl;
+      std::cout << "ParticleSampleViscous (hydrojet/interpolation): initializing table..." << std::endl;
       interpolation::TotalCDFInterpolater interp(&rlist, switchingBeta);
-      std::cout << "ParticleSampleViscous.cpp (interpolation): done" << std::endl;
+      std::cout << "ParticleSampleViscous (hydrojet/interpolation): done" << std::endl;
 
       HypersurfaceElementC0Lrf surface;
 
@@ -1574,7 +1574,7 @@ namespace {
       }
 
       std::cout
-        << "ParticleSampleFromHydrojet: done:\n"
+        << "ParticleSampleViscous (hydrojet/update): done:\n"
         << "  input = " << fname_freezeout << " " << fname_position << "\n"
         << "  interpolation = " << c1 << "/" << c2 << " @ T_sw <= " << this->m_switchingTemperature << "MeV\n"
         << "  number_of_particles = " << base::plist.size() << std::endl;

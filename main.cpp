@@ -463,11 +463,9 @@ void doCascade(runjam_context const& ctx, std::string const& type, std::string c
   }
 
   Program prog(ctx);
-  std::cout << "runjam: JAM hadronic cascade start" << std::endl;
   prog.initializeJam();
   prog.generateEvent(*psamp, cascadeMode);
   prog.finalizeJam();
-  std::cout << "runjam: JAM hadronic cascade end" << std::endl;
 }
 
 void doGeneratePhasespace0(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
@@ -513,17 +511,13 @@ int main(int argc, char *argv[]) {
 
   idt::util::set_random_seed(ctx.seed());
 
-  if (args.subcommand == "generate-phasespace0") {
+  if (args.subcommand == "cascade" || args.subcommand == "decay" || args.subcommand == "sample") {
+    doCascade(ctx, args.initType, args.initPath, args.subcommand);
+  } else if (args.subcommand == "generate-phasespace0") {
     // test 用
     doGeneratePhasespace0(ctx, args.initType, args.initPath);
   } else if (args.subcommand == "test-viscous-correction-integration") {
     return checkViscousCooperFryeInterpolated(true);
-  } else if (args.subcommand == "cascade") {
-    std::string mode = ctx.get_config<std::string>("runjam_cascade_mode", "cascade");
-    if (mode == "cascade" && ctx.get_config("runjam_decay_only", false)) mode = "decay";
-    doCascade(ctx, args.initType, args.initPath, mode);
-  } else if (args.subcommand == "decay" || args.subcommand == "sample") {
-    doCascade(ctx, args.initType, args.initPath, args.subcommand);
   } else {
     std::cerr << "runjam: unknown subcommand ' " << args.subcommand << "'" << std::endl;
     return 2;
