@@ -17,11 +17,15 @@ runjam_phi_decays=1
 # Note: currently this should be 0
 runjam_switch_weak_decay=0
 
+# Resonance list
+runjam_resodata=ResonanceJam.dat
+runjam_eospce=6
+runjam_kintmp=5
+
 # Options for Cooper-Frye formula
 runjam_turnsOffViscousEffect=0
 runjam_oversampling_factor=1.0
 runjam_switching_temperature=-1
-runjam_resodata=ResonanceJam.dat
 
 #------------------------------------------------------------------------------
 # Output options
@@ -47,8 +51,6 @@ runjam_output_index_start=0
 # Input options
 
 hydrojet_directory=test
-hydrojet_eospce=6
-hydrojet_kintmp=5
 hydrojet_baryonfree=1
 hydrojet_deltat=0.3
 hydrojet_deltah=0.3

@@ -1595,10 +1595,10 @@ namespace {
 
       } else if (type == "hydrojet") {
         double const switchingTemperature = ctx.get_config("runjam_switching_temperature", -1.0);
-        double const deltat = ctx.get_config("runjam_deltat", 0.3);
-        double const deltah = ctx.get_config("runjam_deltah", 0.3);
-        double const deltax = ctx.get_config("runjam_deltax", 0.3);
-        double const deltay = ctx.get_config("runjam_deltay", 0.3);
+        double const deltat = ctx.get_config("hydrojet_deltat", 0.3);
+        double const deltah = ctx.get_config("hydrojet_deltah", 0.3);
+        double const deltax = ctx.get_config("hydrojet_deltax", 0.3);
+        double const deltay = ctx.get_config("hydrojet_deltay", 0.3);
 
         ParticleSampleFromHydrojet* psamp = new ParticleSampleFromHydrojet(ctx, inputfile);
         psamp->setDtau(deltat);

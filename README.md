@@ -109,6 +109,10 @@ The default is `eospce=6` and `kintmp=5` so that `ResonanceJam.dat` is used.
   - rename option `ParticleSample_ReverseParticleList` -> `hydrojet_reverse_particles`
   - rename option `ParticleSample_ShuffleParticleList` -> `hydrojet_shuffle_particles`
   - rename option `HydroSpectrum_RotateFreezeoutData` -> `hydrojet_rotate_freezeout`
+- resonance list options
+  - new option `-r PATH`
+  - rename option `--hydrojet-pce, hydrojet_eospce` -> `-p, runjam_eospce`
+  - rename option `--hydrojet-ftemp, hydrojet_kintmp` -> `-k, runjam_kintmp`
 
 ## Changes 0.1..0.2
 

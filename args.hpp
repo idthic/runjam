@@ -23,12 +23,6 @@ namespace runjam {
       return ret;
     }
 
-    int eospce() const {
-      return this->get_config("hydrojet_eospce", 6);
-    }
-    int kintmp() const {
-      return this->get_config("hydrojet_kintmp", 5);
-    }
     std::string resodata() const;
     std::string indir() const {
       return this->get_config<std::string>("hydrojet_directory", "test");

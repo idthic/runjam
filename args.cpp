@@ -20,8 +20,8 @@ using namespace idt::runjam;
 std::string runjam_context::resodata() const {
   std::string file = "ResonanceJam.dat";
   if (!read_config(file, "runjam_resodata")) {
-    int const eospce = this->get_config("hydrojet_eospce", 6);
-    int const kintmp = this->get_config("hydrojet_kintmp", 5);
+    int const eospce = this->get_config("runjam_eospce", 6);
+    int const kintmp = this->get_config("runjam_kintmp", 5);
     switch (eospce) {
     case 0: file = "ResonancePCE.dat"; break; // 21 resonances
     case 1: // 21 resonances with PCE
@@ -116,7 +116,6 @@ namespace {
       "  -t, runjam_oversampling_factor=NUM [1] number of test particles\n"
       "  -w, runjam_switch_weak_decay=BOOL [false] enable weak decays\n"
       "      runjam_phi_decays=BOOL [true]\n"
-      "  --resodata, runjam_resodata=FILE [ResonanceJam.dat] resodata\n"
       "\n"
       " Output options\n"
       "  -o,        runjam_output_directory=DIR [out]   directory of output files\n"
@@ -148,14 +147,17 @@ namespace {
       "    psample:FILE  read a particle list from the file in the format of\n"
       "                  runjam \"particlesample_pos.dat\"\n"
       "\n"
+      " Resonance list\n"
+      "  -r, --resodata, runjam_resodata=FILE   resonance data\n"
+      "  -p, runjam_eospce=INT [6]              eospce\n"
+      "  -k, runjam_kintmp=INT [5]              freezeout temperature type\n"
+      "\n"
       " Options for viscous sampler\n"
       "  --switching-temperature, runjam_switching_temperature=TEMP [155]\n"
       "                    an advice to switching temperature in MeV\n"
       "  runjam_turnsOffViscousEffect=INT\n"
       "\n"
       " Options for hydrojet hypersurface\n"
-      "  --hydrojet-ftemp, hydrojet_kintmp=INT [5]       freezeout temperature type\n"
-      "  --hydrojet-pce,   hydrojet_eospce=INT [6]       eos_pce\n"
       "  --hydrojet-bfree, hydrojet_baryonfree=INT [1]   baryonfree\n"
       "  --hydrojet-dir,   hydrojet_directory=DIR [test] directory of freezeout.dat\n"
       "  --hydrojet-dt,    hydrojet_deltat=NUM [0.3]     delta tau\n"
@@ -170,11 +172,11 @@ namespace {
       "  --help          show this help\n"
       "  --version       show version information\n"
       "\n"
-      "SAMPLE\n"
+      "EXAMPLE\n"
       "\n"
-      "$ ./runjam cascade -s 12345 -o jam --hydrojet-dir hydro\n"
-      "$ ./runjam cascade -s 12345 -o jam -i phase:phasespace0.in\n"
-      "$ ./runjam decay -s 12345 -o jam -i phase:phasespace0.in\n"
+      "$ ./runjam cascade -s 12345 -o jam -i c0lrf:hypersurface_v1.txt\n"
+      "$ ./runjam decay   -s 12345 -o jam -i phase:phasespace0.in\n"
+      "$ ./runjam sample  -s 12345 -o jam -i c0lrf:hypersurface_v1.txt -n 1000 -d 2\n"
       "\n"
     );
   }
@@ -270,10 +272,6 @@ namespace {
 
       } else if (longname == "hydrojet-dir") {
         assign_optarg("hydrojet_directory");
-      } else if (longname == "hydrojet-ftemp")  {
-        assign_optarg_int("hydrojet_kintmp");
-      } else if (longname == "hydrojet-pce") {
-        assign_optarg_int("hydrojet_eospce");
       } else if (longname == "hydrojet-bfree") {
         assign_optarg_int("hydrojet_baryonfree");
       } else if (longname == "hydrojet-dt") {
@@ -325,6 +323,9 @@ namespace {
         break;
       case 'w': assign_optarg_int("runjam_switch_weak_decay"); break;
       case 'i': assign_optarg_input(); break;
+      case 'r': assign_optarg("runjam_resodata"); break;
+      case 'k': assign_optarg_int("runjam_kintmp"); break;
+      case 'p': assign_optarg_int("runjam_eospce"); break;
       default: return false;
       }
       return true;
