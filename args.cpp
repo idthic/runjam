@@ -120,9 +120,8 @@ namespace {
       "\n"
       " Output options\n"
       "  -o,        runjam_output_directory=DIR [out]   directory of output files\n"
-      "  --fphase,  runjam_fname_phdat=FILE []     output filename\n"
-      "  --fphase0, runjam_fname_phdat0=FILE []    output filename\n"
-      "  -d INT                                         (set the next two options)\n"
+      "  --fphase,  runjam_fname_phdat=FILE []          output filename\n"
+      "  --fphase0, runjam_fname_phdat0=FILE []         output filename\n"
       "             runjam_output_phdat=BOOL [true]     output phasespace data\n"
       "             runjam_output_phdat0=BOOL [true]    output phasespace0 data\n"
       "             runjam_output_phbin=BOOL [false]    output binary phasespace\n"
@@ -130,6 +129,11 @@ namespace {
       "             runjam_output_phdat_indexed=BOOL [false]\n"
       "             runjam_output_phdat0_indexed=BOOL [false]\n"
       "             runjam_output_index_start=INT [0]\n"
+      "  -d INT\n"
+      "    0        Disable all output format\n"
+      "    1        Enable only 'phdat' and 'phdat0'\n"
+      "    2        Enable only 'phbin' and 'phbin0'\n"
+      "    3        Enable only 'phdat_indexed' and 'phdat0_indexed'\n"
       "\n"
       " Initialization options\n"
       "  -i ICSPEC       specify initial condition\n"
@@ -284,7 +288,7 @@ namespace {
       } else if (longname == "switching-temperature") {
         assign_optarg_double("runjam_switching_temperature");
       } else {
-        std::cerr << "unknown option '" << arg << "'" << std::endl;
+        std::cerr << "runjam: unknown option '" << arg << "'" << std::endl;
         flag_error = true;
       }
     }
@@ -297,9 +301,26 @@ namespace {
       case 'o': assign_optarg("runjam_output_directory"); break;
       case 'd':
         if (const char* optarg = get_optarg()) {
+          bool phdat = false, phdat0 = false;
+          bool phbin = false, phbin0 = false;
+          bool phdat_indexed = false, phdat0_indexed = false;
           int const value = std::atoi(optarg);
-          ctx->set_value("runjam_output_phdat", value);
-          ctx->set_value("runjam_output_phdat0", value);
+          switch (value) {
+          case 0: break;
+          case 1: phdat = phdat0 = true; break;
+          case 2: phbin = phbin0 = true; break;
+          case 3: phdat_indexed = phdat0_indexed = true; break;
+          default:
+            std::cerr << "runjam:$" << arg_index << ": invalid value for option '-d'." << std::endl;
+            flag_error = true;
+            return true;
+          }
+          ctx->set_value("runjam_output_phdat", phdat);
+          ctx->set_value("runjam_output_phdat0", phdat0);
+          ctx->set_value("runjam_output_phbin", phbin);
+          ctx->set_value("runjam_output_phbin0", phbin0);
+          ctx->set_value("runjam_output_phdat_indexed", phdat_indexed);
+          ctx->set_value("runjam_output_phdat0_indexed", phdat0_indexed);
         }
         break;
       case 'w': assign_optarg_int("runjam_switch_weak_decay"); break;
