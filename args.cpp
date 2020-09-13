@@ -15,6 +15,11 @@ namespace fsys {
   }
 }
 
+static bool starts_with(const char* str, const char* head) {
+  while (*str && *head) if (*str++ != *head++) return false;
+  return !*head;
+}
+
 using namespace idt::runjam;
 
 std::string runjam_context::resodata() const {
@@ -338,16 +343,19 @@ namespace {
           std::cerr << "runjam:$" << arg_index << ": unknown option '-" << c << "'" << std::endl;
           flag_error = true;
         }
+        if (!arg_optarg) return; // the rest characters are consumed as optarg
       }
     }
 
     bool read_assign() {
       const char* p = arg;
-      while (std::isalnum(*p) && *p == '_') p++;
+      while (std::isalnum(*p) || *p == '_') p++;
       if (p == arg || *p != '=') return false;
 
-      std::string const name(arg, p);
+      std::string name(arg, p);
       const char* const value = p + 1;
+      if (!starts_with(name.c_str(), "runjam_") && !starts_with(name.c_str(), "hydrojet_"))
+        name = "runjam_" + name;
       ctx->set_value(name.c_str(), value);
       return true;
     }
