@@ -1273,7 +1273,7 @@ namespace {
 
       std::ifstream ifs(this->fname_hypersurface.c_str());
       if (!ifs) {
-        std::cerr << "ParticleSampleViscous (c0lrf/update): failed to open the hypersurface file(" << fname_hypersurface << ")." << std::endl;
+        std::cerr << "ParticleSampleViscous (c0lrf/update): failed to open the hypersurface file '" << fname_hypersurface << "'." << std::endl;
         std::exit(EXIT_FAILURE);
       }
 

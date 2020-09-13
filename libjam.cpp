@@ -70,20 +70,15 @@ namespace libjam {
     return !*src;
   }
 
-  static int isign(const int a, const int b) {
-    return  b >= 0 ? std::abs(a): -std::abs(a);
-  }
-
   //---------------------------------------------------------------------------
   // JAM data section
 
-  struct Jamevnt1 {
+  extern "C" struct {
     double R[CONFIG_JAM_MXV][5];
     double P[CONFIG_JAM_MXV][5];
     double V[CONFIG_JAM_MXV][5];
     int    K[CONFIG_JAM_MXV][11];
-  };
-  extern "C" Jamevnt1 jamevnt1_;
+  } jamevnt1_;
 
   int    getK(int i, int ip)           { return jamevnt1_.K[ip-1][i-1]; }
   double getR(int i, int ip)           { return jamevnt1_.R[ip-1][i-1]; }
@@ -94,12 +89,11 @@ namespace libjam {
   void   setP(int i, int ip, double p) { jamevnt1_.P[ip-1][i-1] = p; }
   void   setV(int i, int ip, double v) { jamevnt1_.V[ip-1][i-1] = v; }
 
-  struct Jamevnt2 {
+  extern "C" struct {
     int NV;
     int NBARY;
     int NMESON;
-  };
-  extern "C" Jamevnt2 jamevnt2_;
+  } jamevnt2_;
 
   int    getNV()                       { return jamevnt2_.NV; }
   int    getNBARY()                    { return jamevnt2_.NBARY; }
@@ -108,13 +102,12 @@ namespace libjam {
   void   setNBARY(int n)               { jamevnt2_.NBARY = n; }
   void   setNMESON(int n)              { jamevnt2_.NMESON = n; }
 
-  struct Jamdat1 {
+  extern "C" struct {
     int    MSTC[200];
     double PARC[200];
     int    MSTD[200];
     double PARD[200];
-  };
-  extern "C" Jamdat1 jamdat1_;
+  } jamdat1_;
 
   int    getMSTC(int i) { return jamdat1_.MSTC[i-1]; }
   double getPARC(int i) { return jamdat1_.PARC[i-1]; }
@@ -126,16 +119,14 @@ namespace libjam {
   void   setPARD(int i, double p) { jamdat1_.PARD[i-1] = p; }
   void   addPARD(int i, double p) { jamdat1_.PARD[i-1] += p; }
 
-  struct Jamdat2 {
+  extern "C" struct {
     int    MSTE[200];
     double PARE[200];
-  };
-  extern "C" Jamdat2 jamdat2_;
+  } jamdat2_;
 
-  struct Jamdat3 {
+  extern "C" struct {
     char  FNAME[8][80];
-  };
-  extern "C" Jamdat3 jamdat3_;
+  } jamdat3_;
 
   char*  getFNAME(int i) {
     static char buf[81];
@@ -152,13 +143,12 @@ namespace libjam {
   }
   void   setFNAME(int i, std::string const& v) { setFNAME(i, v.c_str()); }
 
-  struct Jydat2 {
+  extern "C" struct {
     int    KCHG[7][500];
     double PMAS[4][500];
     double PARF[2000];
     double VCKM[4][4];
-  };
-  extern "C" Jydat2 jydat2_;
+  } jydat2_;
 
   int    getKCHG(int ip, int i) { return jydat2_.KCHG[i-1][ip-1]; }
   double getPMAS(int ip, int i) { return jydat2_.PMAS[i-1][ip-1]; }
@@ -168,18 +158,17 @@ namespace libjam {
   void   setPMAS(int ip, int i, double m) { jydat2_.PMAS[i-1][ip-1] = m; }
   void   setPARF        (int i, double p) { jydat2_.PARF[i-1]       = p; }
   void   setVCKM (int i, int j, double v) { jydat2_.VCKM[j-1][i-1]  = v; }
-  int    getBaryonNumber(int kc, int kf) { return isign(jydat2_.KCHG[5][kc-1],kf); }
+  int    getBaryonNumber(int kc, int kf) { return std::copysign(jydat2_.KCHG[5][kc-1], kf); }
 
 
   static const int KNDCAY1 = 4000; //should be 8000 for pythia62
 
-  struct Jydat3 {
+  extern "C" struct {
     int    MDCY[3][500];
     int    MDME[3][KNDCAY1];
     double BRAT[KNDCAY1];
     int    KFDP[5][KNDCAY1];
-  };
-  extern "C" Jydat3 jydat3_;
+  } jydat3_;
 
   int    getMDCY(int i, int j) { return jydat3_.MDCY[j-1][i-1]; }
   int    getMDME(int i, int j) { return jydat3_.MDME[j-1][i-1]; }
@@ -190,10 +179,9 @@ namespace libjam {
   void   setBRAT(int i, double b)     { jydat3_.BRAT[i-1]      = b; }
   void   setKFDP(int i, int j, int k) { jydat3_.KFDP[j-1][i-1] = k; }
 
-  struct Jydat4 {
+  extern "C" struct {
     char  CHAF[2][500][16];	// here I needed manual intervention
-  };
-  extern "C" Jydat4 jydat4_;
+  } jydat4_;
 
   //---------------------------------------------------------------------------
   // JAM routines
@@ -262,40 +250,19 @@ namespace libjam {
   // Utilities
 
   void printParticleInformation(int i) {
-    std::cout
-      << i
-      << " KF= " << getK(2, i)
-      << std::endl
-      << " K= "   << getK(1, i)
-      << std::setw(5) << getK(2, i)
-      << std::setw(5) << getK(3, i)
-      << std::setw(5) << getK(4, i)
-      << std::setw(5) << getK(5, i)
-      << std::setw(5) << getK(6, i)
-      << std::setw(5) << getK(7, i)
-      << std::setw(5) << getK(8, i)
-      << std::setw(5) << getK(9, i)
-      << std::setw(5) << getK(10, i)
-      << std::setw(5) << getK(11, i)
-      << std::endl
-      << " R= "   << getR(1, i)
-      << std::setw(10) << getR(2, i)
-      << std::setw(10) << getR(3, i)
-      << std::setw(10) << getR(4, i)
-      << std::setw(10) << getR(5, i)
-      << std::endl
-      << " P= "   << getP(1, i)
-      << std::setw(15) << getP(2, i)
-      << std::setw(15) << getP(3, i)
-      << std::setw(15) << getP(4, i)
-      << std::setw(15) << getP(5, i)
-      << std::endl
-      << " V= "   << getV(1, i)
-      << std::setw(10) << getV(2, i)
-      << std::setw(10) << getV(3, i)
-      << std::setw(10) << getV(4, i)
-      << std::setw(10) << getV(5, i)
-      << std::endl;
+    std::printf("%6d   ", i);
+    for (int k = 1; k <= 11; k++)
+      std::printf(" %5d", getK(k, i));
+    std::printf("   ");
+    for (int k = 1; k <= 5; k++)
+      std::printf(" %13.6g", getR(k, i));
+    std::printf("   ");
+    for (int k = 1; k <= 5; k++)
+      std::printf(" %13.6g", getP(k, i));
+    std::printf("   ");
+    for (int k = 1; k <= 5; k++)
+      std::printf(" %13.6g", getV(k, i));
+    std::printf("\n");
   }
 
   // ks: 安定粒子なら 1, 不安定粒子なら 2.

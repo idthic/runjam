@@ -41,10 +41,7 @@ runjam_OBJS := \
   $(OBJDIR)/ksh/integrator.o \
   $(OBJDIR)/ParticleSample.o \
   $(OBJDIR)/ResonanceList.o \
-  $(OBJDIR)/ParticleSampleHydrojet.o \
-  $(OBJDIR)/ParticleSampleRead.o \
-  $(OBJDIR)/ParticleSamplePhasespace.o \
-  $(OBJDIR)/ParticleSampleViscous.o
+  $(patsubst %.cpp,$(OBJDIR)/%.o,$(wildcard ParticleSample*.cpp))
 runjam_LIBS := -ljam $(LIBS)
 
 directories += $(OBJDIR) $(OBJDIR)/spectra $(OBJDIR)/ksh
