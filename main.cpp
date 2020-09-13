@@ -19,59 +19,22 @@
 using namespace idt;
 using namespace idt::runjam;
 
-void writePhasespaceData(std::FILE* f, Particle* begin, Particle* end, int ntest = 1) {
-  std::size_t const nhadron = end - begin;
-  std::fprintf(f, "%-4zd %d\n", nhadron, ntest);
-  for (; begin != end; begin++) {
-    Particle& particle = *begin;
-
-    // (1) kf ... PDG particle code
-    int const kf = particle.pdg;
-    if (kf == 0) {
-      std::cerr << "runjam: invalid value of kf (PDG particle code)." << std::endl;
-      std::exit(EXIT_FAILURE);
-    }
-
-    int const ks = libjam::determineStableCode(kf);
-
-    // (3) px,py,pz,m
-    double const px = particle.px;
-    double const py = particle.py;
-    double const pz = particle.pz;
-    double const pe = particle.e;
-    double const m = particle.mass;
-
-    // (3) x,y,z,t
-    double const x = particle.x;
-    double const y = particle.y;
-    double const z = particle.z;
-    double const t = particle.t;
-
-    std::fprintf(
-      f, "%5d %9d %13.6g %13.6g %13.6g %13.6g %13.6g %13.6g %13.6g %13.6g\n",
-      ks, kf, px, py, pz, m, x, y, z, t);
-  }
-  std::fprintf(f, "-999\n");
-}
-
-void writePhasespaceData(std::ofstream& ofs) {
-  int const nv = libjam::getNV();
-  int const numberTestParticle = libjam::getMSTC(5);
-  ofs << nv << "  " << numberTestParticle << std::endl;
-  for (int i = 1; i <= nv; i++) {
-    //if(libjam::getK(1,i) > 10) continue;
-    int ks = libjam::getK(1, i);
-    int kf = libjam::getK(2, i);
-    double px = libjam::getP(1, i);
-    double py = libjam::getP(2, i);
-    double pz = libjam::getP(3, i);
-    //double pe=libjam::getP(4, i);
-    double m = libjam::getP(5, i);
-    double x = libjam::getR(1, i);
-    double y = libjam::getR(2, i);
-    double z = libjam::getR(3, i);
-    double t = libjam::getR(4, i);
-    ofs << std::setw(5) << ks
+void writePhasespaceData(std::ofstream& ofs, Particle const* begin, Particle const* end, double ntest = 1.0) {
+  std::size_t const nv = end - begin;
+  ofs << nv << "  " << ntest << std::endl;
+  while (begin != end) {
+    Particle const& part = *begin++;
+    int const ks = libjam::determineStableCode(part.pdg);
+    int const kf = part.pdg;
+    double const px = part.px;
+    double const py = part.py;
+    double const pz = part.pz;
+    double const m  = part.mass;
+    double const x  = part.x;
+    double const y  = part.y;
+    double const z  = part.z;
+    double const t  = part.t;
+    ofs << std::setw(5)  << ks
         << std::setw(10) << kf
         << std::setw(14) << px
         << std::setw(14) << py
@@ -85,12 +48,46 @@ void writePhasespaceData(std::ofstream& ofs) {
   }
 }
 
+void writePhasespaceBinary(std::ofstream& ofs, Particle const* begin, Particle const* end, double ntest = 1.0) {
+  std::uint32_t const nv = libjam::getNV();
+  ofs.write("EvPh", 4);
+  ofs.write((char*) &nv, 4);
+  while (begin != end) {
+    Particle const& part = *begin++;
+    std::size_t const ks = libjam::determineStableCode(part.pdg);
+    std::size_t const kf = part.pdg;
+    float const px = part.px;
+    float const py = part.py;
+    float const pz = part.pz;
+    float const m  = part.mass;
+    float const x  = part.x;
+    float const y  = part.y;
+    float const z  = part.z;
+    float const t  = part.t;
+    ofs.write((char*) &ks, 4);
+    ofs.write((char*) &kf, 4);
+    ofs.write((char*) &px, 4);
+    ofs.write((char*) &py, 4);
+    ofs.write((char*) &pz, 4);
+    ofs.write((char*) &m, 4);
+    ofs.write((char*) &x, 4);
+    ofs.write((char*) &y, 4);
+    ofs.write((char*) &z, 4);
+    ofs.write((char*) &t, 4);
+  }
+}
+
 class IObserver {
 public:
   virtual void initialize() = 0;
-  virtual void process_event() = 0;
+  virtual void process_event(Particle const* begin, Particle const* end, double ntest) = 0;
   virtual void finalize() = 0;
   virtual ~IObserver() {}
+
+public:
+  void process_event(std::vector<Particle> const& list, double ntest) {
+    return process_event(list.data(), list.data() + list.size(), ntest);
+  }
 };
 
 class FileWriterBase: public IObserver {
@@ -117,8 +114,8 @@ public:
 struct PhasespaceDataWriter: public FileWriterBase {
   typedef FileWriterBase base;
   PhasespaceDataWriter(std::string const& filename): base(filename) {}
-  virtual void process_event() override {
-    writePhasespaceData(ofs);
+  virtual void process_event(Particle const* begin, Particle const* end, double ntest) override {
+    writePhasespaceData(ofs, begin, end, ntest);
   }
   virtual void finalize() override {
     if (ofs.is_open())
@@ -131,32 +128,8 @@ struct PhasespaceBinaryWriter: public FileWriterBase {
   typedef FileWriterBase base;
   PhasespaceBinaryWriter(std::string const& filename):
     base(filename, std::ios::out | std::ios::binary) {}
-  virtual void process_event() override {
-    std::uint32_t const nv = libjam::getNV();
-    ofs.write("EvPh", 4);
-    ofs.write((char*) &nv, 4);
-    for (std::uint32_t i = 1; i <= nv; i++) {
-      std::int32_t const ks = libjam::getK(1,i);
-      std::int32_t const kf = libjam::getK(2,i);
-      float const px = libjam::getP(1,i);
-      float const py = libjam::getP(2,i);
-      float const pz = libjam::getP(3,i);
-      float const m = libjam::getP(5,i);
-      float const x = libjam::getR(1,i);
-      float const y = libjam::getR(2,i);
-      float const z = libjam::getR(3,i);
-      float const t = libjam::getR(4,i);
-      ofs.write((char*) &ks, 4);
-      ofs.write((char*) &kf, 4);
-      ofs.write((char*) &px, 4);
-      ofs.write((char*) &py, 4);
-      ofs.write((char*) &pz, 4);
-      ofs.write((char*) &m, 4);
-      ofs.write((char*) &x, 4);
-      ofs.write((char*) &y, 4);
-      ofs.write((char*) &z, 4);
-      ofs.write((char*) &t, 4);
-    }
+  virtual void process_event(Particle const* begin, Particle const* end, double ntest) override {
+    writePhasespaceBinary(ofs, begin, end, ntest);
   }
 };
 
@@ -168,11 +141,11 @@ public:
   IndexedPhasespaceDataWriter(std::string const& outdir, std::string const& suffix, std::size_t startIndex):
     outdir(outdir), suffix(suffix), index(startIndex) {}
   virtual void initialize() override {}
-  virtual void process_event() {
+  virtual void process_event(Particle const* begin, Particle const* end, double ntest) {
     filename.resize(outdir.size() + suffix.size() + 50);
-    std::sprintf(&filename[0], "%s/dens%06zd%s", outdir.c_str(), index++, suffix.c_str());
-    std::ofstream ofs(&filename[0]);
-    writePhasespaceData(ofs);
+    std::sprintf(filename.data(), "%s/dens%06zd%s", outdir.c_str(), index++, suffix.c_str());
+    std::ofstream ofs(filename.data());
+    writePhasespaceData(ofs, begin, end, ntest);
     ofs << -999 << std::endl;
   }
   virtual void finalize() override {}
@@ -248,6 +221,7 @@ public:
     }
   }
 
+private:
   void initializeJam() {
     // Initialize JAM
     libjam::setMSTC(1, cfg_jamseed); // int seed = 1921;
@@ -304,84 +278,9 @@ public:
     libjam::setPARD(16, 10.0); // user defined frame.
     libjam::jamInit(this->cfg_nevent, bmin, bmax, dt, nstep, frame.c_str(), "p ", "p ", "2gev");
   }
+
   void finalizeJam() {
     libjam::jamFin();
-  }
-
-public:
-  void  generateEvent(ParticleSampleBase& psamp, std::string const& cascadeMode) {
-    int const nevent = this->cfg_nevent;
-
-    if (nevent > 0)
-      psamp.setAdviceNumberOfExpectedEvents(nevent);
-
-    bool const flagSampleOnly = cascadeMode == "sample";
-    bool const flagDecayOnly = cascadeMode == "decay";
-
-    int nprint = 1;
-
-    for (auto const& observer: onbefore)
-      observer->initialize();
-    for (auto const& observer: onafter)
-      observer->initialize();
-
-    double averageParticleNumber0 = 0.0;
-    double averageParticleNumber = 0.0;
-    for (int iev = 1; iev <= nevent; iev++) {
-      psamp.update();
-      forceJamMass(psamp);
-      //psamp->adjustCenterOfMassByLorentzBoost();
-      double const ntest = psamp.getOverSamplingFactor();
-      libjam::setMSTC(5, ntest);
-      storeParticlesInJam(psamp.begin(), psamp.end());
-
-      if (iev % nprint == 0) {
-        std::cout
-          << "runjam:iev=" << iev << ": "
-          << "sampling done. The initial test-particle number is nv=" << libjam::getNV() << "." << std::endl;
-      }
-
-      averageParticleNumber0 += (double) libjam::getNV() / ntest;
-
-      for (auto const& observer: onbefore)
-        observer->process_event();
-
-      if (flagSampleOnly) continue;
-
-      if (flagDecayOnly) {
-        libjam::finalResonanceDecay();
-        if (iev % nprint == 0) {
-          std::cout
-            << "runjam:iev=" << iev << ": "
-            << "decay done." << std::endl;
-        }
-      } else {
-        libjam::jamEvt(iev);
-        if (iev % nprint == 0) {
-          std::cout
-            << "runjam:iev=" << iev << ": "
-            << "cascade done. The average collision number is "
-            << (libjam::getMSTD(41) + libjam::getMSTD(42)) / ntest << "." << std::endl;
-        }
-      }
-
-      averageParticleNumber += (double) libjam::getNV() / ntest;
-
-      for (auto const& observer: onafter)
-        observer->process_event();
-    }
-
-    for (auto const& observer: onbefore)
-      observer->finalize();
-    for (auto const& observer: onafter)
-      observer->finalize();
-
-    averageParticleNumber0 /= nevent;
-    averageParticleNumber /= nevent;
-    std::cout
-      << "runjam: the average number of hadrons are "
-      << averageParticleNumber0 << " (before JAM) -> "
-      << averageParticleNumber << " (after JAM)" << std::endl;
   }
 
   static void storeParticlesInJam(Particle const* begin, Particle const* end) {
@@ -453,52 +352,109 @@ public:
     libjam::setNBARY(nbary);    // set total number of baryons
     libjam::setNMESON(nmeson);  // set total number of mesons
   }
-};
 
-void doCascade(runjam_context const& ctx, std::string const& type, std::string const& inputfile, std::string const& cascadeMode) {
-  std::unique_ptr<ParticleSampleBase> psamp = CreateParticleSample(ctx, type, inputfile);
-  if (!psamp) {
-    std::cerr << "runjam: failed to initialize ParticleSample of type '" << type << "'." <<  std::endl;
-    std::exit(1);
-  }
-
-  Program prog(ctx);
-  prog.initializeJam();
-  prog.generateEvent(*psamp, cascadeMode);
-  prog.finalizeJam();
-}
-
-void doGeneratePhasespace0(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
-  std::unique_ptr<ParticleSampleBase> psamp = CreateParticleSample(ctx, type, inputfile);
-  if (!psamp) {
-    std::cerr << "runjam: failed to initialize ParticleSample of type '" << type << "'." <<  std::endl;
-    std::exit(1);
-  }
-
-  int const nevent = ctx.nevent(1000);
-  std::string const outdir = ctx.outdir();
-  int const ibase = ctx.get_config("runjam_output_index_start", 0);
-  if (nevent > 0)
-    psamp->setAdviceNumberOfExpectedEvents(nevent);
-
-  for (int i = 0; i < nevent; i++) {
-    psamp->update();
-    forceJamMass(*psamp);
-
-    std::vector<char> buff(outdir.size() + 50);
-    char* pbuff = &buff[0];
-    std::sprintf(pbuff, "%s/dens%06d_phasespace0.dat", outdir.c_str(), ibase + i);
-    std::FILE* f = std::fopen(pbuff, "w");
-    if (!f) {
-      std::cerr << "runjam: failed to open the file '" << pbuff << "'" << std::endl;
-      std::exit(1);
+  static int loadParticlesFromJam(std::vector<Particle>& list) {
+    list.clear();
+    int const nv = libjam::getNV();
+    int const ntest = libjam::getMSTC(5);
+    for (int i = 1; i <= nv; i++) {
+      //if(libjam::getK(1,i) > 10) continue;
+      list.emplace_back();
+      Particle& part = list.back();
+      part.pdg  = libjam::getK(2, i);
+      part.mass = libjam::getP(5, i);
+      part.px = libjam::getP(1, i);
+      part.py = libjam::getP(2, i);
+      part.pz = libjam::getP(3, i);
+      part.e  = libjam::getP(4, i);
+      part.x  = libjam::getR(1, i);
+      part.y  = libjam::getR(2, i);
+      part.z  = libjam::getR(3, i);
+      part.t  = libjam::getR(4, i);
     }
-    writePhasespaceData(f, psamp->begin(), psamp->end());
-    std::fclose(f);
+    return ntest;
   }
-}
 
-//-----------------------------------------------------------------------------
+public:
+  void  generateEvent(ParticleSampleBase& psamp, std::string const& cascadeMode) {
+    int const nprint = 1;
+    bool const useJAM = cascadeMode != "sample";
+    bool const is_decay = cascadeMode == "decay";
+
+    int const nevent = this->cfg_nevent;
+    if (nevent > 0)
+      psamp.setAdviceNumberOfExpectedEvents(nevent);
+
+    for (auto const& observer: onbefore)
+      observer->initialize();
+    if (useJAM) {
+      this->initializeJam();
+      for (auto const& observer: onafter)
+        observer->initialize();
+    }
+
+    std::vector<Particle> final_state;
+
+    double averageParticleNumber0 = 0.0;
+    double averageParticleNumber = 0.0;
+    for (int iev = 1; iev <= nevent; iev++) {
+      psamp.update();
+      forceJamMass(psamp);
+      //psamp->adjustCenterOfMassByLorentzBoost();
+      if (iev % nprint == 0) {
+        std::cout
+          << "runjam:iev=" << iev << ": "
+          << "sampling done. The initial test-particle number is nv=" << psamp.size() << "." << std::endl;
+      }
+
+      double const ntest = psamp.getOverSamplingFactor();
+      libjam::setMSTC(5, ntest);
+
+      averageParticleNumber0 += (double) psamp.size() / ntest;
+      for (auto const& observer: onbefore)
+        observer->process_event(psamp.begin(), psamp.end(), ntest);
+
+      if (!useJAM) continue;
+
+      storeParticlesInJam(psamp.begin(), psamp.end());
+      if (is_decay) {
+        libjam::finalResonanceDecay();
+        if (iev % nprint == 0) {
+          std::cout
+            << "runjam:iev=" << iev << ": "
+            << "decay done." << std::endl;
+        }
+      } else {
+        libjam::jamEvt(iev);
+        if (iev % nprint == 0) {
+          std::cout
+            << "runjam:iev=" << iev << ": "
+            << "cascade done. The average collision number is "
+            << (libjam::getMSTD(41) + libjam::getMSTD(42)) / ntest << "." << std::endl;
+        }
+      }
+      loadParticlesFromJam(final_state);
+
+      averageParticleNumber += (double) final_state.size() / ntest;
+      for (auto const& observer: onafter)
+        observer->process_event(final_state, ntest);
+    }
+    averageParticleNumber0 /= nevent;
+    averageParticleNumber /= nevent;
+    std::cout
+      << "runjam: the average number of hadrons are "
+      << averageParticleNumber0 << " (before JAM) -> "
+      << averageParticleNumber << " (after JAM)" << std::endl;
+
+    for (auto const& observer: onbefore)
+      observer->finalize();
+    if (useJAM) {
+      for (auto const& observer: onafter)
+        observer->finalize();
+      this->finalizeJam();
+    }
+  }
+};
 
 int main(int argc, char *argv[]) {
   runjam_context ctx;
@@ -512,10 +468,14 @@ int main(int argc, char *argv[]) {
   idt::util::set_random_seed(ctx.seed());
 
   if (args.subcommand == "cascade" || args.subcommand == "decay" || args.subcommand == "sample") {
-    doCascade(ctx, args.initType, args.initPath, args.subcommand);
-  } else if (args.subcommand == "generate-phasespace0") {
-    // test 用
-    doGeneratePhasespace0(ctx, args.initType, args.initPath);
+    std::unique_ptr<ParticleSampleBase> psamp = CreateParticleSample(ctx, args.initType, args.initPath);
+    if (!psamp) {
+      std::cerr << "runjam: failed to initialize ParticleSample of type '" << args.initType << "'." <<  std::endl;
+      std::exit(1);
+    }
+
+    Program prog(ctx);
+    prog.generateEvent(*psamp, args.subcommand);
   } else if (args.subcommand == "test-viscous-correction-integration") {
     return checkViscousCooperFryeInterpolated(true);
   } else {
