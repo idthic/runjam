@@ -93,8 +93,23 @@ function main {
     echo "#define PACKAGE_PREFIX  \"$PREFIX\""
     echo "#define PACKAGE_BUILD   \"$PWD\""
     echo "#define CONFIG_JAM_MXV  $libjam_MXV"
+    echo 'namespace idt {'
+    echo 'namespace runjam {'
+    echo '  extern const char* package_hash;'
+    echo '}'
+    echo '}'
     echo "#endif"
   } > config.hpp
+
+  {
+    echo '#include "config.hpp"'
+    echo 'namespace idt {'
+    echo 'namespace runjam {'
+    echo '  const char* package_hash = "";'
+    echo '}'
+    echo '}'
+  } > config.cpp
+  ./mktool.sh update-commit-hash
   echo ---------------------------------------
 }
 

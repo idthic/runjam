@@ -96,7 +96,7 @@ std::string runjam_context::resodata() const {
 namespace {
 
   static void print_version() {
-    std::cout << "runjam (idt) " << PACKAGE_VERSION << PACKAGE_HASH << std::endl;
+    std::cout << "runjam (idt) " << PACKAGE_VERSION << idt::runjam::package_hash << std::endl;
   }
 
   static void print_help() {

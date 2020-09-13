@@ -463,7 +463,7 @@ int main(int argc, char *argv[]) {
   int const ext = args.read(argc, argv, ctx);
   if (ext) return ext;
 
-  std::cout << "runjam [version " << PACKAGE_VERSION << PACKAGE_HASH << ", seed = " << ctx.seed() << "]" << std::endl;
+  std::cout << "runjam [version " << PACKAGE_VERSION << idt::runjam::package_hash << ", seed = " << ctx.seed() << "]" << std::endl;
 
   idt::util::set_random_seed(ctx.seed());
 

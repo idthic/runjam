@@ -3,6 +3,8 @@
 all:
 .PHONY: all clean
 
+PRECMD := $(shell ./mktool.sh update-commit-hash)
+
 #------------------------------------------------------------------------------
 # Compile config
 
@@ -19,13 +21,8 @@ user_LIBS     := $(LIBS)
 INSDIR := $(DESTDIR)$(PREFIX)
 libjam_LIBDIR := $(libjam_PREFIX)/lib
 
-PACKAGE_HASH := $(shell git show -s --format=%h 2>/dev/null)
-ifneq ($(PACKAGE_HASH),)
-  PACKAGE_HASH := +$(PACKAGE_HASH)
-endif
-
 CXXFLAGS := $(user_CXXFLAGS) -march=native -O3 -std=gnu++11
-CPPFLAGS =  $(user_CPPFLAGS) -I . -MD -MP -MF $(@:.o=.dep) -D'PACKAGE_HASH="$(PACKAGE_HASH)"'
+CPPFLAGS =  $(user_CPPFLAGS) -I . -MD -MP -MF $(@:.o=.dep)
 LDFLAGS  := $(user_LDFLAGS)  -L $(libjam_LIBDIR) -Wl,-rpath,$(libjam_LIBDIR)
 LIBS     := $(user_LIBS)
 
@@ -36,6 +33,7 @@ LIBS     := $(user_LIBS)
 OBJDIR := obj
 
 runjam_OBJS := \
+  $(OBJDIR)/config.o \
   $(OBJDIR)/util.o \
   $(OBJDIR)/args.o \
   $(OBJDIR)/main.o \
@@ -55,7 +53,7 @@ $(OBJDIR)/%.o: %.cpp | $(OBJDIR) $(OBJDIR)/spectra $(OBJDIR)/ksh
 
 all: runjam.exe
 runjam.exe: $(runjam_OBJS)
-	$(CXX) $(LDFLAGS) -o $@ $^ $(runjam_LIBS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(runjam_LIBS)
 
 
 #---------------------------------------

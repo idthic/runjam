@@ -6,6 +6,7 @@
 
 /config.mk
 /config.hpp
+/config.cpp
 /*.exe
 /dist
 /out
