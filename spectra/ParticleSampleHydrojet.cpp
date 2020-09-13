@@ -374,39 +374,16 @@ namespace {
 
   private:
     bool flag_negative_contribution = false;
-    bool cfg_reverse_particles;
-    bool cfg_shuffle_particles;
-
-  private:
-    std::string fn_freezeout_dat;
-    std::string fn_position_dat;
-  public:
-    void setHypersurfaceFilenames(std::string const& fn_freezeout_dat, std::string const& fn_position_dat) {
-      this->fn_freezeout_dat = fn_freezeout_dat;
-      this->fn_position_dat = fn_position_dat;
-    }
 
   private:
     int    cfg_baryon_disable;
     double cfg_baryon_tmpf;  // [unit: fm^{-1}]
     double cfg_baryon_mubf;  // [unit: fm^{-1}]
     double cfg_baryon_meanf;
-  public:
-    void setBaryonFree(int i) { cfg_baryon_disable = i; }
-    void setTMPF(double t) { cfg_baryon_tmpf = t / hbarc_GeVfm; }
-    void setMUBF(double m) { cfg_baryon_mubf = m / hbarc_GeVfm; }
 
-  private:
-    double dx, dy, dh, dtau;
-  public:
-    void setDx(double d) { dx = d; }
-    void setDy(double d) { dy = d; }
-    void setDh(double d) { dh = d; }
-    void setDtau(double d) { dtau = d; }
-    double getDtau() { return dtau; }
-    double getDx() { return dx; }
-    double getDy() { return dy; }
-    double getDh() { return dh; }
+    double cfg_dx, cfg_dy, cfg_dh, cfg_dtau;
+    bool cfg_reverse_particles;
+    bool cfg_shuffle_particles;
 
   private:
     bool cache_available;
@@ -416,6 +393,15 @@ namespace {
     bool openCooperFryeCacheForRead();
     void createCooperFryeCache(int ireso);
     void createCooperFryeCache();
+
+  private:
+    std::string fn_freezeout_dat;
+    std::string fn_position_dat;
+  public:
+    void setHypersurfaceFilenames(std::string const& fn_freezeout_dat, std::string const& fn_position_dat) {
+      this->fn_freezeout_dat = fn_freezeout_dat;
+      this->fn_position_dat = fn_position_dat;
+    }
 
   public:
     ParticleSampleHydrojet(runjam_context const& ctx, std::string const& cachedir, std::string suffix);
@@ -443,21 +429,17 @@ namespace {
   ParticleSampleHydrojet::ParticleSampleHydrojet(
     runjam_context const& ctx, std::string const& cachedir, std::string suffix
   ): base(ctx), rlist(ctx), m_hf(ctx) {
-    int const nreso_loop = this->rlist.size();
-    this->cache_fname.resize(nreso_loop);
-    for (int i = 0; i < nreso_loop; i++) {
-      std::ostringstream sstr;
-      if (cachedir.size() > 0) sstr << cachedir << "/";
-      sstr << "ELEMENT." << rlist[i].key << suffix;
-      cache_fname[i] = sstr.str();
-    }
+    // Freezeout constants
+    cfg_baryon_disable = ctx.get_config("hydrojet_baryonfree", 1);
+    cfg_baryon_tmpf    = ctx.get_config("hydrojet_TMPF" , 0.16) / hbarc_GeVfm;
+    cfg_baryon_mubf    = ctx.get_config("hydrojet_MUBF" , 1.6 ) / hbarc_GeVfm;
+    cfg_baryon_meanf   = ctx.get_config("hydrojet_MEANF", 0.45) / hbarc_GeVfm;
 
-    cache_available = false;
-
-    // constants
-    cfg_baryon_tmpf = 0.16 / hbarc_GeVfm;
-    cfg_baryon_mubf = 1.6 / hbarc_GeVfm;
-    cfg_baryon_meanf = 0.45 / hbarc_GeVfm;
+    // Hypersurface element
+    cfg_dtau = ctx.get_config("hydrojet_deltat", 0.3);
+    cfg_dx   = ctx.get_config("hydrojet_deltax", 0.3);
+    cfg_dy   = ctx.get_config("hydrojet_deltay", 0.3);
+    cfg_dh   = ctx.get_config("hydrojet_deltah", 0.3);
 
     // 2013/04/23, KM, reverse z axis
     this->cfg_reverse_particles = ctx.get_config("hydrojet_reverse_particles", false);
@@ -468,6 +450,17 @@ namespace {
     this->cfg_shuffle_particles = ctx.get_config("hydrojet_shuffle_particles", false);
     if (this->cfg_shuffle_particles)
       std::cout << "ParticleSampleHydrojet: ShuffleParticleList mode enabled!" << std::endl;
+
+    // Cache files
+    this->cache_available = false;
+    int const nreso_loop = this->rlist.size();
+    this->cache_fname.resize(nreso_loop);
+    for (int i = 0; i < nreso_loop; i++) {
+      std::ostringstream sstr;
+      if (cachedir.size() > 0) sstr << cachedir << "/";
+      sstr << "ELEMENT." << rlist[i].key << suffix;
+      cache_fname[i] = sstr.str();
+    }
   }
 
   // 一度に 151x2 のファイルを開いて書き込むとディスクに悪いので共鳴毎に処理する。
@@ -753,10 +746,10 @@ namespace {
     double p[58], pw[58];
 
     double const ptmid = 1e3 / hbarc_MeVfm;
-    double const dx = getDx();
-    double const dy = getDy();
-    double const dh = getDh();
-    double const dtau = getDtau();
+    double const dx = this->cfg_dx;
+    double const dy = this->cfg_dy;
+    double const dh = this->cfg_dh;
+    double const dtau = this->cfg_dtau;
     double const vz = std::tanh(yv);
     double const gamma =  std::cosh(yv) / std::sqrt(1.0 - (vx * vx + vy * vy) * std::cosh(yv) * std::cosh(yv));
     double const beta = 1.0 / m_hf.tf;
@@ -891,14 +884,7 @@ namespace {
       std::string const cachedir = ctx.indir();
       std::string const fn_freezeout_dat = inputfile + "/freezeout.dat";
       std::string const fn_position_dat = inputfile + "/position.dat";
-
       ParticleSampleHydrojet* psamp = new ParticleSampleHydrojet(ctx, cachedir, ".PC170");
-      psamp->setDtau(ctx.get_config("hydrojet_deltat", 0.3));
-      psamp->setDx(ctx.get_config("hydrojet_deltax", 0.3));
-      psamp->setDy(ctx.get_config("hydrojet_deltay", 0.3));
-      psamp->setDh(ctx.get_config("hydrojet_deltah", 0.3));
-
-      psamp->setBaryonFree(ctx.get_config("hydrojet_baryonfree", 1));
       psamp->setHypersurfaceFilenames(fn_freezeout_dat, fn_position_dat);
       return std::unique_ptr<ParticleSampleBase>(psamp);
     }
