@@ -12,8 +12,8 @@
 
 #include "config.hpp"
 #include "args.hpp"
-#include "spectra/ParticleSample.hpp"
-#include "spectra/ParticleSampleViscous.hpp"
+#include "ParticleSample.hpp"
+#include "ParticleSampleViscous.hpp"
 #include "libjam.hpp"
 
 using namespace idt;

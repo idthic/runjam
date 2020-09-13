@@ -65,14 +65,14 @@ namespace {
 
     error_failed_to_open:
       std::cerr
-        << "spectra/ParticleSampleRead: failed to open the file ("
+        << "ParticleSampleRead: failed to open the file ("
         << this->fname_particlesample_dat << ")" << std::endl;
       std::exit(EXIT_FAILURE);
       return; /*NOTREACHED*/
 
     error_invalid_format:
       std::cerr
-        << this->fname_particlesample_dat << ":" << iline << ": invalid format (spectra/ParticleSampleRead)"
+        << this->fname_particlesample_dat << ":" << iline << ": invalid format (ParticleSampleRead)"
         << std::endl;
       std::exit(EXIT_FAILURE);
       return; /*NOTREACHED*/

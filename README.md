@@ -39,10 +39,12 @@ $ make install
 
 Please check the output of `runjam.exe --help`.
 
-### Option `--resodata, runjam_resodata=FILE`
+### Resonance list
 
-This option can be used to select the file that contains the list of sampled particles.
+The resonance list can be specified by the option `-r, --resodata, runjam_resodata=FILE`.
+This option selects the file that contains the list of particle species to be sampled.
 Empty lines and lines starting with `#` are ignored.
+Each line contains the information of a particle species with the following format:
 
 - Column 1: Mass
 - Column 2: Degeneracy
@@ -67,7 +69,7 @@ The default is `eospce=6` and `kintmp=5` so that `ResonanceJam.dat` is used.
   - `kintmp=5`: `ResonancePCE.T160.dat`. Freezeout temperature 160 MeV
 - `eospce=4`: `ResonanceEosqJam.dat`. EOS-Q
 - `eospce=5`: `ResonancePCE.New.dat`. `eospce=1` with updated masses
-- `eospce=10`: `ResonanceCharged.dat`.
+- `eospce=10`: `ResonanceCharged.Massless.dat`.
 - `eospce=11`: `ResonanceCharged.dat`.
 - `eospce=12` The same as `eospce=11` but with the chemical potentials (PCE)
   - `kintmp=1`: `ResonanceCharged.T080.dat`. Freezeout temperature 80 MeV

@@ -39,12 +39,12 @@ runjam_OBJS := \
   $(OBJDIR)/main.o \
   $(OBJDIR)/libjam.o \
   $(OBJDIR)/ksh/integrator.o \
-  $(OBJDIR)/spectra/ParticleSample.o \
-  $(OBJDIR)/spectra/ResonanceList.o \
-  $(OBJDIR)/spectra/ParticleSampleHydrojet.o \
-  $(OBJDIR)/spectra/ParticleSampleRead.o \
-  $(OBJDIR)/spectra/ParticleSamplePhasespace.o \
-  $(OBJDIR)/spectra/ParticleSampleViscous.o
+  $(OBJDIR)/ParticleSample.o \
+  $(OBJDIR)/ResonanceList.o \
+  $(OBJDIR)/ParticleSampleHydrojet.o \
+  $(OBJDIR)/ParticleSampleRead.o \
+  $(OBJDIR)/ParticleSamplePhasespace.o \
+  $(OBJDIR)/ParticleSampleViscous.o
 runjam_LIBS := -ljam $(LIBS)
 
 directories += $(OBJDIR) $(OBJDIR)/spectra $(OBJDIR)/ksh

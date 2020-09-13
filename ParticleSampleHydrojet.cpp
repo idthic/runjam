@@ -19,8 +19,8 @@
 #include <util.hpp>
 #include <args.hpp>
 #include <ksh/integrator.hpp>
-#include <spectra/ResonanceList.hpp>
-#include <spectra/ParticleSample.hpp>
+#include <ResonanceList.hpp>
+#include <ParticleSample.hpp>
 
 using namespace idt;
 using namespace idt::runjam;

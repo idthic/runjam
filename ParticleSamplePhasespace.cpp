@@ -116,7 +116,7 @@ namespace {
 
     error_failed_to_open:
       std::cerr
-        << "spectra/ParticleSamplePhasespace.cpp(ParticleSamplePhasespace::update): failed to open the file ("
+        << "ParticleSamplePhasespace.cpp(ParticleSamplePhasespace::update): failed to open the file ("
         << this->fname_phasespace_dat << ")" << std::endl;
       std::exit(EXIT_FAILURE);
       return; /*NOTREACHED*/
@@ -247,7 +247,7 @@ namespace {
 
     error_failed_to_open:
       std::cerr
-        << "spectra/ParticleSamplePhasespace (ParticleSampleReadPhasespaceBinary): failed to open the file ("
+        << "ParticleSamplePhasespace (ParticleSampleReadPhasespaceBinary): failed to open the file ("
         << this->fname_phasespace_bin << ")" << std::endl;
       std::exit(EXIT_FAILURE);
       return; /*NOTREACHED*/
