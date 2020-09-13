@@ -18,7 +18,36 @@ namespace fsys {
 using namespace idt::runjam;
 
 std::string runjam_context::resodata() const {
-  std::string file = this->get_config<std::string>("runjam_resodata", "ResonanceJam.dat");
+  std::string file = "ResonanceJam.dat";
+  if (!read_config(file, "runjam_resodata")) {
+    int const eospce = this->get_config("hydrojet_eospce", 6);
+    int const kintmp = this->get_config("hydrojet_kintmp", 5);
+    switch (eospce) {
+    case 0: file = "ResonancePCE.dat"; break; // 21 resonances
+    case 1: // 21 resonances with PCE
+      switch (kintmp) {
+      case 1: file = "ResonancePCE.T080.dat"; break;
+      case 2: file = "ResonancePCE.T100.dat"; break;
+      case 3: file = "ResonancePCE.T120.dat"; break;
+      case 4: file = "ResonancePCE.T140.dat"; break;
+      case 5: file = "ResonancePCE.T160.dat"; break;
+      default:
+        std::cerr << "runjam: unsupported kintmp=" << kintmp << "." << std::endl;
+        std::exit(1);
+        break;
+      }
+    case 2: case 3:
+      file = "ResonanceJam.dat"; // 151 resonances from JAM
+      break;
+    case 4: file = "ResonanceEosqJam.dat"; break; // 75 resonances
+    case 5: file = "ResonancePCE.New.dat"; break; // 21 resonances (data updated)
+    case 6: break; // use specified file
+    default:
+      std::cerr << "runjam: unsupported eospce=" << eospce << "." << std::endl;
+      std::exit(1);
+      break;
+    }
+  }
 
   if (fsys::is_file(file.c_str())) return file;
 

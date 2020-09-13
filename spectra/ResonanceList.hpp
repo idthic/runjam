@@ -49,17 +49,6 @@ namespace runjam {
     virtual ~ResonanceList() {}
   };
 
-  class ResonanceListPCE: public ResonanceList {
-    typedef ResonanceList base;
-  private:
-    static ResonanceRecord resT[5][21];
-
-    void initialize(int kineticTemp, int eos_pce,std::string const& fn_resodata);
-  public:
-    ResonanceListPCE(runjam_context const& ctx);
-    ResonanceListPCE(int kineticTemp, int eos_pce,std::string const& fn_resodata);
-  };
-
 }
 }
 

@@ -1237,7 +1237,7 @@ namespace {
   class ParticleSampleViscous: public OversampledParticleSampleBase {
     typedef OversampledParticleSampleBase base;
 
-    ResonanceListPCE rlist;
+    ResonanceList rlist;
 
     std::string fname_hypersurface;
 
@@ -1375,7 +1375,7 @@ namespace {
 
   class ParticleSampleFromHydrojet: public OversampledParticleSampleBase {
     typedef OversampledParticleSampleBase base;
-    ResonanceListPCE rlist;
+    ResonanceList rlist;
     std::string fname_freezeout;
     std::string fname_position;
 
@@ -1583,7 +1583,6 @@ namespace {
 
   class ParticleSampleFactory: ParticleSampleFactoryBase {
     virtual std::unique_ptr<ParticleSampleBase> CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
-      // ResonanceListPCE を移動する
       if (type == "c0lrf") {
         double const switchingTemperature = ctx.get_config("runjam_switching_temperature", -1.0);
         bool const turnsOffViscousEffect = ctx.get_config("runjam_turnsOffViscousEffect", false);

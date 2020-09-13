@@ -48,7 +48,7 @@ namespace util {
     template<typename T>
     T get_config(const char* key, T const& defaultValue) const {
       T value;
-      read_config(value, key, defaultValue);
+      this->read_config<T>(value, key, defaultValue);
       return value;
     }
   };

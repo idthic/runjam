@@ -49,8 +49,8 @@ runjam_OBJS := \
   $(OBJDIR)/spectra/ParticleSampleViscous.o
 runjam_LIBS := -ljam $(LIBS)
 
-directories += $(OBJDIR) $(OBJDIR)/util $(OBJDIR)/spectra $(OBJDIR)/jam $(OBJDIR)/ksh
-$(OBJDIR)/%.o: %.cpp | $(OBJDIR) $(OBJDIR)/util $(OBJDIR)/spectra $(OBJDIR)/jam $(OBJDIR)/ksh
+directories += $(OBJDIR) $(OBJDIR)/spectra $(OBJDIR)/ksh
+$(OBJDIR)/%.o: %.cpp | $(OBJDIR) $(OBJDIR)/spectra $(OBJDIR)/ksh
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 all: runjam.exe
@@ -70,8 +70,15 @@ $(INSDIR)/share/runjam/%: data/% | $(INSDIR)/share/runjam
 directories += $(INSDIR)/bin $(INSDIR)/share/runjam
 install-files += \
   $(INSDIR)/bin/runjam.exe \
+  $(INSDIR)/share/runjam/ResonanceJam.dat \
   $(INSDIR)/share/runjam/ResonanceEosqJam.dat \
-  $(INSDIR)/share/runjam/ResonanceJam.dat
+  $(INSDIR)/share/runjam/ResonancePCE.dat \
+  $(INSDIR)/share/runjam/ResonancePCE.T080.dat \
+  $(INSDIR)/share/runjam/ResonancePCE.T100.dat \
+  $(INSDIR)/share/runjam/ResonancePCE.T120.dat \
+  $(INSDIR)/share/runjam/ResonancePCE.T140.dat \
+  $(INSDIR)/share/runjam/ResonancePCE.T160.dat \
+  $(INSDIR)/share/runjam/ResonancePCE.New.dat
 install: $(install-files)
 .PHONY: install
 

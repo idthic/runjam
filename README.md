@@ -41,7 +41,8 @@ Please check the output of `runjam.exe --help`.
 
 ### Option `--resodata, runjam_resodata=FILE`
 
-The list of particles
+This option can be used to select the file that contains the list of sampled particles.
+Empty lines and lines starting with `#` are ignored.
 
 - Column 1: Mass
 - Column 2: Degeneracy
@@ -49,14 +50,24 @@ The list of particles
 - Column 4: Chemical potential
 - Column 5: Statistics (1: boson, 2: fermion)
 - Column 6: Is antiparticle
+- Column 7: KEY.  The name used to determine the filename for the resonance.
+- Column 8: Description
+- Column 9+: corresponding PDG Monte-Carlo codes.  Note that there can be multiple codes corresponding to the isospin degenracy.
 
-### Option `--hydrojet-ftemp, hydrojet_kintmp=INT`
+When this option is not specified, the resonance list file is determined
+based on the other options `--hydrojet-pce, hydrojet_eospce=INT` and `--hydrojet-ftemp, hydrojet_kintmp=INT`.
+The default is `eospce=6` and `kintmp=5` so that `ResonanceJam.dat` is used.
 
-- 1 = 80 MeV
-- 2 = 100 MeV
-- 3 = 120 MeV
-- 4 = 140 MeV
-- 5 = 160 MeV [default]
+- `eospce=0`: `ResonancePCE.dat` is used as the list of particles. 21 resonances are contained.
+- `eospce=1` The same as `eospce=0` but the chemical potentials are determined by PCE.
+  - `kintmp=1`: `ResonancePCE.T080.dat`. Freezeout temperature 80 MeV
+  - `kintmp=2`: `ResonancePCE.T100.dat`. Freezeout temperature 100 MeV
+  - `kintmp=3`: `ResonancePCE.T120.dat`. Freezeout temperature 120 MeV
+  - `kintmp=4`: `ResonancePCE.T140.dat`. Freezeout temperature 140 MeV
+  - `kintmp=5`: `ResonancePCE.T160.dat`. Freezeout temperature 160 MeV
+- `eospce=4`: `ResonanceEosqJam.dat`. EOS-Q
+- `eospce=5`: `ResonancePCE.New.dat`. `eospce=1` with updated masses
+- Otherwise: `ResonanceJam.dat`
 
 ## Changes 0.2..0.3
 
@@ -86,8 +97,8 @@ The list of particles
   - rename option `runjam_ievent_begin` -> `runjam_output_index_start`
 - ParticleSampleHydrojet: rename debug options
   - rename option `ParticleSample_ReverseParticleList` -> `hydrojet_reverse_particles`
-  - rename option `ParticleSample_ReverseParticleList` -> `hydrojet_shuffle_particles`
-  - rename option `HydroSpectrum__RotateFreezeoutData` -> `hydrojet_rotate_freezeout`
+  - rename option `ParticleSample_ShuffleParticleList` -> `hydrojet_shuffle_particles`
+  - rename option `HydroSpectrum_RotateFreezeoutData` -> `hydrojet_rotate_freezeout`
 
 ## Changes 0.1..0.2
 

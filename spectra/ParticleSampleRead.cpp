@@ -18,12 +18,12 @@ namespace {
   }
 
   class ParticleSampleRead: public ParticleSampleBase {
-    ResonanceListPCE rlist;
+    ResonanceList rlist;
     std::string fname_particlesample_dat;
     double m_overSamplingFactor = 1.0;
   public:
     ParticleSampleRead(runjam_context const& ctx, std::string const& fname_particlesample_dat):
-      rlist(-1, 6, "ResonanceJam.dat"),
+      rlist("ResonanceJam.dat"),
       fname_particlesample_dat(fname_particlesample_dat),
       m_overSamplingFactor(ctx.get_config("runjam_oversampling_factor", 1.0))
     {}

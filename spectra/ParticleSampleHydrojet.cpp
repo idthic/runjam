@@ -130,7 +130,6 @@ namespace {
     double  mpi, mk, mpro; // masses of pions, kaons and protons.
     double  mupi, muk, mup; // chemical potentials.
     int co; //=1: v1  =2:v2  =3: v3
-    int kineticTemp;
 
     int fin;
 
@@ -163,7 +162,7 @@ namespace {
     static constexpr double mProton  = 939.0;
 
   public:
-    HypersurfaceReader(runjam_context const& ctx, int kint, int eos_pce);
+    HypersurfaceReader(runjam_context const& ctx);
 
     void openFDataFile(std::string const& fn_freezeout_dat);
     void openPDataFile(std::string const& fn_position_dat);
@@ -192,10 +191,10 @@ namespace {
     //double thermaldist(double mt, double yy, double mu, int iw, int sgn);
   };
 
-  HypersurfaceReader::HypersurfaceReader(runjam_context const& ctx, int kint, int eos_pce) {
-    kineticTemp = kint;
-
+  HypersurfaceReader::HypersurfaceReader(runjam_context const& ctx) {
     fin  = -1;
+
+    int const eospce = ctx.eospce();
 
     //...degree of freedom  [pi+ or pi- or pi0]
     degpi = 1;
@@ -207,7 +206,7 @@ namespace {
     mpi   = 0.0;
     mk    = 0.0;
     mpro  = 0.0;
-    if (eos_pce != 10) {
+    if (eospce != 10) {
       mpi   = mPion / hbarc_MeVfm;
       mk    = mKaon / hbarc_MeVfm;
       mpro  = mProton / hbarc_MeVfm;
@@ -217,8 +216,9 @@ namespace {
     muk = 0.0;  //!< chemical potential at f.o. (kaon)   from pi to delta(1232)
     mup = 0.0;  //!< chemical potential at f.o. (proton) from pi to delta(1232)
 
-    if (eos_pce == 1) {
-      switch (kineticTemp) {
+    if (eospce == 1) {
+      int kintmp = ctx.kintmp();
+      switch (kintmp) {
         //   (tf=80mev)
       case 1:
         mupi = 0.951925e+02 / hbarc_MeVfm;
@@ -263,7 +263,7 @@ namespace {
 
       default:
         std::cerr << "HypersurfaceReader::  Not avaiable sorry" << std::endl;
-        std::cerr << " kinetic temperature = " << kineticTemp << std::endl;
+        std::cerr << " kinetic temperature = " << kintmp << std::endl;
         std::exit(1);
       }
     }
@@ -466,7 +466,7 @@ namespace {
   class ParticleSampleHydrojet: public OversampledParticleSampleBase {
     typedef OversampledParticleSampleBase base;
   private:
-    ResonanceListPCE rlist;
+    ResonanceList rlist;
     HypersurfaceReader m_hf;
 
   private:
@@ -515,8 +515,7 @@ namespace {
     void createCooperFryeCache();
 
   public:
-    ParticleSampleHydrojet(runjam_context const& ctx, std::string const& cachedir, std::string suffix,
-      int kin, int eos_pce, std::string const& fn_resodata);
+    ParticleSampleHydrojet(runjam_context const& ctx, std::string const& cachedir, std::string suffix);
 
   private:
     void initialize();
@@ -539,9 +538,8 @@ namespace {
   };
 
   ParticleSampleHydrojet::ParticleSampleHydrojet(
-    runjam_context const& ctx, std::string const& cachedir, std::string suffix,
-    int kintmp, int eos_pce, std::string const& fn_resodata
-  ): base(ctx), rlist(kintmp, eos_pce, fn_resodata), m_hf(ctx, kintmp, eos_pce) {
+    runjam_context const& ctx, std::string const& cachedir, std::string suffix
+  ): base(ctx), rlist(ctx), m_hf(ctx) {
     int const nreso_loop = this->rlist.size();
     this->cache_fname.resize(nreso_loop);
     for (int i = 0; i < nreso_loop; i++) {
@@ -988,14 +986,10 @@ namespace {
       if (type != "hydrojet.original") return nullptr;
 
       std::string const cachedir = ctx.indir();
-      int const kintmp = ctx.kintmp();
-      int const eospce = ctx.eospce();
-      std::string const resodata = ctx.resodata();
       std::string const fn_freezeout_dat = inputfile + "/freezeout.dat";
       std::string const fn_position_dat = inputfile + "/position.dat";
 
-      ParticleSampleHydrojet* psamp
-        = new ParticleSampleHydrojet(ctx, cachedir, ".PC170", kintmp, eospce, resodata);
+      ParticleSampleHydrojet* psamp = new ParticleSampleHydrojet(ctx, cachedir, ".PC170");
       psamp->setDtau(ctx.get_config("hydrojet_deltat", 0.3));
       psamp->setDx(ctx.get_config("hydrojet_deltax", 0.3));
       psamp->setDy(ctx.get_config("hydrojet_deltay", 0.3));
