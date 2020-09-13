@@ -1,3 +1,21 @@
+/* Copyright (C) 2014-2020, Koichi Murase @akinomyoga.
+   This file is a part of runjam <https://github.com/idthic/runjam>.
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+   USA  */
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -224,31 +242,31 @@ public:
 private:
   void initializeJam() {
     // Initialize JAM
-    libjam::setMSTC(1, cfg_jamseed); // int seed = 1921;
-    libjam::setMSTC(2, cfg_nevent);  // number of event.
-    //libjam::setMSTC(38,6); // io number for jamlist.
-    libjam::setMSTC(8,0);    // job mode.
-    libjam::setMSTC(16,0);   // display on/off.
-    libjam::setPARC(6,5.0);  // scale of display
-    libjam::setMSTC(54,0);   // avoid first coll inside the same nucleus off
-    //libjam::setMSTC(39,0); //no output fname(4)
+    libjam::setMSTC(  1, cfg_jamseed); // int seed = 1921;
+    libjam::setMSTC(  2, cfg_nevent);  // number of event
+    libjam::setPARC(  6, 5.0); // scale of display
+    libjam::setMSTC(  8,   0); // job mode
+    libjam::setMSTC( 16,   0); // display on/off
+    //libjam::setMSTC( 38,   6); // IO number for jamlist
+    //libjam::setMSTC( 39,   0); //no output fname(4)
+    libjam::setMSTC( 54,   0); // avoid first coll inside the same nucleus off
 
-    // Switch on some analysis.
-    libjam::setMSTC(156,0);  // analysis of collision distribution
-    libjam::setMSTC(161,0);  // no analysis from jam internal subr.
-    libjam::setMSTC(162,0);  // Output collision history
-    libjam::setMSTC(165,0);  //
-    libjam::setPARC(7, 1.0); // Output time interval (fm/c)
-    libjam::setMSTC(81,0);   // 1:hard scattering on/off
-    libjam::setMSTC(4,100);  // user defined frame.
-    //libjam::setMSTC(61,0); // isotropic resonance decay option
+    // Default settings
+    //libjam::setMSTC(156,   0); // analysis of collision distribution
+    //libjam::setMSTC(161,   0); // no analysis from jam internal subr
+    //libjam::setMSTC(162,   0); // Output collision history
+    //libjam::setMSTC(165,   0); //
 
     // Additional settings
-    libjam::setMSTC(156, 1); // analysis of collision distribution
-    libjam::setMSTC(161, 0); // no analysis from jam internal subr.
-    libjam::setMSTC(162, 1); // Output collision history
-    libjam::setMSTC(165, 1); //
-    //libjam::setMSTC(41,0); // 0:no resonance decay after simulation.
+    libjam::setMSTC(  4, 100); // user defined frame
+    libjam::setPARC(  7, 1.0); // Output time interval (fm/c)
+    //libjam::setMSTC( 41,   0); // 0:no resonance decay after simulation
+    //libjam::setMSTC( 61,   0); // isotropic resonance decay option
+    libjam::setMSTC( 81,   0); // 1:hard scattering on/off
+    libjam::setMSTC(156,   1); // analysis of collision distribution
+    libjam::setMSTC(161,   0); // no analysis from jam internal subr
+    libjam::setMSTC(162,   1); // Output collision history
+    libjam::setMSTC(165,   1); //
 
     // JAM*.DAT files
     if (cfg_outdir.size() > 0) {
@@ -259,11 +277,11 @@ private:
       libjam::setFNAME(8, dir);
     }
 
-    //libjam::setMDCY(libjam::jamComp(111) ,1,0);   // no pi0 decay
-    //libjam::setMDCY(libjam::jamComp(3122),1,1);   // Lambda decay
-    //libjam::setMDCY(libjam::jamComp(3222),1,1);   // Sigma- decay
-    //libjam::setMDCY(libjam::jamComp(3212),1,1);   // Sigma0 decay
-    //libjam::setMDCY(libjam::jamComp(3112),1,1);   // Sigma+ decay
+    //libjam::setMDCY(libjam::jamComp(111) , 1, 0); // no pi0 decay
+    //libjam::setMDCY(libjam::jamComp(3122), 1, 1); // Lambda decay
+    //libjam::setMDCY(libjam::jamComp(3222), 1, 1); // Sigma- decay
+    //libjam::setMDCY(libjam::jamComp(3212), 1, 1); // Sigma0 decay
+    //libjam::setMDCY(libjam::jamComp(3112), 1, 1); // Sigma+ decay
     if (!cfg_phi_decays)
       libjam::setMDCY(libjam::jamComp(333), 1, 0); // no phi decay
 
