@@ -70,15 +70,7 @@ $(INSDIR)/share/runjam/%: data/% | $(INSDIR)/share/runjam
 directories += $(INSDIR)/bin $(INSDIR)/share/runjam
 install-files += \
   $(INSDIR)/bin/runjam.exe \
-  $(INSDIR)/share/runjam/ResonanceJam.dat \
-  $(INSDIR)/share/runjam/ResonanceEosqJam.dat \
-  $(INSDIR)/share/runjam/ResonancePCE.dat \
-  $(INSDIR)/share/runjam/ResonancePCE.T080.dat \
-  $(INSDIR)/share/runjam/ResonancePCE.T100.dat \
-  $(INSDIR)/share/runjam/ResonancePCE.T120.dat \
-  $(INSDIR)/share/runjam/ResonancePCE.T140.dat \
-  $(INSDIR)/share/runjam/ResonancePCE.T160.dat \
-  $(INSDIR)/share/runjam/ResonancePCE.New.dat
+  $(patsubst data/%,$(INSDIR)/share/runjam/%,$(wildcard data/Resonance*.dat))
 install: $(install-files)
 .PHONY: install
 

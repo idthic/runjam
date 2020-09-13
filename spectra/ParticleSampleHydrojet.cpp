@@ -126,11 +126,6 @@ namespace {
 #endif
 
   public:
-    int degpi, degk, degp; // degree of freedom.
-    double  mpi, mk, mpro; // masses of pions, kaons and protons.
-    double  mupi, muk, mup; // chemical potentials.
-    int co; //=1: v1  =2:v2  =3: v3
-
     int fin;
 
     // FData
@@ -154,13 +149,6 @@ namespace {
   private:
     bool cfg_rotate_freezeout;
 
-  private:
-    static constexpr double mPion = 139.0;
-    //static constexpr double mPion  = 1020.0;//For phi meson
-    //static constexpr double mPion  = 3096.9;//For J/psi meson
-    static constexpr double mKaon    = 493.6;
-    static constexpr double mProton  = 939.0;
-
   public:
     HypersurfaceReader(runjam_context const& ctx);
 
@@ -173,8 +161,6 @@ namespace {
     int  readFData();
     int  readPData();
     int  readEData();
-
-    void setCoef(int c) {co = c;}
 
   protected:
     double pti, cosp, sinp, gam;
@@ -193,89 +179,6 @@ namespace {
 
   HypersurfaceReader::HypersurfaceReader(runjam_context const& ctx) {
     fin  = -1;
-
-    int const eospce = ctx.eospce();
-
-    //...degree of freedom  [pi+ or pi- or pi0]
-    degpi = 1;
-    //      degpi  = 3;//For  phi meson
-    degk  = 1;
-    degp  = 2;
-
-    //...pion mass [fm^-1]
-    mpi   = 0.0;
-    mk    = 0.0;
-    mpro  = 0.0;
-    if (eospce != 10) {
-      mpi   = mPion / hbarc_MeVfm;
-      mk    = mKaon / hbarc_MeVfm;
-      mpro  = mProton / hbarc_MeVfm;
-    }
-
-    mupi = 0.0; //!< chemical potential at f.o. (pion)   from pi to delta(1232)
-    muk = 0.0;  //!< chemical potential at f.o. (kaon)   from pi to delta(1232)
-    mup = 0.0;  //!< chemical potential at f.o. (proton) from pi to delta(1232)
-
-    if (eospce == 1) {
-      int kintmp = ctx.kintmp();
-      switch (kintmp) {
-        //   (tf=80mev)
-      case 1:
-        mupi = 0.951925e+02 / hbarc_MeVfm;
-        muk = 0.233670e+03 / hbarc_MeVfm;
-        mup = 0.456089e+03 / hbarc_MeVfm;
-        std::cout << "HypersurfaceReader Tf=80MeV" << std::endl;
-        break;
-
-        //     (tf=100mev)
-      case 2:
-        mupi = 0.833141e+02 / hbarc_MeVfm;
-        //    mupi = 0.356941e+03 / hbarc_MeVfm;//For phi-meson
-        //    mupi = 0.0 / hbarc_MeVfm;//For J/psi
-        muk = 0.180805e+03 / hbarc_MeVfm;
-        mup = 0.348810e+03 / hbarc_MeVfm;
-        std::cout << "HypersurfaceReader Tf=100MeV" << std::endl;
-        break;
-
-        //     (tf=120mev)
-      case 3:
-        mupi = 0.646814e+02 / hbarc_MeVfm;
-        muk = 0.128598e+03 / hbarc_MeVfm;
-        mup = 0.245865e+03 / hbarc_MeVfm;
-        std::cout << "HypersurfaceReader Tf=120MeV" << std::endl;
-        break;
-
-        //     (tf=140mev)
-      case 4:
-        mupi = 0.406648e+02 / hbarc_MeVfm;
-        muk = 0.633578e+02 / hbarc_MeVfm;
-        mup = 0.145518e+03 / hbarc_MeVfm;
-        std::cout << "HypersurfaceReader Tf=140MeV" << std::endl;
-        break;
-
-        //     (tf=160mev)
-      case 5:
-        mupi = 0.137867e+02 / hbarc_MeVfm;
-        muk = 0.249125e+02 / hbarc_MeVfm;
-        mup = 0.476744e+02 / hbarc_MeVfm;
-        std::cout << "HypersurfaceReader Tf=160MeV" << std::endl;
-        break;
-
-      default:
-        std::cerr << "HypersurfaceReader::  Not avaiable sorry" << std::endl;
-        std::cerr << " kinetic temperature = " << kintmp << std::endl;
-        std::exit(1);
-      }
-    }
-
-    //      co = 1;
-    //     ^^^^^^^---> V1
-    co = 2;
-    //     ^^^^^^^---> V2
-    //      co = 3;
-    //     ^^^^^^^---> V3
-    //      co = 4;
-    //     ^^^^^^^---> V3
 
     // KM, 2013/04/20, initializes the flag to rotate the data in freezeout.dat
     this->cfg_rotate_freezeout = ctx.get_config("hydrojet_rotate_freezeout", false);

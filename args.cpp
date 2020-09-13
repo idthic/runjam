@@ -42,6 +42,28 @@ std::string runjam_context::resodata() const {
     case 4: file = "ResonanceEosqJam.dat"; break; // 75 resonances
     case 5: file = "ResonancePCE.New.dat"; break; // 21 resonances (data updated)
     case 6: break; // use specified file
+
+    case 10: // charged (pi,K,p)
+      file = "ResonanceCharged.Massless.dat";
+      break;
+    case 11: // charged (pi,K,p)
+      file = "ResonanceCharged.dat";
+      break;
+    case 12: // charged (pi,K,p)
+      switch (kintmp) {
+      case 1: file = "ResonanceCharged.T080.dat"; break;
+      case 2: file = "ResonanceCharged.T100.dat"; break;
+      case 3: file = "ResonanceCharged.T120.dat"; break;
+      case 4: file = "ResonanceCharged.T140.dat"; break;
+      case 5: file = "ResonanceCharged.T160.dat"; break;
+      default:
+        std::cerr << "runjam: unsupported kintmp=" << kintmp << "." << std::endl;
+        std::exit(1);
+        break;
+      }
+    case 13: file = "ResonancePhi.dat"; break; // phi, J/psi
+    case 14: file = "ResonancePhi.T100.dat"; break; // phi, J/psi (PCE T=100 MeV)
+
     default:
       std::cerr << "runjam: unsupported eospce=" << eospce << "." << std::endl;
       std::exit(1);

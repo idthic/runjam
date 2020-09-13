@@ -1,0 +1,6 @@
+# From hydrojet/src/spectra/HydroSpectrum.cxx
+#
+# MASS    DEG    DEGEFF  MU           BF ANTI  KEY            NAME           PDGCODES ...
+#------ -----    ------  ------------ -- ----  -------------- -------------- -----------------------------
+1020.0    3.0    1.47    0.356941e+03  1    0  PHI            phi(1020)           333
+3096.9    3.0    0.00    0.0           1    0  JPSI           J/Psi               443

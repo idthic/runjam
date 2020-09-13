@@ -1,0 +1,8 @@
+# From hydrojet/src/spectra/HydroSpectrum.cxx
+#
+# MASS    DEG    DEGEFF  MU           BF ANTI  KEY            NAME           PDGCODES ...
+#------ -----    ------  ------------ -- ----  -------------- -------------- -----------------------------
+ 139.0    3.0    1.0     0.406648e+02  1    0  PI             pion                111    211   -211
+ 493.6    2.0    1.0     0.633578e+02  1    0  K              K=(K_0,K+)          321    311
+ 939.0    2.0    1.0     0.145518e+03  2    0  PRO            nucleon            2212
+ 939.0    2.0    1.0     0.145518e+03  2    1  PBAR           anti-nucleon      -2212

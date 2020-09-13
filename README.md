@@ -58,8 +58,8 @@ When this option is not specified, the resonance list file is determined
 based on the other options `--hydrojet-pce, hydrojet_eospce=INT` and `--hydrojet-ftemp, hydrojet_kintmp=INT`.
 The default is `eospce=6` and `kintmp=5` so that `ResonanceJam.dat` is used.
 
-- `eospce=0`: `ResonancePCE.dat` is used as the list of particles. 21 resonances are contained.
-- `eospce=1` The same as `eospce=0` but the chemical potentials are determined by PCE.
+- `eospce=0`: `ResonancePCE.dat` will be used as the list of particles. 21 resonances are contained.
+- `eospce=1` The same as `eospce=0` but with the chemical potentials (PCE)
   - `kintmp=1`: `ResonancePCE.T080.dat`. Freezeout temperature 80 MeV
   - `kintmp=2`: `ResonancePCE.T100.dat`. Freezeout temperature 100 MeV
   - `kintmp=3`: `ResonancePCE.T120.dat`. Freezeout temperature 120 MeV
@@ -67,6 +67,16 @@ The default is `eospce=6` and `kintmp=5` so that `ResonanceJam.dat` is used.
   - `kintmp=5`: `ResonancePCE.T160.dat`. Freezeout temperature 160 MeV
 - `eospce=4`: `ResonanceEosqJam.dat`. EOS-Q
 - `eospce=5`: `ResonancePCE.New.dat`. `eospce=1` with updated masses
+- `eospce=10`: `ResonanceCharged.dat`.
+- `eospce=11`: `ResonanceCharged.dat`.
+- `eospce=12` The same as `eospce=11` but with the chemical potentials (PCE)
+  - `kintmp=1`: `ResonanceCharged.T080.dat`. Freezeout temperature 80 MeV
+  - `kintmp=2`: `ResonanceCharged.T100.dat`. Freezeout temperature 100 MeV
+  - `kintmp=3`: `ResonanceCharged.T120.dat`. Freezeout temperature 120 MeV
+  - `kintmp=4`: `ResonanceCharged.T140.dat`. Freezeout temperature 140 MeV
+  - `kintmp=5`: `ResonanceCharged.T160.dat`. Freezeout temperature 160 MeV
+- `eospce=13`: `ResonancePhi.dat`. phi and J/psi mesons
+- `eospce=14`: `ResonancePhi.T100.dat`. phi and J/psi mesons with PCE T = 100 MeV.
 - Otherwise: `ResonanceJam.dat`
 
 ## Changes 0.2..0.3
