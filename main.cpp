@@ -496,6 +496,16 @@ int main(int argc, char *argv[]) {
     prog.generateEvent(*psamp, args.subcommand);
   } else if (args.subcommand == "test-viscous-correction-integration") {
     return checkViscousCooperFryeInterpolated(true);
+  } else if (args.subcommand == "resolist-print-ks-and-mass") {
+    ResonanceList list(ctx);
+    std::cout << std::setprecision(8);
+    for (auto const& reso : list) {
+      for (int pdg : reso.pdg_codes) {
+        if (pdg > 0)
+          std::cout << pdg << " " << libjam::determineStableCode(pdg) << " " << libjam::jamMass(pdg) << std::endl;
+      }
+    }
+    return 0;
   } else {
     std::cerr << "runjam: unknown subcommand ' " << args.subcommand << "'" << std::endl;
     return 2;
