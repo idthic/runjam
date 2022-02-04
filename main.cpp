@@ -67,7 +67,7 @@ void writePhasespaceData(std::ofstream& ofs, Particle const* begin, Particle con
 }
 
 void writePhasespaceBinary(std::ofstream& ofs, Particle const* begin, Particle const* end, double ntest = 1.0) {
-  std::uint32_t const nv = libjam::getNV();
+  std::uint32_t const nv = end - begin;
   ofs.write("EvPh", 4);
   ofs.write((char*) &nv, 4);
   while (begin != end) {
