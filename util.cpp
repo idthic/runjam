@@ -55,7 +55,7 @@ bool application_context::read_config(std::string& value, const char* key) const
 
 bool application_context::read_config(int& value, const char* key) const {
   const char* str= get_value(key);
-  if (str && std::isdigit(*str)) {
+  if (str && std::strchr("+-0123456789", *str)) {
     value = std::atoi(str);
     return true;
   } else
