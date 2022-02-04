@@ -21,7 +21,7 @@ user_LIBS     := $(LIBS)
 INSDIR := $(DESTDIR)$(PREFIX)
 libjam_LIBDIR := $(libjam_PREFIX)/lib
 
-CXXFLAGS := $(user_CXXFLAGS) -march=native -O3 -std=gnu++11
+CXXFLAGS := $(user_CXXFLAGS) -march=native -O3 -std=gnu++14
 CPPFLAGS =  $(user_CPPFLAGS) -I . -MD -MP -MF $(@:.o=.dep)
 LDFLAGS  := $(user_LDFLAGS)  -L $(libjam_LIBDIR) -Wl,-rpath,$(libjam_LIBDIR)
 LIBS     := $(user_LIBS)

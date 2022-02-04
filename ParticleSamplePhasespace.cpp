@@ -297,7 +297,9 @@ namespace {
         if (type == "phase1") psamp->setNumberOfSamples(1);
         return std::unique_ptr<ParticleSampleBase>(psamp);
       } else if (type == "phbin") {
-        return std::unique_ptr<ParticleSampleBase>(new ParticleSampleReadPhasespaceBinary(ctx, inputfile));
+        auto psamp = std::make_unique<ParticleSampleReadPhasespaceBinary>(ctx, inputfile);
+        psamp->setNumberOfSamples(ctx.get_config("runjam_initial_phbin_size", 1000));
+        return std::move(psamp);
       }
 
       return nullptr;
