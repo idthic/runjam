@@ -16,12 +16,12 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
    USA  */
 
-#ifndef runjam_libjam_hpp
-#define runjam_libjam_hpp
+#ifndef runjam_libjam1_hpp
+#define runjam_libjam1_hpp
 #include <string>
 
 namespace idt {
-namespace libjam {
+namespace libjam1 {
 
   int    getK(int i, int ip);
   double getR(int i, int ip);

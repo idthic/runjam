@@ -45,6 +45,8 @@ namespace runjam {
     std::string indir() const {
       return this->get_config<std::string>("hydrojet_directory", "test");
     }
+
+    std::string cachedir() const;
   };
 
   struct runjam_commandline_arguments {

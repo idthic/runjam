@@ -76,7 +76,7 @@ namespace runjam {
 
       reso.mass /= hbarc_MeVfm; // fm^{-1}
       reso.mu   /= hbarc_MeVfm; // fm^{-1}
-      reso.bf   = bftype == 1 ? -1: bftype == 2 ? 1 : bftype;
+      reso.bf   = bftype == 1 ? -1: bftype == 2 ? 1 : bftype; // boson -1, fermion +1
       data.emplace_back(reso);
     }
 

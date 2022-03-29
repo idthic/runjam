@@ -21,7 +21,7 @@
 #include <cmath>
 #include <iostream>
 #include <iomanip>
-#include "libjam.hpp"
+#include "libjam1.hpp"
 
 #include "config.hpp"
 // This number should be the same as "mxv" in jam1.inc
@@ -56,7 +56,7 @@
 
 
 namespace idt {
-namespace libjam {
+namespace libjam1 {
 
   static std::size_t strlen_fortran(const char* buff, int bufferSize = -1) {
     std::size_t ret = 0, run = 0;
@@ -285,9 +285,9 @@ namespace libjam {
 
   // ks: 安定粒子なら 1, 不安定粒子なら 2.
   int determineStableCode(int kf) {
-    int const kc = libjam::jamComp(kf); // jam internal particle code.
-    if (libjam::getPMAS(kc,2) <= 1e-7 || libjam::getMDCY(kc,1) == 0
-      || libjam::getMDCY(kc,2) == 0 || libjam::getMDCY(kc,3) == 0) return 1;
+    int const kc = libjam1::jamComp(kf); // jam internal particle code.
+    if (libjam1::getPMAS(kc,2) <= 1e-7 || libjam1::getMDCY(kc,1) == 0
+      || libjam1::getMDCY(kc,2) == 0 || libjam1::getMDCY(kc,3) == 0) return 1;
     return 2;
   }
 

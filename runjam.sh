@@ -18,7 +18,7 @@ runjam_phi_decays=1
 runjam_switch_weak_decay=0
 
 # Resonance list
-runjam_resodata=ResonanceJam.dat
+#runjam_resodata=ResonanceJam2.dat
 runjam_eospce=6
 runjam_kintmp=5
 

@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
 
 PACKAGE_VERSION=0.3.0-alpha
-libjam_PREFIX=~/opt/jam/1.820
-libjam_MXV=200000
+
 CXX=g++
+
+use_libjam1=yes
+libjam1_PREFIX=~/opt/jam/1.820
+libjam1_MXV=200000
+
+use_libjam2=yes
+libjam2_PREFIX=~/.opt/jam/dev
+pythia8_PREFIX=~/.opt/pythia/8.244mod
 
 function readargs/option:with-jam {
   if [[ -f $1/lib/libjam.a || -f $f/lib/libjam.so ]]; then
-    libjam_PREFIX=$1
+    libjam1_PREFIX=$1
   else
     echo "configure: jam not fond at '$1'" >&2
     flags=E$flags
@@ -26,11 +33,11 @@ function readargs/option:help {
 ## @fn readargs
 ##   @var[out] flags
 ##   @var[out] PREFIX
-##   @var[out] libjam_PREFIX
+##   @var[out] libjam1_PREFIX
 function readargs {
   flags=
   PREFIX=~/.opt/idt
-  libjam_PREFIX=
+  libjam1_PREFIX=
   while (($#)); do
     local arg=$1; shift
     if [[ $flags != *R* ]]; then
@@ -56,7 +63,7 @@ function readargs {
     fi
   done
 
-  [[ $libjam_PREFIX ]] ||
+  [[ $libjam1_PREFIX ]] ||
     readargs/option:with-jam $HOME/opt/jam/1.820 ||
     readargs/option:with-jam $HOME/opt/jam-1.820 ||
     flags=E$flags
@@ -66,7 +73,7 @@ function readargs {
 }
 
 function main {
-  local flags libjam_PREFIX
+  local flags libjam1_PREFIX
   readargs "$@" || return 1
   [[ $flags == *H* ]] && return 0
   echo ---------------------------------------
@@ -81,8 +88,16 @@ function main {
       echo "CXXFLAGS  := $CXXFLAGS"
       echo "LDFLAGS   := $LDFLAGS"
       echo "LIBS      := $LIBS"
-      echo "libjam_PREFIX := $libjam_PREFIX"
-      echo "libjam_MXV    := $libjam_MXV"
+      echo "use_libjam1 := $use_libjam1"
+      echo "ifneq (\$(use_libjam1),)"
+      echo "  libjam1_PREFIX := $libjam1_PREFIX"
+      echo "  libjam1_MXV    := $libjam1_MXV"
+      echo "endif"
+      echo "use_libjam2 := $use_libjam2"
+      echo "ifneq (\$(use_libjam2),)"
+      echo "  libjam2_PREFIX := $libjam2_PREFIX"
+      echo "  pythia8_PREFIX := $pythia8_PREFIX"
+      echo "endif"
     } | tee /dev/tty
   } > config.mk
 
@@ -92,7 +107,25 @@ function main {
     echo "#define PACKAGE_VERSION \"$PACKAGE_VERSION\""
     echo "#define PACKAGE_PREFIX  \"$PREFIX\""
     echo "#define PACKAGE_BUILD   \"$PWD\""
-    echo "#define CONFIG_JAM_MXV  $libjam_MXV"
+    if [[ $use_libjam1 ]]; then
+      echo "#define USE_LIBJAM1 1"
+      echo "#define CONFIG_JAM_MXV $libjam1_MXV"
+    else
+      echo "#undef USE_LIBJAM1"
+    fi
+    if [[ $use_libjam2 ]]; then
+      echo "#define USE_LIBJAM2 1"
+      echo "#define Pythia8_PREFIX \"$pythia8_PREFIX\""
+    else
+      echo "#undef USE_LIBJAM2"
+    fi
+    if [[ $use_libjam2 ]]; then
+      echo "#define DEFAULT_JAM_VERSION 2"
+    elif [[ $use_libjam1 ]]; then
+      echo "#define DEFAULT_JAM_VERSION 1"
+    else
+      echo "#define DEFAULT_JAM_VERSION 0"
+    fi
     echo 'namespace idt {'
     echo 'namespace runjam {'
     echo '  extern const char* package_hash;'

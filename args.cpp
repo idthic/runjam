@@ -18,6 +18,7 @@
 
 #include <sys/stat.h>
 #include <iostream>
+#include <filesystem>
 #include "args.hpp"
 #include "config.hpp"
 
@@ -41,7 +42,12 @@ static bool starts_with(const char* str, const char* head) {
 using namespace idt::runjam;
 
 std::string runjam_context::resodata() const {
-  std::string file = "ResonanceJam.dat";
+  // 151 resonances from JAM1
+  std::string default_data = "ResonanceJam2.dat";
+  if (this->get_config("runjam_jam_version", DEFAULT_JAM_VERSION) == 1)
+    default_data = "ResonanceJam.dat";
+
+  std::string file = default_data;
   if (!read_config(file, "runjam_resodata")) {
     int const eospce = this->get_config("runjam_eospce", 6);
     int const kintmp = this->get_config("runjam_kintmp", 5);
@@ -60,7 +66,7 @@ std::string runjam_context::resodata() const {
         break;
       }
     case 2: case 3:
-      file = "ResonanceJam.dat"; // 151 resonances from JAM
+      file = default_data;
       break;
     case 4: file = "ResonanceEosqJam.dat"; break; // 75 resonances
     case 5: file = "ResonancePCE.New.dat"; break; // 21 resonances (data updated)
@@ -116,6 +122,31 @@ std::string runjam_context::resodata() const {
   return file;
 }
 
+std::string runjam_context::cachedir() const {
+  if (std::strlen(PACKAGE_PREFIX)) {
+    std::filesystem::path path = PACKAGE_PREFIX;
+    path += "/share/runjam/cache";
+    std::filesystem::create_directories(path);
+    if (std::filesystem::is_directory(path)) return path;
+  }
+
+  if (const char* xdgcache = std::getenv("XDG_CACHE_HOME"); xdgcache && xdgcache[0]) {
+    std::filesystem::path path = xdgcache;
+    path += "/runjam";
+    std::filesystem::create_directories(path);
+    if (std::filesystem::is_directory(path)) return path;
+  }
+
+  if (const char* home = std::getenv("HOME"); home && home[0]) {
+    std::filesystem::path path = home;
+    path += "/.cache/runjam";
+    std::filesystem::create_directories(path);
+    if (std::filesystem::is_directory(path)) return path;
+  }
+
+  return ".cache";
+}
+
 namespace {
 
   static void print_version() {
@@ -143,6 +174,16 @@ namespace {
       "  -t, runjam_oversampling_factor=NUM [1] number of test particles\n"
       "  -w, runjam_switch_weak_decay=BOOL [false] enable weak decays\n"
       "      runjam_phi_decays=BOOL [true]\n"
+#ifdef USE_LIBJAM2
+      "  -1, runjam_jam_version=1               use JAM1 for cascade/decay\n"
+      "  -2, runjam_jam_version=2 (default)     use JAM2 for cascade/decay\n"
+#elif defined(USE_LIBJAM1)
+      "  -1, runjam_jam_version=1 (default)     use JAM1 for cascade/decay\n"
+      "  -2, runjam_jam_version=2               use JAM2 for cascade/decay\n"
+#else
+      "  -1, runjam_jam_version=1               use JAM1 for cascade/decay\n"
+      "  -2, runjam_jam_version=2               use JAM2 for cascade/decay\n"
+#endif
       "\n"
       " Output options\n"
       "  -o,        runjam_output_directory=DIR [out]   directory of output files\n"
@@ -353,6 +394,8 @@ namespace {
       case 'r': assign_optarg("runjam_resodata"); break;
       case 'k': assign_optarg_int("runjam_kintmp"); break;
       case 'p': assign_optarg_int("runjam_eospce"); break;
+      case '1': ctx->set_value("runjam_jam_version", 1); break;
+      case '2': ctx->set_value("runjam_jam_version", 2); break;
       default: return false;
       }
       return true;
