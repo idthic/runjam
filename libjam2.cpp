@@ -9,11 +9,11 @@ namespace {
     static constexpr double DEFAULT_MAX_CM_ENERGY = 20.0;
 
   public:
-    std::vector<libjam2::phasespace_particle> const* m_particles = nullptr;
+    std::vector<idt::runjam::Particle> const* m_particles = nullptr;
 
   private:
     // currently unused.
-    void determine_max_cm_energy_from_particles(std::vector<libjam2::phasespace_particle> const& initial_state) {
+    void determine_max_cm_energy_from_particles(std::vector<idt::runjam::Particle> const& initial_state) {
       // determine maximum invariant mass
       double max_mass2 = 0.0;
       for (std::size_t i = 0; i < initial_state.size(); i++) {
@@ -50,14 +50,14 @@ namespace {
     virtual void generate(jam::Collision* event, int mode = 0) override {
       (void) mode;
 
-      for (libjam2::phasespace_particle const& particle: *m_particles) {
+      for (idt::runjam::Particle const& particle: *m_particles) {
         // find this particle in the JAM particle list.
-        Pythia8::ParticleDataEntry* const pa = jamParticleData->find(particle.pdg_code);
+        Pythia8::ParticleDataEntry* const pa = jamParticleData->find(particle.pdg);
         Pythia8::Vec4 const r(particle.pos[1], particle.pos[2], particle.pos[3], particle.pos[0]);
         Pythia8::Vec4 const p(particle.mom[1], particle.mom[2], particle.mom[3], particle.mom[0]);
 
-        auto const cp = new jam::EventParticle(particle.pdg_code, particle.mass, r, p, pa);
-        cp->setPID(jamParticleData->pid(std::abs(particle.pdg_code)));
+        auto const cp = new jam::EventParticle(particle.pdg, particle.mass, r, p, pa);
+        cp->setPID(jamParticleData->pid(std::abs(particle.pdg)));
 
         // compute decay time if it is resonance.
         double const decay_time = jamParticleData->lifeTime(pa, particle.mass, particle.mom[0]);
@@ -100,7 +100,7 @@ namespace libjam2 {
       m_jam.init(m_initial_condition);
     }
 
-    void run(std::vector<phasespace_particle> const& initial_state, std::vector<phasespace_particle>& final_state) override {
+    void run(std::vector<idt::runjam::Particle> const& initial_state, std::vector<idt::runjam::Particle>& final_state) override {
       m_initial_condition->m_particles = &initial_state;
       m_jam.next();
 
@@ -108,7 +108,7 @@ namespace libjam2 {
       for (jam::EventParticle* p: m_jam.getEvent()) {
         final_state.emplace_back();
         auto& particle = final_state.back();
-        particle.pdg_code = p->getID();
+        particle.pdg = p->getID();
         particle.mass = p->getMass();
         particle.pos[0] = p->TimeLastColl();
         particle.pos[1] = p->getV(1);

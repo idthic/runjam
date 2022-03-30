@@ -94,45 +94,6 @@ namespace runjam {
 
 #ifdef USE_LIBJAM2
 
-  static void fillParticles(std::vector<libjam2::phasespace_particle>& data, Particle const* begin, Particle const* end) {
-    data.clear();
-    data.reserve(end - begin);
-    for (; begin != end; ++begin) {
-      Particle const& particle = *begin;
-      libjam2::phasespace_particle entry;
-      entry.pdg_code = particle.pdg;
-      entry.mass = particle.mass;
-      entry.pos[0] = particle.t;
-      entry.pos[1] = particle.x;
-      entry.pos[2] = particle.y;
-      entry.pos[3] = particle.z;
-      entry.mom[0] = particle.e;
-      entry.mom[1] = particle.px;
-      entry.mom[2] = particle.py;
-      entry.mom[3] = particle.pz;
-      data.emplace_back(entry);
-    }
-  }
-
-  static void readParticles(std::vector<libjam2::phasespace_particle> const& data, std::vector<Particle>& outbuf) {
-    outbuf.clear();
-    outbuf.reserve(data.size());
-    for (libjam2::phasespace_particle const& entry: data) {
-      outbuf.emplace_back();
-      Particle& particle = outbuf.back();
-      particle.pdg = entry.pdg_code;
-      particle.mass = entry.mass;
-      particle.t = entry.pos[0];
-      particle.x = entry.pos[1];
-      particle.y = entry.pos[2];
-      particle.z = entry.pos[3];
-      particle.e = entry.mom[0];
-      particle.px = entry.mom[1];
-      particle.py = entry.mom[2];
-      particle.pz = entry.mom[3];
-    }
-  }
-
   class Jam2Runner: public IJamRunner {
     std::unique_ptr<libjam2::irunner> m_runner;
 
@@ -212,10 +173,8 @@ namespace runjam {
 
     void do_cascade(ParticleSampleBase& psamp, std::vector<Particle>& final_state, int iev) override {
       (void) iev;
-      std::vector<libjam2::phasespace_particle> vinitial, vfinal;
-      fillParticles(vinitial, psamp.begin(), psamp.end());
-      m_runner->run(vinitial, vfinal);
-      readParticles(vfinal, final_state);
+      std::vector<Particle> initial_state(psamp.begin(), psamp.end());
+      m_runner->run(initial_state, final_state);
     }
 
     void do_decay(ParticleSampleBase& psamp, std::vector<Particle>& final_state) override {
