@@ -34,6 +34,10 @@
 #include "ParticleSampleViscous.hpp"
 #include "jamimpl.hpp"
 
+namespace idt::runjam {
+  int cmd_resolist_feeddown_factor(idt::runjam::runjam_context& ctx, idt::runjam::runjam_commandline_arguments const& args);
+}
+
 using namespace idt;
 using namespace idt::runjam;
 
@@ -225,37 +229,12 @@ public:
 
     int const nprint = 1;
 
-    std::unique_ptr<IJamRunner> runner;
-    if (cascadeMode != "sample") {
-#if defined(USE_LIBJAM1) || defined(USE_LIBJAM2)
-      switch (cfg_jam_version) {
-      case 1:
-#ifdef USE_LIBJAM1
-        runner = runjam::create_jam1_runner();
-#else
-        std::cerr << "runjam was compiled without the support for JAM1" << std::endl;
-        std::exit(3);
-#endif
-        break;
-      case 2:
-#ifdef USE_LIBJAM2
-        runner = runjam::create_jam2_runner();
-#else
-        std::cerr << "runjam was compiled without the support for JAM2" << std::endl;
-        std::exit(3);
-#endif
-        break;
-      default:
-        std::cerr << "runjam: invalid value runjam_jam_version='" << cfg_jam_version << "'" << std::endl;
-        std::exit(1);
-        break;
-      }
-#else
+    std::unique_ptr<IJamRunner> runner = create_runner(ctx);
+    if (!runner) {
       std::cerr << "runjam: " << cascadeMode << " not supported." << std::endl;
-      std::cerr << "  runjam was compiled without the support for JAM" << std::endl;
       std::exit(3);
-#endif
     }
+
     bool const is_decay = cascadeMode == "decay";
     int const nevent = this->cfg_nevent;
     if (nevent > 0)
@@ -364,6 +343,8 @@ int main(int argc, char *argv[]) {
       }
     }
     return 0;
+  } else if (args.subcommand == "resolist-feeddown-factor") {
+    return cmd_resolist_feeddown_factor(ctx, args);
   } else {
     std::cerr << "runjam: unknown subcommand ' " << args.subcommand << "'" << std::endl;
     return 2;

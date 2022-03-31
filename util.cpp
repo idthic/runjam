@@ -98,6 +98,11 @@ double urand() {
   return dist(eng);
 }
 
+double nrand() {
+  static std::normal_distribution<double> dist;
+  return dist(eng);
+}
+
 int irand(int n) {
   std::uniform_int_distribution<int> dist(0, n - 1);
   return dist(eng);

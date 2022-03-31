@@ -48,11 +48,12 @@ runjam_OBJS := \
   $(OBJDIR)/config.o \
   $(OBJDIR)/util.o \
   $(OBJDIR)/args.o \
-  $(OBJDIR)/main.o \
   $(OBJDIR)/jamimpl.o \
   $(OBJDIR)/ksh/integrator.o \
   $(OBJDIR)/ParticleSample.o \
   $(OBJDIR)/ResonanceList.o \
+  $(OBJDIR)/cmd_resolist_feeddown_factor.o \
+  $(OBJDIR)/main.o \
   $(patsubst %.cpp,$(OBJDIR)/%.o,$(wildcard ParticleSample*.cpp))
 
 runjam_LIBS := $(LIBS)

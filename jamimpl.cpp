@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <vector>
 #include <string>
+#include <memory>
 
 #ifdef USE_LIBJAM2
 # include <sstream>
@@ -414,6 +415,34 @@ namespace runjam {
   }
 
 #endif
+
+  std::unique_ptr<IJamRunner> create_runner(runjam_context const& ctx) {
+#if defined(USE_LIBJAM1) || defined(USE_LIBJAM2)
+    int const libjam_version = ctx.get_config("runjam_jam_version", DEFAULT_JAM_VERSION);
+    switch (libjam_version) {
+    case 1:
+#ifdef USE_LIBJAM1
+      return runjam::create_jam1_runner();
+#else
+      std::cerr << "runjam was compiled without the support for JAM1" << std::endl;
+      break;
+#endif
+    case 2:
+#ifdef USE_LIBJAM2
+      return runjam::create_jam2_runner();
+#else
+      std::cerr << "runjam was compiled without the support for JAM2" << std::endl;
+      break;
+#endif
+    default:
+      std::cerr << "runjam: invalid value runjam_jam_version='" << libjam_version << "'" << std::endl;
+      break;
+    }
+#else
+    std::cerr << "  runjam was compiled without the support for JAM" << std::endl;
+#endif
+    return std::unique_ptr<IJamRunner>();
+  }
 
 }
 }

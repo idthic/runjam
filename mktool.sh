@@ -59,12 +59,15 @@ function cmd:jam2-generate-resodata-full {
         # exclude massless and 100 GeV+ particles
         i=3; while (i < 10 && $i !~ /^[0-9]+$/) i++;
         spin = $i;
-        BF = spin % 2 == 0 ? 1 : 2; # boson: 1, fermion: 2
+        BF = spin % 2 == 1 ? 1 : 2; # boson: 1, fermion: 2
         mass = $(i+3);
         if (!(0 < mass && mass < 100)) next;
 
         # exclude gravitino and piv/rhov
         if ($1 ~ /^10000..$/ || $1 ~ /^4900...$/) next;
+
+        # exclude diquarks
+        if ($1 ~ /^-?[1-9][0-9]0[0-9]$/) next;
 
         # exclude nuclei
         if (1e9 <= $1 && $1 < 2e9) next;
@@ -73,6 +76,7 @@ function cmd:jam2-generate-resodata-full {
         for (j = 2; j < i; j++) {
           pdg = $1;
           if (j > 2) pdg = -pdg;
+          anti = BF == 2 && j > 2 ? 1 : 0; # Note: anti-baryon
 
           name = $j
           name = gensub(/\y0$|([*)]|\y)[-+]$/, "\\1", "g", name);
@@ -91,11 +95,38 @@ function cmd:jam2-generate-resodata-full {
           gsub(/_$/, "", key);
           key = toupper(key);
 
-          printf("%.2f %d %g %g %d %d %s %s %d\n", mass*1e3, spin, 0.0, 0.0, BF, (j > 2 ? 1 : 0), key, name, pdg);
+          printf("%.2f %d %g %g %d %d %s %s %d\n", mass*1e3, spin, 0.0, 0.0, BF, anti, key, name, pdg);
         }
       }
-    ' "$fileListAll" | sort -n -k1,5
-  } | column -t -R 1,2,3,4,5,6 > data/ResonanceJam2Full.dat
+    ' "$fileListAll" | sort -n -k1 -k2 -k5 | awk '
+      function flush_line() {
+        if (pnam == "") return;
+        print mass, deg, 0, 0, bf, anti, pkey, pnam, pdg;
+        pnam = "";
+      }
+
+      {
+        key = $1 "," $2 "," $5 "," $6;
+        if (key != okey) {
+          flush_line();
+          okey = key;
+
+          mass = $1;
+          bf = $5;
+          anti = $6;
+          pkey = $7;
+          pnam = $8;
+
+          deg = $2;
+          pdg = $9;
+        } else {
+          deg += $2;
+          pdg = pdg " " $9
+        }
+      }
+      END { flush_line(); }
+    '
+  } | column -t -R 1,2,3,4,5,6,9,10,11,12,13,14 | sed 's/[[:space:]]\{1,\}$//' > data/ResonanceJam2Full.dat
 }
 
 if declare -f "cmd:$1" &>/dev/null; then

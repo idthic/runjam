@@ -80,6 +80,7 @@ namespace util {
   std::mt19937& random_engine();
   void set_random_seed(int seed);
   double urand(); // double [0,1)
+  double nrand(); // normal distribution N(μ=0, σ^2)
   int irand(int n); // int [0,n)
   std::size_t irand(std::size_t n); // int [0,n)
   int irand_poisson(double lambda);
