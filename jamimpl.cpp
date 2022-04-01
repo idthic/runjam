@@ -97,16 +97,23 @@ namespace runjam {
 
   class Jam2Runner: public IJamRunner {
     std::unique_ptr<libjam2::irunner> m_runner;
+    double m_oversample = 1.0;
 
   public:
     void initialize(runjam_context const& ctx, std::string const& cascadeMode) override {
       m_runner = libjam2::create_runner();
+      m_oversample = ctx.get_config("runjam_oversampling_factor", 1.0);
+      if (m_oversample != std::floor(m_oversample)) {
+        std::cerr << "jam2: 'runjam_oversampling_factor=" << m_oversample << "' needs to be an integer." << std::endl;
+        std::exit(2);
+      }
 
       auto const settings = m_runner->settings();
 
       settings->flag("Random:setSeed", true);
       settings->mode("Random:seed", ctx.seed());
       settings->mode("Cascade:model", cascadeMode == "decay" ? 0 : 3);
+      settings->mode("Cascade:overSample", (int) m_oversample);
 
       std::string const cachedir = ctx.cachedir();
       settings->word("Cascade:dataFile1", cachedir + "/BWintjam2a.dat");
@@ -173,6 +180,11 @@ namespace runjam {
     }
 
     void do_cascade(ParticleSampleBase& psamp, std::vector<Particle>& final_state, int iev) override {
+      if (psamp.getOverSamplingFactor() != m_oversample) {
+        std::cerr << "ParticleSample: mismatching oversampling factor between the initial condition and JAM2 initialization." << std::endl;
+        std::exit(1);
+      }
+
       (void) iev;
       std::vector<Particle> initial_state(psamp.begin(), psamp.end());
       m_runner->run(initial_state, final_state);
