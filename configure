@@ -2,21 +2,48 @@
 
 PACKAGE_VERSION=0.3.0-alpha
 
+function check-lib {
+  local prefix=$1 name=$2
+  [[ -s $prefix/lib/lib$name.a || -s $prefix/lib/lib$name.so ]]
+}
+
 CXX=g++
 
-use_libjam1=yes
-libjam1_PREFIX=~/opt/jam/1.820
-libjam1_MXV=200000
+use_libjam1=
+if check-lib ~/opt/jam/1.820 jam; then
+  use_libjam1=yes
+  libjam1_PREFIX=~/opt/jam/1.820
+  libjam1_MXV=200000
+fi
 
-use_libjam2=yes
-libjam2_PREFIX=~/.opt/jam/dev
-pythia8_PREFIX=~/.opt/pythia/8.244mod
+use_libjam2=
+if check-lib ~/.opt/jam/dev jam2 && check-lib ~/.opt/pythia/8.244mod pythia8; then
+  use_libjam2=yes
+  libjam2_PREFIX=~/.opt/jam/dev
+  pythia8_PREFIX=~/.opt/pythia/8.244mod
+fi
 
 function readargs/option:with-jam {
   if [[ -f $1/lib/libjam.a || -f $f/lib/libjam.so ]]; then
     libjam1_PREFIX=$1
   else
-    echo "configure: jam not fond at '$1'" >&2
+    echo "configure: jam1 not found at '$1'" >&2
+    flags=E$flags
+  fi
+}
+function readargs/option:with-jam2 {
+  if [[ -f $1/lib/libjam2.a || -f $f/lib/libjam2.so ]]; then
+    libjam2_PREFIX=$1
+  else
+    echo "configure: jam2 not found at '$1'" >&2
+    flags=E$flags
+  fi
+}
+function readargs/option:with-pythia8 {
+  if [[ -f $1/lib/libpythia8.a || -f $f/lib/libpythia8.so ]]; then
+    pythia8_PREFIX=$1
+  else
+    echo "configure: pythia8 not found at '$1'" >&2
     flags=E$flags
   fi
 }
@@ -26,7 +53,9 @@ function readargs/option:help {
          '' \
          'OPTION' \
          '  --prefix=DIR' \
-         '  --with-jam=DIR' \
+         '  --with-jam1=JAM1_PREFIX_DIR' \
+         '  --with-jam2=JAM2_PREFIX_DIR' \
+         '  --with-pythia8=Pythia8_PREFIX_DIR' \
          ''
 }
 
@@ -45,13 +74,23 @@ function readargs {
         printf -v "${arg%%=*}" %s "${arg#*=}"
       elif [[ $arg == -* ]]; then
         case $arg in
-        (--prefix=*) PREFIX=${arg#*=} ;;
-        (--prefix)   PREFIX=$1; shift ;;
-        (--with-jam=*) readargs/option:with-jam "${arg#*=}" ;;
-        (--with-jam)   readargs/option:with-jam "$1"; shift ;;
         (--help)
           readargs/option:help
           flags=H$flags ;;
+
+        (--prefix=*) PREFIX=${arg#*=} ;;
+        (--prefix)   PREFIX=$1; shift ;;
+        (--with-jam1=*) readargs/option:with-jam1 "${arg#*=}" ;;
+        (--with-jam1)   readargs/option:with-jam1 "$1"; shift ;;
+        (--with-jam2=*) readargs/option:with-jam2 "${arg#*=}" ;;
+        (--with-jam2)   readargs/option:with-jam2 "$1"; shift ;;
+        (--with-pythia8=*) readargs/option:with-pythia8 "${arg#*=}" ;;
+        (--with-pythia8)   readargs/option:with-pythia8 "$1"; shift ;;
+
+        # old names of the option
+        (--with-jam=*) readargs/option:with-jam1 "${arg#*=}" ;;
+        (--with-jam)   readargs/option:with-jam1 "$1"; shift ;;
+
         (*)
           echo "configure: unknown option '$arg'" >&2
           flags=E$flags ;;
