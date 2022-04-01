@@ -4,7 +4,7 @@
 #include <Pythia8/Settings.h>
 #include "ParticleSample.hpp"
 
-namespace jam { struct JAM; }
+namespace jam2 { struct JAM; }
 
 namespace libjam2 {
 

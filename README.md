@@ -1,4 +1,4 @@
-# runjam - Cooper-Frye sampler & CLI for JAM1 cascades
+# runjam - Cooper-Frye sampler & CLI for JAM cascades
 
 An efficient hadron sampler based on the Cooper-Frye formula. This
 also provides a command-line interface for JAM cascades useful for
@@ -97,6 +97,8 @@ OPTIONS and VARIABLES
   -t, runjam_oversampling_factor=NUM [1] number of test particles
   -w, runjam_switch_weak_decay=BOOL [false] enable weak decays
       runjam_phi_decays=BOOL [true]
+  -1, runjam_jam_version=1               use JAM1 for cascade/decay
+  -2, runjam_jam_version=2 (default)     use JAM2 for cascade/decay
 
  Output options
   -o,        runjam_output_directory=DIR [out]   directory of output files
@@ -289,10 +291,10 @@ of the original `hydrojet`.
 ### Change resonance list
 
 The resonance list can be specified by the option `-r, --resodata,
-runjam_resodata=FILE`.  This option selects the file that contains the
-information of particle species to be sampled.  The default resonance
-list file is [`data/ResonanceJam.dat`](data/ResonanceJam.dat).  When
-you run cascades the default should be used.
+runjam_resodata=FILE`.
+This option selects the file that contains the information of particle species to be sampled.
+The default resonance list file is [`data/ResonanceJam.dat`](data/ResonanceJam.dat) or [`data/ResonanceJam2.dat`](data/ResonanceJam2.dat) depending on the version of the underlying JAM.
+For the cascade calculations, the default particle list for the cascade model should be used.
 
 Here the file format of the resonance list file is described.  Empty
 lines and lines starting with `#` are ignored.  Each line contains the

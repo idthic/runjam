@@ -4,8 +4,8 @@
 
 namespace {
 
-  class initial_condition_adapter: public jam::UserInitialCondition {
-    typedef jam::UserInitialCondition base;
+  class initial_condition_adapter: public jam2::UserInitialCondition {
+    typedef jam2::UserInitialCondition base;
     static constexpr double DEFAULT_MAX_CM_ENERGY = 20.0;
 
   public:
@@ -33,7 +33,7 @@ namespace {
     }
 
   public:
-    initial_condition_adapter(jam::JAM* jam):
+    initial_condition_adapter(jam2::JAM* jam):
       base(jam->settings, jam->jamParticleData, jam->rndm) {}
 
     virtual ~initial_condition_adapter() {}
@@ -47,7 +47,7 @@ namespace {
       settings->parm("Beams:eCM", DEFAULT_MAX_CM_ENERGY);
     }
 
-    virtual void generate(jam::Collision* event, int mode = 0) override {
+    virtual void generate(jam2::Collision* event, int mode = 0) override {
       (void) mode;
 
       for (idt::runjam::Particle const& particle: *m_particles) {
@@ -56,7 +56,7 @@ namespace {
         Pythia8::Vec4 const r(particle.pos[1], particle.pos[2], particle.pos[3], particle.pos[0]);
         Pythia8::Vec4 const p(particle.mom[1], particle.mom[2], particle.mom[3], particle.mom[0]);
 
-        auto const cp = new jam::EventParticle(particle.pdg, particle.mass, r, p, pa);
+        auto const cp = new jam2::EventParticle(particle.pdg, particle.mass, r, p, pa);
         cp->setPID(jamParticleData->pid(std::abs(particle.pdg)));
 
         // compute decay time if it is resonance.
@@ -74,7 +74,7 @@ namespace {
 namespace libjam2 {
 
   class runner: public irunner {
-    jam::JAM m_jam;
+    jam2::JAM m_jam;
     initial_condition_adapter* m_initial_condition;
 
   public:
@@ -105,7 +105,7 @@ namespace libjam2 {
       m_jam.next();
 
       final_state.clear();
-      for (jam::EventParticle* p: m_jam.getEvent()) {
+      for (jam2::EventParticle* p: m_jam.getEvent()) {
         final_state.emplace_back();
         auto& particle = final_state.back();
         particle.pdg = p->getID();
