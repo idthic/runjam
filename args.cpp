@@ -18,19 +18,42 @@
 
 #include <sys/stat.h>
 #include <iostream>
-#include <filesystem>
+//#include <filesystem>
 #include "args.hpp"
 #include "config.hpp"
 
+// std::filesystem emulation
 namespace fsys {
   static bool exists(const char* path) {
     struct stat st;
     return stat(path, &st) == 0;
   }
-
   static bool is_file(const char* path) {
     struct stat st;
     return stat(path, &st) == 0 && S_ISREG(st.st_mode);
+  }
+  static bool is_directory(const char* path) {
+    struct stat st;
+    return stat(path, &st) == 0 && S_ISDIR(st.st_mode);
+  }
+  static bool is_directory(std::string const& path) {
+    return is_directory(path.c_str());
+  }
+  static bool create_directories(const char* path) {
+    if (is_directory(path)) return false;
+
+    std::string buff = path;
+    char* const p = buff.data();
+    for (std::size_t index = 1; index < buff.size(); index++) {
+      if (p[index] != '/') continue;
+      p[index] = '\0';
+      if (!is_directory(p) && ::mkdir(p, 0777) != 0) return false;
+      p[index] = '/';
+    }
+    return mkdir(path, 0777) == 0;
+  }
+  static bool create_directories(std::string const& path) {
+    return create_directories(path.c_str());
   }
 }
 
@@ -124,24 +147,24 @@ std::string runjam_context::resodata() const {
 
 std::string runjam_context::cachedir() const {
   if (std::strlen(PACKAGE_PREFIX)) {
-    std::filesystem::path path = PACKAGE_PREFIX;
+    std::string path = PACKAGE_PREFIX;
     path += "/share/runjam/cache";
-    std::filesystem::create_directories(path);
-    if (std::filesystem::is_directory(path)) return path;
+    fsys::create_directories(path);
+    if (fsys::is_directory(path)) return path;
   }
 
   if (const char* xdgcache = std::getenv("XDG_CACHE_HOME"); xdgcache && xdgcache[0]) {
-    std::filesystem::path path = xdgcache;
+    std::string path = xdgcache;
     path += "/runjam";
-    std::filesystem::create_directories(path);
-    if (std::filesystem::is_directory(path)) return path;
+    fsys::create_directories(path);
+    if (fsys::is_directory(path)) return path;
   }
 
   if (const char* home = std::getenv("HOME"); home && home[0]) {
-    std::filesystem::path path = home;
+    std::string path = home;
     path += "/.cache/runjam";
-    std::filesystem::create_directories(path);
-    if (std::filesystem::is_directory(path)) return path;
+    fsys::create_directories(path);
+    if (fsys::is_directory(path)) return path;
   }
 
   return ".cache";
