@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 function cmd:update-commit-hash {
-  [[ -f config.cpp ]] || return 0
+  local file=${1-config.cpp}
+  [[ -f $file ]] || return 0
 
   local hash=$(git show -s --format=%h 2>/dev/null)
   if [[ $hash ]]; then
@@ -9,9 +10,9 @@ function cmd:update-commit-hash {
     git status -s | grep -qE '^ ?M' && hash=$hash*
   fi
 
-  grep -qF \""$hash"\" config.cpp && return
-  sed "s/package_hash = \".*\"/package_hash = \"$hash\"/" config.cpp > config.part &&
-    mv config.part config.cpp
+  grep -qF \""$hash"\" "$file" && return
+  sed "s/package_hash = \".*\"/package_hash = \"$hash\"/" "$file" > "$file.part" &&
+    mv "$file.part" "$file"
 }
 
 function cmd:jam2-check-resodata {

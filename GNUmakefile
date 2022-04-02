@@ -59,11 +59,11 @@ runjam_OBJS := \
 runjam_LIBS := $(LIBS)
 ifneq ($(use_libjam1),)
   runjam_OBJS += $(OBJDIR)/libjam1.o
-  runjam_LIBS := -ljam $(runjam_LIBS)
+  runjam_LIBS := $(libjam1_LIBS) $(runjam_LIBS)
 endif
 ifneq ($(use_libjam2),)
   runjam_OBJS += $(OBJDIR)/libjam2.o
-  runjam_LIBS := -ljam2 -lpythia8 $(runjam_LIBS)
+  runjam_LIBS := $(libjam2_LIBS) $(pythia8_LIBS) $(runjam_LIBS) -ldl
 endif
 
 directories += $(OBJDIR) $(OBJDIR)/spectra $(OBJDIR)/ksh

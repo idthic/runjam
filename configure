@@ -6,13 +6,24 @@ function string#quote-arguments {
   ret=()
   local q=\' Q="'\''" special=$' \t\n\\`$!^'\"\'"#&|;()<>[*?]~{,}"
   while (($#)); do
-    if [[ $1 == *["$special"]* ]]; then
-      ret+=("'${1//$q/$Q}'")
-    else
+    if [[ $1 != *["$special"]* ]]; then
       ret+=("$1")
+    elif [[ $1 =~ ^([a-zA-Z0-9_]+=|--[a-zA-Z0-9][a-zA-Z0-9_-]*=)(.*)$ ]]; then
+      ret+=("${BASH_REMATCH[1]}'${BASH_REMATCH[2]//$q/$Q}'")
+    else
+      ret+=("'${1//$q/$Q}'")
     fi
     shift
   done
+}
+
+function util/replace-if-dirty {
+  local src=$1.part dst=$1
+  if diff -q "$src" "$dst" >/dev/null; then
+    rm -f "$src"
+  else
+    mv "$src" "$dst"
+  fi
 }
 
 function check-lib {
@@ -54,11 +65,29 @@ function readargs/option:help {
          'usage: configure [OPTION|VAR=VAL]...' \
          '' \
          'OPTION' \
-         '  --prefix=DIR' \
+         '  --help            print this help' \
+         '  --config          print the previous configure flags' \
+         '' \
          '  --with-jam1=JAM1_PREFIX_DIR' \
+         '                    specify the path of jam1 installation' \
          '  --with-jam2=JAM2_PREFIX_DIR' \
+         '                    specify the path of jam2 installation' \
          '  --with-pythia8=Pythia8_PREFIX_DIR' \
+         '                    specify the path of pythia8 installation' \
+         '  --static-libjam1  statically link libjam1.a' \
+         '  --static-libjam2  statically link libjam2.a' \
+         '  --static-pythia8  statically link libpythia8.a' \
+         '  --static          statically link all the above libaries' \
          ''
+}
+function readargs/option:config {
+  if [[ -s config.mk ]]; then
+    sed -n 's/^configure := //p' config.mk
+    return 0
+  else
+    echo "./configure --config: configure has never been called." >&2
+    return 1
+  fi
 }
 
 ## @fn readargs
@@ -66,6 +95,7 @@ function readargs/option:help {
 ##   @var[out] PREFIX
 ##   @var[out] libjam1_PREFIX
 function readargs {
+  opts=
   flags=
   libjam1_PREFIX=
   libjam2_PREFIX=
@@ -82,6 +112,9 @@ function readargs {
         (--help)
           readargs/option:help
           flags=H$flags ;;
+        (--config)
+          readargs/option:config
+          flags=H$flags ;;
 
         (--prefix=*) PREFIX=${arg#*=} ;;
         (--prefix)   PREFIX=$1; shift ;;
@@ -91,6 +124,7 @@ function readargs {
         (--with-jam2)   readargs/option:with-jam2 "$1"; shift ;;
         (--with-pythia8=*) readargs/option:with-pythia8 "${arg#*=}" ;;
         (--with-pythia8)   readargs/option:with-pythia8 "$1"; shift ;;
+        (--static | --static-pythia8 | --static-jam[12]) opts=$opts:${arg#--} ;;
 
         # old names of the option
         (--with-jam=*) readargs/option:with-jam1 "${arg#*=}" ;;
@@ -112,17 +146,20 @@ function readargs {
 }
 
 function main {
-  local flags libjam1_PREFIX libjam2_PREFIX pythia8_PREFIX
+  local flags opts libjam1_PREFIX libjam2_PREFIX pythia8_PREFIX
   readargs "$@" || return 1
   [[ $flags == *H* ]] && return 0
 
   # fall back to default locations
   [[ $libjam1_PREFIX ]] ||
+    readargs/option:with-jam1 "$PREFIX" opt ||
     readargs/option:with-jam1 ~/opt/jam/1.820 opt ||
     readargs/option:with-jam1 ~/opt/jam-1.820 opt
   [[ $libjam1_PREFIX ]] ||
+    readargs/option:with-jam2 "$PREFIX" opt ||
     readargs/option:with-jam2 ~/.opt/jam/dev jam2 opt
   [[ $pythia8_PREFIX ]] ||
+    readargs/option:with-pythia8 "$PREFIX" opt ||
     readargs/option:with-pythia8 ~/.opt/pythia/8.244mod opt
 
   # determine caps
@@ -136,14 +173,15 @@ function main {
     use_libjam2=yes
   fi
 
+  local ret; string#quote-arguments "$@"
+  local configure_command="./configure ${ret[*]}"
+
   echo ---------------------------------------
   {
     echo '# -*- mode: makefile-gmake -*-'
     echo
     {
-      local ret
-      string#quote-arguments "$@"
-      echo "configure := ./configure ${ret[*]}"
+      echo "configure := $configure_command"
       echo "PREFIX    := $PREFIX"
       echo "CXX       := $CXX"
       echo "CPPFLAGS  := $CPPFLAGS"
@@ -153,15 +191,30 @@ function main {
       echo "use_libjam1 := $use_libjam1"
       echo "ifneq (\$(use_libjam1),)"
       echo "  libjam1_PREFIX := $libjam1_PREFIX"
-      echo "  libjam1_MXV    := $libjam1_MXV"
+      if [[ ( :$opts: == *:static:* || :$opts: == *:static-jam1:* ) && -s $libjam1_PREFIX/lib/libjam.a ]]; then
+        echo "  libjam1_LIBS := $libjam1_PREFIX/lib/libjam.a"
+      else
+        echo "  libjam1_LIBS := -ljam1"
+      fi
+      echo "  libjam1_MXV := $libjam1_MXV"
       echo "endif"
       echo "use_libjam2 := $use_libjam2"
       echo "ifneq (\$(use_libjam2),)"
       echo "  libjam2_PREFIX := $libjam2_PREFIX"
+      if [[ ( :$opts: == *:static:* || :$opts: == *:static-jam2:* ) && -s $libjam2_PREFIX/lib/libjam2.a ]]; then
+        echo "  libjam2_LIBS := $libjam2_PREFIX/lib/libjam2.a"
+      else
+        echo "  libjam2_LIBS := -ljam2"
+      fi
       echo "  pythia8_PREFIX := $pythia8_PREFIX"
+      if [[ ( :$opts: == *:static:* || :$opts: == *:static-pythia8:* ) && -s $pythia8_PREFIX/lib/libpythia8.a ]]; then
+        echo "  pythia8_LIBS := $pythia8_PREFIX/lib/libpythia8.a"
+      else
+        echo "  pythia8_LIBS := -lpythia8"
+      fi
       echo "endif"
     } | tee /dev/tty
-  } > config.mk
+  } > config.mk #.part && util/replace-if-dirty config.mk
 
   {
     echo "#ifndef CONFIG_HPP"
@@ -194,17 +247,20 @@ function main {
     echo '}'
     echo '}'
     echo "#endif"
-  } > config.hpp
+  } > config.hpp.part
+  util/replace-if-dirty config.hpp
 
   {
     echo '#include "config.hpp"'
     echo 'namespace idt {'
     echo 'namespace runjam {'
-    echo '  const char* package_hash = "";'
+    echo "  const char* package_hash = \"$hash\";"
     echo '}'
     echo '}'
-  } > config.cpp
-  ./mktool.sh update-commit-hash
+  } > config.cpp.part
+  ./mktool.sh update-commit-hash config.cpp.part
+  util/replace-if-dirty config.cpp
+
   echo ---------------------------------------
 }
 
