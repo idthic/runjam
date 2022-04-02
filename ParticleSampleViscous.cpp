@@ -36,6 +36,9 @@ namespace idt {
 namespace runjam {
 namespace {
 
+  // 元々の hydrojet コードの値 (将来的に更新するべき)
+  static const double hbarc_GeVfm = 0.197327053;
+
   // sqrt(pi/2)
   static const double SQRT_TANGENT_ASYMPTOTE = M_SQRT2 / M_2_SQRTPI;
 
@@ -1101,7 +1104,6 @@ namespace {
       };
 
       // 粒子の追加
-      const double hbarc_GeVfm = 0.197327053;
       particle->e  = laboratory_momentum[0] * hbarc_GeVfm;
       particle->px = laboratory_momentum[1] * hbarc_GeVfm;
       particle->py = laboratory_momentum[2] * hbarc_GeVfm;
@@ -1201,7 +1203,7 @@ namespace {
         if (m_dominating && idt::util::urand() >= prob) continue;
         if (generateParticleSample(&particle)) {
           particle.pdg = reso.generatePDGCode();
-          particle.mass = reso.mass;
+          particle.mass = reso.mass * hbarc_GeVfm;
           plist.emplace_back(particle);
         }
       }
