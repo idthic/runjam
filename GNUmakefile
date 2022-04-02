@@ -33,10 +33,10 @@ endif
 
 INSDIR := $(DESTDIR)$(PREFIX)
 
-CXXFLAGS := $(user_CXXFLAGS) -march=native -O3 -std=gnu++17
-CPPFLAGS  =  $(user_CPPFLAGS) -I . $(config_CPPFLAGS) -MD -MP -MF $(@:.o=.dep)
-LDFLAGS  := $(user_LDFLAGS) $(config_LDFLAGS)
-LIBS     := $(user_LIBS)
+override CXXFLAGS := $(user_CXXFLAGS)
+override CPPFLAGS  =  -I . $(config_CPPFLAGS) -MD -MP -MF $(@:.o=.dep) $(user_CPPFLAGS)
+override LDFLAGS  := $(user_LDFLAGS) $(config_LDFLAGS)
+override LIBS     := $(user_LIBS)
 
 #------------------------------------------------------------------------------
 
