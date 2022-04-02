@@ -69,6 +69,7 @@ void writePhasespaceData(std::ofstream& ofs, Particle const* begin, Particle con
         << std::setw(14) << t
         << std::endl;
   }
+  ofs << std::flush;
 }
 
 void writePhasespaceBinary(std::ofstream& ofs, Particle const* begin, Particle const* end, double ntest = 1.0) {
@@ -100,6 +101,7 @@ void writePhasespaceBinary(std::ofstream& ofs, Particle const* begin, Particle c
     ofs.write((char*) &z, 4);
     ofs.write((char*) &t, 4);
   }
+  ofs << std::flush;
 }
 
 class IObserver {
@@ -118,21 +120,27 @@ public:
 class FileWriterBase: public IObserver {
 protected:
   std::string filename;
+  std::string filename_part;
   std::ios::openmode openmode = std::ios::out;
   std::ofstream ofs;
   FileWriterBase(std::string const& filename, std::ios::openmode openmode = std::ios::out):
-    filename(filename), openmode(openmode) {}
+    filename(filename), openmode(openmode), filename_part(filename + ".part") {}
 public:
   virtual void initialize() override {
-    ofs.open(filename.c_str(), openmode);
+    ofs.open(filename_part.c_str(), openmode);
     if (!ofs) {
       std::cerr << "runjam: failed to open '" << filename << "' for write." << std::endl;
       std::exit(1);
     }
   }
   virtual void finalize() override {
-    if (ofs.is_open())
+    if (ofs.is_open()) {
       ofs.close();
+      if (std::rename(filename_part.c_str(), filename.c_str()) != 0) {
+        std::cerr << "runjam: failed to rename '" << filename_part << "' to '" << filename
+                  << " (" << std::strerror(errno) << ")" << std::endl;
+      }
+    }
   }
 };
 
@@ -232,10 +240,13 @@ public:
 
     int const nprint = 1;
 
-    std::unique_ptr<IJamRunner> runner = create_runner(ctx);
-    if (!runner) {
-      std::cerr << "runjam: " << cascadeMode << " not supported." << std::endl;
-      std::exit(3);
+    std::unique_ptr<IJamRunner> runner;
+    if (cascadeMode != "sample") {
+      runner = create_runner(ctx);
+      if (!runner) {
+        std::cerr << "runjam: " << cascadeMode << " not supported." << std::endl;
+        std::exit(3);
+      }
     }
 
     bool const is_decay = cascadeMode == "decay";
