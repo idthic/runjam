@@ -27,6 +27,7 @@
 #include <iostream>
 #include <iomanip>
 #include <memory>
+#include <chrono>
 
 #include "config.hpp"
 #include "args.hpp"
@@ -255,17 +256,14 @@ public:
         observer->initialize();
     }
 
+    typedef std::chrono::steady_clock clock_t;
+
     // event loop
     for (int iev = 1; iev <= nevent; iev++) {
       psamp.update();
 
       if (runner) runner->adjust_mass(psamp);
       //psamp->adjustCenterOfMassByLorentzBoost();
-      if (iev % nprint == 0) {
-        std::cout
-          << "runjam:iev=" << iev << ": "
-          << "sampling done. The initial test-particle number is nv=" << psamp.size() << "." << std::endl;
-      }
 
       double const ntest = psamp.getOverSamplingFactor();
       averageParticleNumber0 += (double) psamp.size() / ntest;
@@ -274,21 +272,27 @@ public:
 
       if (!runner) continue;
 
-      if (is_decay) {
+      if (iev % nprint == 0) {
+        std::cout
+          << "runjam:iev=" << iev << ": " << cascadeMode
+          << " start (initial_nparticle=" << psamp.size() << ")" << std::endl;
+      }
+
+      clock_t::time_point const time1 = clock_t::now();
+      if (is_decay)
         runner->do_decay(psamp, final_state);
-        if (iev % nprint == 0) {
-          std::cout
-            << "runjam:iev=" << iev << ": "
-            << "decay done." << std::endl;
-        }
-      } else {
+      else
         runner->do_cascade(psamp, final_state, iev);
-        if (iev % nprint == 0) {
-          std::cout
-            << "runjam:iev=" << iev << ": "
-            << "cascade done. The average collision number is "
-            << runner->get_average_collision_number() << "." << std::endl;
-        }
+      clock_t::time_point const time2 = clock_t::now();
+
+      if (iev % nprint == 0) {
+        double const ata = std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1).count() * 0.001;
+        std::cout
+          << "runjam:iev=" << iev << ": " << cascadeMode
+          << " done (final_nparticle=" << final_state.size();
+        if (!is_decay)
+          std::cout << " average_ncollision=" << runner->get_average_collision_number();
+        std::cout << ") " << ata << "sec" << std::endl;
       }
 
       averageParticleNumber += (double) final_state.size() / ntest;

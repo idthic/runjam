@@ -26,6 +26,7 @@
 #include <fstream>
 #include <sstream>
 #include <iterator>
+#include <chrono>
 #include <ksh/integrator.hpp>
 #include <util.hpp>
 
@@ -1326,8 +1327,12 @@ namespace {
       double const switchingBeta = 1.0 / switchingTemperature; // [/fm]
       interpolation::TotalCDFInterpolater interp(&rlist, switchingBeta);
 
+      typedef std::chrono::steady_clock clock_t;
+      clock_t::time_point const stat_time1 = clock_t::now();
+      std::size_t stat_iline = 0;
       bool completed=false;
       while (std::getline(ifs, line)) {
+        stat_iline++;
         HypersurfaceElementC0Lrf surface;
         {
           std::istringstream s(line);
@@ -1377,13 +1382,16 @@ namespace {
             sampler.SampleResonance(plist, &rlist, ireso);
         }
       }
+      clock_t::time_point const stat_time2 = clock_t::now();
 
       if (!completed) {
         std::cerr << "ParticleSampleViscous (c0lrf/update):" << fname_hypersurface << ": unexpected end of the file." << std::endl;
         std::exit(EXIT_FAILURE);
       }
 
-      std::cout << "ParticleSampleViscous (c0lrf/update):" << fname_hypersurface << ": " << base::plist.size() << " particles were generated," << std::endl;
+      double const stat_ata = 1e-3 * std::chrono::duration_cast<std::chrono::milliseconds>(stat_time2 - stat_time1).count();
+      std::cout << "ParticleSampleViscous (c0lrf/update):" << fname_hypersurface << ": " << base::plist.size()
+                << " particles were generated (" << stat_iline << " lines, " << stat_ata << " sec)." << std::endl;
     }
 
   };
