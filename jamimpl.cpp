@@ -22,34 +22,43 @@ namespace runjam {
 
 #ifdef USE_LIBJAM2
   static libjam2::irunner* runner_instance = nullptr;
-  int getParticleStableCode(int kf) {
-    if (!runner_instance) {
-#ifdef USE_LIBJAM1
-      return libjam1::determineStableCode(kf);
-#else
-      std::cerr << "FATAL: libjam2::runner not yet initialized." << std::endl;
-      std::exit(3);
 #endif
-    }
-    return runner_instance->get_particle_stable_code(kf);
-  }
-  double getParticleMass(int kf) {
-    if (!runner_instance) {
-#ifdef USE_LIBJAM1
-      return libjam1::jamMass(kf);
-#else
-      std::cerr << "FATAL: libjam2::runner not yet initialized." << std::endl;
-      std::exit(3);
-#endif
-    }
-    return runner_instance->get_particle_mass(kf);
-  }
-#elif defined(USE_LIBJAM1)
+
   int getParticleStableCode(int kf) {
+#ifdef USE_LIBJAM2
+    if (runner_instance)
+      return runner_instance->get_particle_stable_code(kf);
+#endif
+
+#if defined(USE_LIBJAM1)
     return libjam1::determineStableCode(kf);
+#else
+    switch (std::abs(kf)) {
+    case 111: case 211: case 221: // pions
+    case 311: case 321: // kaons
+    case 2212: case 2112: // nucleons
+    case 3112: case 3122: case 3212: case 3222: // Lambda and Sigma
+    case 3312: case 3322: case 3334: // Xi and Omega
+      return 1;
+    default:
+      return 2;
+    }
+#endif
   }
+
+#if defined(USE_LIBJAM2) || defined(USE_LIBJAM1)
   double getParticleMass(int kf) {
+# ifdef USE_LIBJAM2
+    if (runner_instance)
+      return runner_instance->get_particle_mass(kf);
+# endif
+
+# ifdef USE_LIBJAM1
     return libjam1::jamMass(kf);
+# else
+    std::cerr << "FATAL: libjam2::runner not yet initialized." << std::endl;
+    std::exit(3);
+# endif
   }
 #endif
 

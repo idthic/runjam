@@ -11,8 +11,9 @@ namespace libjam2 { class runner; }
 namespace idt {
 namespace runjam {
 
-#if defined(USE_LIBJAM2) || defined(USE_LIBJAM1)
   int getParticleStableCode(int kf);
+
+#if defined(USE_LIBJAM2) || defined(USE_LIBJAM1)
   double getParticleMass(int kf);
 #endif
 
