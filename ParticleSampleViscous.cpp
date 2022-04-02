@@ -122,7 +122,7 @@ namespace {
         double const center = 0.5 * (upper + lower);
         double const dxds   = 0.5 * (upper - lower);
         ideal = 0.0, viscous = 0.0;
-        for (int i = 0; i < gl_nodes::data_size; i++) {
+        for (std::size_t i = 0; i < gl_nodes::data_size; i++) {
           double const s = gl_nodes::data[i].t;
           double const w = gl_nodes::data[i].w;
 
@@ -168,7 +168,7 @@ namespace {
         double const center = 0.5 * (upper + lower);
         double const dxds   = 0.5 * (upper - lower);
         ideal = 0.0, viscous = 0.0;
-        for (int i = 0; i < gl_nodes::data_size; i++) {
+        for (std::size_t i = 0; i < gl_nodes::data_size; i++) {
           double const s = gl_nodes::data[i].t;
           double const w = gl_nodes::data[i].w;
 
@@ -235,7 +235,7 @@ namespace {
 
         std::fill(buff, buff + 6, 0.0);
 
-        for (int i = 0; i < gl_nodes::data_size; i++) {
+        for (std::size_t i = 0; i < gl_nodes::data_size; i++) {
           double const s = gl_nodes::data[i].t;
           double const w = gl_nodes::data[i].w;
 

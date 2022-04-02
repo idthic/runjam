@@ -1,3 +1,4 @@
+// -*- mode: c++ -*-
 /* Copyright (C) 2011-2020, Koichi Murase @akinomyoga.
    This file is a part of runjam <https://github.com/idthic/runjam>.
 
@@ -19,6 +20,8 @@
 #ifndef kashiwa_integrator_hpp
 #define kashiwa_integrator_hpp
 #include <cstddef>
+#include <cmath>
+#include <algorithm>
 namespace kashiwa {
 namespace integrator_detail {
   struct point_weight_pair {
@@ -59,7 +62,7 @@ namespace integrator_detail {
     double const dxdt   = 0.5 * (upper - lower);
 
     double s = 0.0;
-    for (int i = 0; i < I / 2; i++) {
+    for (std::size_t i = 0; i < I / 2; i++) {
       double const t = traits_t::data[i].t;
       double const w = traits_t::data[i].w;
       s += w * (f(center + dxdt * t) + f(center - dxdt * t));
@@ -72,7 +75,7 @@ namespace integrator_detail {
   double IntegrateByGaussLaguerre(const double lower, const double scale, F f) {
     typedef integrator_detail::GaussLaguerre<I> traits_t;
     double s = 0.0;
-    for (int i = 0; i < traits_t::data_size; i++) {
+    for (std::size_t i = 0; i < traits_t::data_size; i++) {
       double const t = traits_t::data[i].t;
       double const w = traits_t::data[i].w;
       s += w * f(lower + scale * t);
@@ -114,6 +117,61 @@ namespace integrator_detail {
       return s;
     }
   };
+
+  template<int I, typename F>
+  void gauss_legendre_quadrature(int N, double* result, double xmin, double xmax, F f) {
+    typedef integrator_detail::GaussLegendre<I> traits_t;
+    double const center = 0.5 * (xmax + xmin);
+    double const dxdt   = 0.5 * (xmax - xmin);
+
+    std::fill(result, result + N, 0.0);
+
+    for (int i = 0; i < I / 2; i++) {
+      double const t = traits_t::data[i].t;
+      double const w = traits_t::data[i].w;
+
+      double value1[N];
+      f(value1, center + dxdt * t);
+      double value2[N];
+      f(value2, center - dxdt * t);
+
+      for (int k = 0; k < N; k++)
+        result[k] += w * (value1[k] + value2[k]);
+    }
+
+    for (int k = 0; k < N; k++)
+      result[k] *= dxdt;
+  }
+
+  template<typename F>
+  void gauss_chebyshev_quadrature(int Nd, double* result, int Ni, double xmin, double xmax, F f) {
+    double const center = 0.5 * (xmax + xmin);
+    double const dxdt   = 0.5 * (xmax - xmin);
+    double const dh = M_PI / (2.0 * Ni);
+
+    if (Ni & 1) {
+      f(result, center);
+    } else {
+      std::fill(result, result + Nd, 0.0);
+    }
+
+    for (int i = 0, iN = Ni / 2; i < iN; i++) {
+      double const t = std::cos((2 * i + 1) * dh);
+      double const w = std::sqrt(1.0 - t * t);
+
+      double value1[Nd];
+      f(value1, center + dxdt * t);
+      double value2[Nd];
+      f(value2, center - dxdt * t);
+
+      for (int k = 0; k < Nd; k++)
+        result[k] += w * (value1[k] + value2[k]);
+    }
+
+    double const factor = dxdt * M_PI / Ni;
+    for (int k = 0; k < Nd; k++)
+      result[k] *= factor;
+  }
 
 }
 #endif
