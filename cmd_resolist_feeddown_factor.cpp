@@ -17,6 +17,7 @@
 namespace idt::runjam {
 
   int cmd_resolist_feeddown_factor(idt::runjam::runjam_context& ctx, idt::runjam::runjam_commandline_arguments const& args) {
+    (void) args;
     ctx.set_value("runjam_switch_weak_decay", true);
     ctx.set_value("runjam_phi_decay", true);
 

@@ -63,7 +63,7 @@ namespace {
       if (m_currentSampleIndex < 0) {
         std::cerr << "ParticleSampleReadPhasespaceData: A phasespace file has not been read." << std::endl;
         std::exit(EXIT_FAILURE);
-      } else if (m_currentSampleIndex >= this->pcache.size() - 1) {
+      } else if ((std::size_t) m_currentSampleIndex >= this->pcache.size() - 1) {
         std::cerr << "ParticleSampleReadPhasespaceData: No more samples." << std::endl;
         std::exit(EXIT_FAILURE);
       }
@@ -100,7 +100,7 @@ namespace {
           iline++;
           if (!std::getline(ifs, line)) goto error_invalid_format;
           int npart;
-          if (2 != std::sscanf(line.c_str(), " %d %f", &npart, &m_overSamplingFactor)) break;
+          if (2 != std::sscanf(line.c_str(), " %d %lf", &npart, &m_overSamplingFactor)) break;
 
           if (isample == this->m_numberOfSamples) goto error_invalid_format;
 
@@ -193,7 +193,7 @@ namespace {
       if (m_currentSampleIndex < 0) {
         std::cerr << "ParticleSampleReadPhasespaceBinary: A phasespace file has not been read." << std::endl;
         std::exit(EXIT_FAILURE);
-      } else if (m_currentSampleIndex >= this->pcache.size() - 1) {
+      } else if ((std::size_t) m_currentSampleIndex >= this->pcache.size() - 1) {
         std::cerr << "ParticleSampleReadPhasespaceBinary: No more samples." << std::endl;
         std::exit(EXIT_FAILURE);
       }
@@ -223,7 +223,6 @@ namespace {
       if (!ifs) goto error_failed_to_open;
       {
         std::string line;
-        std::uint32_t type;
         for (isample = 0; ; isample++) {
           std::ifstream::pos_type const pos_start = ifs.tellg();
 
@@ -299,7 +298,7 @@ namespace {
       } else if (type == "phbin") {
         auto psamp = std::make_unique<ParticleSampleReadPhasespaceBinary>(ctx, inputfile);
         psamp->setNumberOfSamples(ctx.get_config("runjam_initial_phbin_size", 1000));
-        return std::move(psamp);
+        return psamp;
       }
 
       return nullptr;

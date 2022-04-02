@@ -512,11 +512,10 @@ namespace {
       // 複数の関数の同一点 tsig の上での補間値を得る。
       // 複数の interpolation_data を受け取り複数の double を返す。
       void interpolate(int count, double* result, interpolation_data const* data, double tsig) const {
-        double const lower = 0.0;
-        double const upper = SQRT_TANGENT_ASYMPTOTE;
-        double const dxds  = (upper - lower) / NPART;
-
-        double const s = (NPART / SQRT_TANGENT_ASYMPTOTE) * tsig;
+        // double const lower = 0.0;
+        // double const upper = SQRT_TANGENT_ASYMPTOTE;
+        // double const dxds  = (upper - lower) / NPART;
+        double const s = (NPART / SQRT_TANGENT_ASYMPTOTE) * tsig; // = tsig / dxds
         int    const is = int(s);
         if (is < 0) {
           for (int k = 0; k < count; k++)
@@ -843,8 +842,6 @@ namespace {
     /// @param value 累積確率を指定します。
     /// @return 対応する x = beta*energy を返します。
     double IsotropicPartInverseUCDF(double value) const {
-      static const double asymptote = SQRT_TANGENT_ASYMPTOTE;
-
       // 二分法、目的関数が単調減少である事に注意。
       double alow = 0.0;
       double aupp = SQRT_TANGENT_ASYMPTOTE;
@@ -1646,8 +1643,8 @@ namespace {
   class DummyResonanceList: public ResonanceList {
   public:
     DummyResonanceList() {
-      data.push_back(ResonanceRecord {135 / hbarc_MeVfm, 1.0, 1.0, 0.0, +1, 0});
-      data.push_back(ResonanceRecord {135 / hbarc_MeVfm, 1.0, 1.0, 0.0, -1, 0});
+      data.push_back(ResonanceRecord {135 / hbarc_MeVfm, 1.0, 1.0, 0.0, +1, 0, {}, {}});
+      data.push_back(ResonanceRecord {135 / hbarc_MeVfm, 1.0, 1.0, 0.0, -1, 0, {}, {}});
     }
   };
 }

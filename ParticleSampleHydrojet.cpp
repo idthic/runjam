@@ -353,7 +353,6 @@ namespace {
     return 0;
   }
   int HypersurfaceReader::readEData() {
-    char buffer[1280];
     std::string line;
     std::size_t index = 0, iline = 0;
     while (std::getline(eccdata, line)) {
@@ -613,8 +612,6 @@ namespace {
   void ParticleSampleHydrojet::analyze(double oversamplingFactor) {
     int const nreso_loop = this->rlist.size();
 
-    double ran;
-
     while (!m_hf.readFData()) {
       m_hf.readPData();
 
@@ -666,7 +663,7 @@ namespace {
             IntegrateFermionCooperFrye(npos, nneg, u, ds, beta, reso.mass, reso.mu);
           }
 
-          double n = (nneg + npos) * reso.degeff;
+          // double numPions = (nneg + npos) * reso.degeff;
           numResPos = npos * reso.deg;
           numResNeg = nneg * reso.deg;
         }
@@ -762,8 +759,6 @@ namespace {
       eta0 = -eta0;
     }
 
-    double p[58], pw[58];
-
     double const ptmid = 1e3 / hbarc_MeVfm;
     double const dx = this->cfg_dx;
     double const dy = this->cfg_dy;
@@ -809,7 +804,7 @@ namespace {
 
         double const mu = reso.mu;
         double const sgn = reso.bf;
-        for (int id = 0; id < HYDROJET_ITERATION_MAX; id++) {
+        for (std::size_t id = 0; id < HYDROJET_ITERATION_MAX; id++) {
           ppp = (pmax + pmin) * 0.5;
           double const fp = kashiwa::IntegrateByGaussLegendre<12>(0.0, ppp,
             [beta, mu, mres2, sgn] (double p) {

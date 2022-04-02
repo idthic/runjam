@@ -63,8 +63,8 @@ std::string runjam_context::resodata() const {
       default:
         std::cerr << "runjam: unsupported kintmp=" << kintmp << "." << std::endl;
         std::exit(1);
-        break;
       }
+      break;
     case 2: case 3:
       file = default_data;
       break;
@@ -88,8 +88,8 @@ std::string runjam_context::resodata() const {
       default:
         std::cerr << "runjam: unsupported kintmp=" << kintmp << "." << std::endl;
         std::exit(1);
-        break;
       }
+      break;
     case 13: file = "ResonancePhi.dat"; break; // phi, J/psi
     case 14: file = "ResonancePhi.T100.dat"; break; // phi, J/psi (PCE T=100 MeV)
 

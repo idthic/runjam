@@ -27,7 +27,7 @@ endif
 ifneq ($(use_libjam2),)
   libjam2_LIBDIR  := $(libjam2_PREFIX)/lib
   pythia8_LIBDIR  := $(pythia8_PREFIX)/lib
-  config_CPPFLAGS +=  -I $(libjam2_PREFIX)/include -I $(pythia8_PREFIX)/include
+  config_CPPFLAGS +=  -isystem $(libjam2_PREFIX)/include -isystem $(pythia8_PREFIX)/include
   config_LDFLAGS  += -L$(libjam2_LIBDIR) -L$(pythia8_LIBDIR) -Wl,-rpath,$(libjam2_LIBDIR) -Wl,-rpath,$(pythia8_LIBDIR)
 endif
 

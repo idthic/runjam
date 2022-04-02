@@ -100,8 +100,6 @@ namespace runjam {
   }
 
   void ParticleSampleBase::adjustCenterOfMassByLorentzBoost() {
-    double u0 = 0.0, u1 = 0.0, u2 = 0.0, u3 = 0.0;
-
     vector4 u = {};
     for (Particle& part: *this) u += part.mom;
     double norm = u * u;
@@ -130,7 +128,7 @@ namespace runjam {
   void OversampledParticleSampleBase::update() {
     // 一括生成済の時
     if (this->pcache.size() > 1) {
-      if (++this->indexOfCachedEvents < this->pcache.size() - 1)
+      if ((std::size_t) ++this->indexOfCachedEvents < this->pcache.size() - 1)
         return;
 
       this->pcache.clear();

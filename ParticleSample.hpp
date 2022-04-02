@@ -142,7 +142,7 @@ namespace runjam {
 
     /// @fn void setAdviceNumberOfExpectedEvents(int nEvents);
     /// このインスタンスを用いて生成すると予想されるイベントの数を指定します。
-    virtual void setAdviceNumberOfExpectedEvents(int nEvents) {}
+    virtual void setAdviceNumberOfExpectedEvents(int nEvents) { (void) nEvents; }
 
     virtual double getOverSamplingFactor() const = 0;
 
