@@ -9,10 +9,10 @@ PRECMD := $(shell ./mktool.sh update-commit-hash)
 # Compile config
 
 configure := ./configure
+-include config.mk
 config.mk: configure
 	$(configure)
 
--include config.mk
 user_CPPFLAGS := $(CPPFLAGS)
 user_CXXFLAGS := $(CXXFLAGS)
 user_LDFLAGS  := $(LDFLAGS)

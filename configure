@@ -2,6 +2,19 @@
 
 PACKAGE_VERSION=0.3.0-alpha
 
+function string#quote-arguments {
+  ret=()
+  local q=\' Q="'\''" special=$' \t\n\\`$!^'\"\'"#&|;()<>[*?]~{,}"
+  while (($#)); do
+    if [[ $1 == *["$special"]* ]]; then
+      ret+=("'${1//$q/$Q}'")
+    else
+      ret+=("$1")
+    fi
+    shift
+  done
+}
+
 function check-lib {
   local prefix=$1 name=$2
   [[ -s $prefix/lib/lib$name.a || -s $prefix/lib/lib$name.so ]]
@@ -120,7 +133,9 @@ function main {
     echo '# -*- mode: makefile-gmake -*-'
     echo
     {
-      echo "configure := ./configure $*"
+      local ret
+      string#quote-arguments "$@"
+      echo "configure := ./configure ${ret[*]}"
       echo "PREFIX    := $PREFIX"
       echo "CXX       := $CXX"
       echo "CPPFLAGS  := $CPPFLAGS"
