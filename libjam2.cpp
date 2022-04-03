@@ -125,9 +125,13 @@ namespace libjam2 {
       return m_jam.jamParticleData->find(pdg)->m0();
     }
     int get_particle_stable_code(int pdg) const override {
-      // stable particle = 1
-      // unstable particle = 2
-      return m_jam.jamParticleData->find(pdg)->mWidth() <= 1e-7 ? 1 : 2;
+      // Returns 1 for stable particle and 2 for unstable particle.
+      Pythia8::ParticleDataEntry const* const pd = m_jam.jamParticleData->find(pdg);
+      if (!pd) {
+        std::cerr << "runjam (libjam2::get_particle_stable_code): particle data for pdg=" << pdg << " not found" << std::endl;
+        std::exit(1);
+      }
+      return pd->mWidth() <= 1e-7 ? 1 : 2;
     }
     double get_event_collision_number() const override {
       return m_jam.getNColl();
