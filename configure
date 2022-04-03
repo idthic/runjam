@@ -31,8 +31,6 @@ function check-lib {
   [[ -s $prefix/lib/lib$name.a || -s $prefix/lib/lib$name.so ]]
 }
 
-CXX=g++
-
 function readargs/option:with-jam1 {
   if check-lib "$1" jam; then
     libjam1_PREFIX=$1
@@ -146,6 +144,8 @@ function readargs {
 }
 
 function main {
+  : "${CXX:=g++}"
+
   local flags opts libjam1_PREFIX libjam2_PREFIX pythia8_PREFIX
   readargs "$@" || return 1
   [[ $flags == *H* ]] && return 0
@@ -155,7 +155,7 @@ function main {
     readargs/option:with-jam1 "$PREFIX" opt ||
     readargs/option:with-jam1 ~/opt/jam/1.820 opt ||
     readargs/option:with-jam1 ~/opt/jam-1.820 opt
-  [[ $libjam1_PREFIX ]] ||
+  [[ $libjam2_PREFIX ]] ||
     readargs/option:with-jam2 "$PREFIX" opt ||
     readargs/option:with-jam2 ~/.opt/jam/dev jam2 opt
   [[ $pythia8_PREFIX ]] ||
@@ -194,7 +194,7 @@ function main {
       if [[ ( :$opts: == *:static:* || :$opts: == *:static-jam1:* ) && -s $libjam1_PREFIX/lib/libjam.a ]]; then
         echo "  libjam1_LIBS := $libjam1_PREFIX/lib/libjam.a"
       else
-        echo "  libjam1_LIBS := -ljam1"
+        echo "  libjam1_LIBS := -ljam"
       fi
       echo "  libjam1_MXV := $libjam1_MXV"
       echo "endif"

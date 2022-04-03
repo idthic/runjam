@@ -124,7 +124,7 @@ protected:
   std::ios::openmode openmode = std::ios::out;
   std::ofstream ofs;
   FileWriterBase(std::string const& filename, std::ios::openmode openmode = std::ios::out):
-    filename(filename), openmode(openmode), filename_part(filename + ".part") {}
+    filename(filename), filename_part(filename + ".part"), openmode(openmode) {}
 public:
   virtual void initialize() override {
     ofs.open(filename_part.c_str(), openmode);
