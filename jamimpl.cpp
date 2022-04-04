@@ -110,7 +110,8 @@ namespace runjam {
 
   public:
     void initialize(runjam_context const& ctx, std::string const& cascadeMode) override {
-      m_runner = libjam2::create_runner();
+      std::string const fconfig = ctx.get_config<std::string>("runjam_jam2_config", "/dev/null");
+      m_runner = libjam2::create_runner(fconfig);
       m_oversample = ctx.get_config("runjam_oversampling_factor", 1.0);
       if (m_oversample != std::floor(m_oversample)) {
         std::cerr << "jam2: 'runjam_oversampling_factor=" << m_oversample << "' needs to be an integer." << std::endl;
