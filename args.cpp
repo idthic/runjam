@@ -209,16 +209,27 @@ namespace {
 #endif
       "\n"
       " Output options\n"
-      "  -o,        runjam_output_directory=DIR [out]   directory of output files\n"
-      "  --fphase,  runjam_fname_phdat=FILE []          output filename\n"
-      "  --fphase0, runjam_fname_phdat0=FILE []         output filename\n"
-      "             runjam_output_phdat=BOOL [true]     output phasespace data\n"
-      "             runjam_output_phdat0=BOOL [true]    output phasespace0 data\n"
-      "             runjam_output_phbin=BOOL [false]    output binary phasespace\n"
-      "             runjam_output_phbin0=BOOL [false]   output binary phasespace0\n"
-      "             runjam_output_phdat_indexed=BOOL [false]\n"
-      "             runjam_output_phdat0_indexed=BOOL [false]\n"
-      "             runjam_output_index_start=INT [0]\n"
+      "  -o, runjam_output_directory=DIR [out]   directory of output files\n"
+      "  --fphase FILE\n"
+      "  --fphase0 FILE\n"
+      "          specify final (--fphase) and initial (--fphase0) phasespace output\n"
+      "          filenames.  The output file type is determined based on the extension\n"
+      "          (.bin = phbin, .bin4 = phbin4, .bin4ch = phbin4ch, otherwise phdat).\n"
+      "\n"
+      "      runjam_fname_phdat=FILE [phasespace.dat]\n"
+      "      runjam_fname_phdat0=FILE [phasespace0.dat]\n"
+      "      runjam_fname_phbin=FILE [phasespace.bin]\n"
+      "      runjam_fname_phbin0=FILE [phasespace0.bin]\n"
+      "          set output text and binary filenames.  For the binary format, the\n"
+      "          type is automatically selected based on the extension.\n"
+      "\n"
+      "      runjam_output_phdat=BOOL [true]     output phasespace data\n"
+      "      runjam_output_phdat0=BOOL [true]    output phasespace0 data\n"
+      "      runjam_output_phbin=BOOL [false]    output binary phasespace\n"
+      "      runjam_output_phbin0=BOOL [false]   output binary phasespace0\n"
+      "      runjam_output_phdat_indexed=BOOL [false]\n"
+      "      runjam_output_phdat0_indexed=BOOL [false]\n"
+      "      runjam_output_index_start=INT [0]\n"
       "  -d INT\n"
       "    0        Disable all output format\n"
       "    1        Enable only 'phdat' and 'phdat0'\n"
@@ -356,10 +367,27 @@ namespace {
         flag_version = true;
       } else if (longname == "resodata") {
         assign_optarg("runjam_resodata");
+
       } else if (longname == "fphase") {
-        assign_optarg("runjam_fname_phdat");
+        if (const char* optarg = get_optarg()) {
+          if (idt::util::ends_with(optarg, ".bin") || idt::util::ends_with(optarg, ".bin4") || idt::util::ends_with(optarg, ".bin4ch")) {
+            ctx->set_value("runjam_output_phbin", true);
+            ctx->set_value("runjam_fname_phbin", optarg);
+          } else {
+            ctx->set_value("runjam_output_phdat", true);
+            ctx->set_value("runjam_fname_phdat", optarg);
+          }
+        }
       } else if (longname == "fphase0") {
-        assign_optarg("runjam_fname_phdat0");
+        if (const char* optarg = get_optarg()) {
+          if (idt::util::ends_with(optarg, ".bin") || idt::util::ends_with(optarg, ".bin4") || idt::util::ends_with(optarg, ".bin4ch")) {
+            ctx->set_value("runjam_output_phbin0", true);
+            ctx->set_value("runjam_fname_phbin0", optarg);
+          } else {
+            ctx->set_value("runjam_output_phdat0", true);
+            ctx->set_value("runjam_fname_phdat0", optarg);
+          }
+        }
 
       } else if (longname == "hydrojet-dir") {
         assign_optarg("hydrojet_directory");

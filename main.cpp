@@ -72,36 +72,96 @@ void writePhasespaceData(std::ofstream& ofs, Particle const* begin, Particle con
   ofs << std::flush;
 }
 
-void writePhasespaceBinary(std::ofstream& ofs, Particle const* begin, Particle const* end, double ntest = 1.0) {
-  (void) ntest;
+static bool is_charged(int pdg) {
+  return std::abs(pdg) == 211 ||
+    std::abs(pdg) == 321 ||
+    std::abs(pdg) == 2212;
+}
 
+enum phasespace_phbin_type {
+  phasespace_phbin_full = 0,
+  phasespace_phbin4 = 1,
+  phasespace_phbin4_charged = 2,
+};
+
+void writePhasespaceBinary(std::ofstream& ofs, Particle const* begin, Particle const* end, phasespace_phbin_type type, double ntest = 1.0) {
+  (void) ntest;
   std::uint32_t const nv = end - begin;
-  ofs.write("EvPh", 4);
-  ofs.write((char*) &nv, 4);
-  while (begin != end) {
-    Particle const& part = *begin++;
-    std::size_t const ks = runjam::getParticleStableCode(part.pdg);
-    std::size_t const kf = part.pdg;
-    float const px = part.px;
-    float const py = part.py;
-    float const pz = part.pz;
-    float const m  = part.mass;
-    float const x  = part.x;
-    float const y  = part.y;
-    float const z  = part.z;
-    float const t  = part.t;
-    ofs.write((char*) &ks, 4);
-    ofs.write((char*) &kf, 4);
-    ofs.write((char*) &px, 4);
-    ofs.write((char*) &py, 4);
-    ofs.write((char*) &pz, 4);
-    ofs.write((char*) &m, 4);
-    ofs.write((char*) &x, 4);
-    ofs.write((char*) &y, 4);
-    ofs.write((char*) &z, 4);
-    ofs.write((char*) &t, 4);
+
+  switch (type) {
+  case phasespace_phbin4:
+    {
+      ofs.write("EvPp", 4);
+      ofs.write((char*) &nv, 4);
+      while (begin != end) {
+        Particle const& part = *begin++;
+        std::int32_t const pdg = part.pdg;
+        float const px = part.px;
+        float const py = part.py;
+        float const pz = part.pz;
+        ofs.write((char*) &pdg, 4);
+        ofs.write((char*) &px, 4);
+        ofs.write((char*) &py, 4);
+        ofs.write((char*) &pz, 4);
+      }
+      ofs << std::flush;
+    }
+    break;
+  case phasespace_phbin4_charged:
+    {
+      std::vector<Particle const*> list;
+      while (begin != end) {
+        Particle const& part = *begin++;
+        if (is_charged(part.pdg)) list.push_back(&part);
+      }
+      std::uint32_t const number_of_particles = list.size();
+
+      ofs.write("EvPp", 4);
+      ofs.write((char*) &number_of_particles, 4);
+      for (auto const* part: list) {
+        std::int32_t const pdg = part->pdg;
+        float const px = part->px;
+        float const py = part->py;
+        float const pz = part->pz;
+        ofs.write((char*) &pdg, 4);
+        ofs.write((char*) &px, 4);
+        ofs.write((char*) &py, 4);
+        ofs.write((char*) &pz, 4);
+      }
+      ofs << std::flush;
+    }
+    break;
+  default:
+    {
+      ofs.write("EvPh", 4);
+      ofs.write((char*) &nv, 4);
+      while (begin != end) {
+        Particle const& part = *begin++;
+        std::size_t const ks = runjam::getParticleStableCode(part.pdg);
+        std::size_t const kf = part.pdg;
+        float const px = part.px;
+        float const py = part.py;
+        float const pz = part.pz;
+        float const m  = part.mass;
+        float const x  = part.x;
+        float const y  = part.y;
+        float const z  = part.z;
+        float const t  = part.t;
+        ofs.write((char*) &ks, 4);
+        ofs.write((char*) &kf, 4);
+        ofs.write((char*) &px, 4);
+        ofs.write((char*) &py, 4);
+        ofs.write((char*) &pz, 4);
+        ofs.write((char*) &m, 4);
+        ofs.write((char*) &x, 4);
+        ofs.write((char*) &y, 4);
+        ofs.write((char*) &z, 4);
+        ofs.write((char*) &t, 4);
+      }
+      ofs << std::flush;
+    }
+    break;
   }
-  ofs << std::flush;
 }
 
 class IObserver {
@@ -159,10 +219,21 @@ struct PhasespaceDataWriter: public FileWriterBase {
 
 struct PhasespaceBinaryWriter: public FileWriterBase {
   typedef FileWriterBase base;
+
+private:
+  phasespace_phbin_type m_type = phasespace_phbin_full;
+
+public:
   PhasespaceBinaryWriter(std::string const& filename):
-    base(filename, std::ios::out | std::ios::binary) {}
+    base(filename, std::ios::out | std::ios::binary)
+  {
+    if (idt::util::ends_with(filename, ".bin4"))
+      m_type = phasespace_phbin4;
+    else if (idt::util::ends_with(filename, ".bin4ch"))
+      m_type = phasespace_phbin4_charged;
+  }
   virtual void process_event(Particle const* begin, Particle const* end, double ntest) override {
-    writePhasespaceBinary(ofs, begin, end, ntest);
+    writePhasespaceBinary(ofs, begin, end, m_type, ntest);
   }
 };
 

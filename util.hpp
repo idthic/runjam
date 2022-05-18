@@ -73,6 +73,15 @@ namespace util {
 }
 }
 
+namespace idt {
+namespace util {
+  bool ends_with(const char* s, std::size_t l, const char* suffix, std::size_t len);
+  bool ends_with(std::string const& s, std::string const& suffix);
+  bool ends_with(std::string const& s, const char* suffix);
+  bool ends_with(const char* s, const char* suffix);
+}
+}
+
 #include <random>
 
 namespace idt {

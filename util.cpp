@@ -82,6 +82,25 @@ bool application_context::read_config(bool& value, const char* key) const {
   return true;
 }
 
+}
+}
+
+namespace idt::util {
+  bool ends_with(const char* s, std::size_t l, const char* suffix, std::size_t len) {
+    return l >= len && std::memcmp(s + (l - len), suffix, len) == 0;
+  }
+  bool ends_with(std::string const& s, std::string const& suffix) {
+    return ends_with(s.c_str(), s.size(), suffix.c_str(), suffix.size());
+  }
+  bool ends_with(std::string const& s, const char* suffix) {
+    return ends_with(s.c_str(), s.size(), suffix, std::strlen(suffix));
+  }
+  bool ends_with(const char* s, const char* suffix) {
+    return ends_with(s, std::strlen(s), suffix, std::strlen(suffix));
+  }
+}
+
+namespace idt::util {
 
 static std::mt19937 eng;
 
@@ -126,6 +145,4 @@ std::size_t irand_binomial(std::size_t trial, double probability) {
   return dist(eng);
 }
 
-
-}
 }

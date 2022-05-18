@@ -190,7 +190,7 @@ formation vertex.
 
 This is the binary format.  This contains the sequence of event frames.  Each
 event frame starts with an eight-byte header followed by a sequence of particle
-entries.  The structure is summarized in the following pseudo code.
+entries.  The structure is summarized in the following pseudo-code.
 
 ```c
 struct PARTICLE {
@@ -215,6 +215,31 @@ struct PHBIN_EVENT_FRAME {
 
 struct PHBIN {
   PHBIN_EVENT_FRAME fileContents[numberOfEvents];
+};
+```
+
+### Output data format of reduced phasespace binary (`bin4`, `bin4ch`)
+
+This is the binary format only with the particle species and momentum.
+The structure is summarized in the following pseudo-code.
+
+```c
+struct PARTICLE4 {
+  // PDG Monte-Carlo Code
+  UINT32 kf;
+  
+  // Momentum in [GeV]
+  SINGLE px, py, pz;
+};
+
+struct PHBIN4_EVENT_FRAME {
+  FOURCC magic; // 4-bytes. Fixed to be a string "EvPp"
+  UINT32 numberOfParticles;
+  PARTICLE4 data[numberOfParticles];
+};
+
+struct PHBIN4 {
+  PHBIN4_EVENT_FRAME fileContents[numberOfEvents];
 };
 ```
 
@@ -334,3 +359,19 @@ The default is `eospce=6` and `kintmp=5` so that `ResonanceJam.dat` is used.
 - `eospce=13`: `ResonancePhi.dat`. phi and J/psi mesons
 - `eospce=14`: `ResonancePhi.T100.dat`. phi and J/psi mesons with PCE T = 100 MeV.
 - Otherwise: `ResonanceJam.dat`
+
+
+## resolist-feeddown-factor
+
+Calculate the feeddown factors of each hadrons based on the JAM decay. The result is saved in `feeddown.txt`
+
+```bash
+# Use the default resonance list
+./runjam.exe resolist-feeddown-factor
+
+# Specify the resonance list
+./runjam.exe resolist-feeddown-factor -r data/ResonanceJam2.dat
+
+# Specify the JAM version
+./runjam.exe resolist-feeddown-factor -1 -r data/ResonanceJam.dat
+```
