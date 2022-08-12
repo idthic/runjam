@@ -1191,7 +1191,15 @@ namespace {
         this->totalIsotropicPartCDF = base::IsotropicPartTotalCDF();
         prob = totalIsotropicPartCDF / totalIntegral;
         if (prob > 1.0) {
-          std::cerr << "ParticleSmapleViscous (SampleResonance): BUG the dominating function actually doesn't dominate (prob=" << prob << ")." << std::endl;
+          if (beta < m_dominating->beta()) {
+            std::cerr
+              << "ParticleSmapleViscous (SampleResonance): the actual hypersurface temperature T = " << hbarc_MeVfm / beta << " [MeV]"
+              << " is lower than the adviced switching temperature T = " << hbarc_MeVfm / m_dominating->beta() << " [MeV]." << std::endl;
+            std::cerr
+              << "ParticleSmapleViscous (SampleResonance): please lower the adviced temperature." << std::endl;
+          } else {
+            std::cerr << "ParticleSmapleViscous (SampleResonance): BUG the dominating function actually doesn't dominate (prob=" << prob << ")." << std::endl;
+          }
           std::exit(EXIT_FAILURE);
         }
       } else {
