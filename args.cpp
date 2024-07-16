@@ -317,13 +317,13 @@ namespace {
 
     void assign_optarg(const char* key) {
       if (const char* optarg = get_optarg())
-        ctx->set_value(key, optarg);
+        ctx->set_config(key, optarg);
     }
 
     void assign_optarg_double(const char* key) {
       if (const char* optarg = get_optarg()) {
         if (*optarg) {
-          ctx->set_value(key, std::atof(optarg));
+          ctx->set_config(key, std::atof(optarg));
         } else {
           std::cerr << "runjam:option(" << arg << "): the argument of the option is empty." << std::endl;
           flag_error = true;
@@ -333,7 +333,7 @@ namespace {
 
     void assign_optarg_int(const char* key) {
       if (const char* optarg = get_optarg())
-        ctx->set_value(key, std::atoi(optarg));
+        ctx->set_config(key, std::atoi(optarg));
     }
 
     void assign_optarg_input() {
@@ -371,21 +371,21 @@ namespace {
       } else if (longname == "fphase") {
         if (const char* optarg = get_optarg()) {
           if (idt::util::ends_with(optarg, ".bin") || idt::util::ends_with(optarg, ".bin4") || idt::util::ends_with(optarg, ".bin4ch")) {
-            ctx->set_value("runjam_output_phbin", true);
-            ctx->set_value("runjam_fname_phbin", optarg);
+            ctx->set_config("runjam_output_phbin", true);
+            ctx->set_config("runjam_fname_phbin", optarg);
           } else {
-            ctx->set_value("runjam_output_phdat", true);
-            ctx->set_value("runjam_fname_phdat", optarg);
+            ctx->set_config("runjam_output_phdat", true);
+            ctx->set_config("runjam_fname_phdat", optarg);
           }
         }
       } else if (longname == "fphase0") {
         if (const char* optarg = get_optarg()) {
           if (idt::util::ends_with(optarg, ".bin") || idt::util::ends_with(optarg, ".bin4") || idt::util::ends_with(optarg, ".bin4ch")) {
-            ctx->set_value("runjam_output_phbin0", true);
-            ctx->set_value("runjam_fname_phbin0", optarg);
+            ctx->set_config("runjam_output_phbin0", true);
+            ctx->set_config("runjam_fname_phbin0", optarg);
           } else {
-            ctx->set_value("runjam_output_phdat0", true);
-            ctx->set_value("runjam_fname_phdat0", optarg);
+            ctx->set_config("runjam_output_phdat0", true);
+            ctx->set_config("runjam_fname_phdat0", optarg);
           }
         }
 
@@ -432,12 +432,12 @@ namespace {
             flag_error = true;
             return true;
           }
-          ctx->set_value("runjam_output_phdat", phdat);
-          ctx->set_value("runjam_output_phdat0", phdat0);
-          ctx->set_value("runjam_output_phbin", phbin);
-          ctx->set_value("runjam_output_phbin0", phbin0);
-          ctx->set_value("runjam_output_phdat_indexed", phdat_indexed);
-          ctx->set_value("runjam_output_phdat0_indexed", phdat0_indexed);
+          ctx->set_config("runjam_output_phdat", phdat);
+          ctx->set_config("runjam_output_phdat0", phdat0);
+          ctx->set_config("runjam_output_phbin", phbin);
+          ctx->set_config("runjam_output_phbin0", phbin0);
+          ctx->set_config("runjam_output_phdat_indexed", phdat_indexed);
+          ctx->set_config("runjam_output_phdat0_indexed", phdat0_indexed);
         }
         break;
       case 'w': assign_optarg_int("runjam_switch_weak_decay"); break;
@@ -445,8 +445,8 @@ namespace {
       case 'r': assign_optarg("runjam_resodata"); break;
       case 'k': assign_optarg_int("runjam_kintmp"); break;
       case 'p': assign_optarg_int("runjam_eospce"); break;
-      case '1': ctx->set_value("runjam_jam_version", 1); break;
-      case '2': ctx->set_value("runjam_jam_version", 2); break;
+      case '1': ctx->set_config("runjam_jam_version", 1); break;
+      case '2': ctx->set_config("runjam_jam_version", 2); break;
       default: return false;
       }
       return true;
@@ -472,7 +472,7 @@ namespace {
       const char* const value = p + 1;
       if (!starts_with(name.c_str(), "runjam_") && !starts_with(name.c_str(), "hydrojet_"))
         name = "runjam_" + name;
-      ctx->set_value(name.c_str(), value);
+      ctx->set_config(name.c_str(), value);
       return true;
     }
 

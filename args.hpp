@@ -23,6 +23,7 @@
 #include <string>
 #include <map>
 #include "util.hpp"
+#include "util/context.hpp"
 
 namespace idt {
 namespace runjam {

@@ -17,90 +17,26 @@
    USA  */
 
 #include "util.hpp"
-#include <cstdlib>
-#include <cstdio>
+#include <cstddef>
 #include <cstring>
-#include <cctype>
 #include <random>
 
-namespace idt {
-namespace util {
-
-void application_context::set_value(const char* key, int value) {
-  char buff[100];
-  std::sprintf(buff, "%d", value);
-  data[key] = buff;
-}
-
-void application_context::set_value(const char* key, double value) {
-  char buff[100];
-  std::sprintf(buff, "%.15g", value);
-  data[key] = buff;
-}
-
-const char* application_context::get_value(const char* key) const {
-  typedef std::map<std::string, std::string>::const_iterator It;
-  It it = data.find(key);
-  if (it != data.end())
-    return it->second.c_str();
-  return std::getenv(key);
-}
-
-bool application_context::read_config(std::string& value, const char* key) const {
-  const char* str = get_value(key);
-  if (str == 0) return false;
-  value = str;
-  return true;
-}
-
-bool application_context::read_config(int& value, const char* key) const {
-  const char* str= get_value(key);
-  if (str && std::strchr("+-0123456789", *str)) {
-    value = std::atoi(str);
-    return true;
-  } else
-    return false;
-}
-
-bool application_context::read_config(double& value, const char* key) const {
-  const char* str= get_value(key);
-  if (str && std::strchr("+-.0123456789", *str)) {
-    value = std::atof(str);
-    return true;
-  } else
-    return false;
-}
-
-bool application_context::read_config(bool& value, const char* key) const {
-  const char* str = get_value(key);
-  if (!str || !*str) return false;
-
-  if(isdigit(*str))
-    value = std::atoi(str) != 0;
-  else
-    value = std::strcmp(str, "false") != 0;
-  return true;
-}
-
-}
-}
-
 namespace idt::util {
-  bool ends_with(const char* s, std::size_t l, const char* suffix, std::size_t len) {
-    return l >= len && std::memcmp(s + (l - len), suffix, len) == 0;
-  }
-  bool ends_with(std::string const& s, std::string const& suffix) {
-    return ends_with(s.c_str(), s.size(), suffix.c_str(), suffix.size());
-  }
-  bool ends_with(std::string const& s, const char* suffix) {
-    return ends_with(s.c_str(), s.size(), suffix, std::strlen(suffix));
-  }
-  bool ends_with(const char* s, const char* suffix) {
-    return ends_with(s, std::strlen(s), suffix, std::strlen(suffix));
-  }
+
+bool ends_with(const char* s, std::size_t l, const char* suffix, std::size_t len) {
+  return l >= len && std::memcmp(s + (l - len), suffix, len) == 0;
+}
+bool ends_with(std::string const& s, std::string const& suffix) {
+  return ends_with(s.c_str(), s.size(), suffix.c_str(), suffix.size());
+}
+bool ends_with(std::string const& s, const char* suffix) {
+  return ends_with(s.c_str(), s.size(), suffix, std::strlen(suffix));
+}
+bool ends_with(const char* s, const char* suffix) {
+  return ends_with(s, std::strlen(s), suffix, std::strlen(suffix));
 }
 
-namespace idt::util {
+//-----------------------------------------------------------------------------
 
 static std::mt19937 eng;
 

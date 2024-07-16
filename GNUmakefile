@@ -47,6 +47,7 @@ OBJDIR := obj
 runjam_OBJS := \
   $(OBJDIR)/config.o \
   $(OBJDIR)/util.o \
+  $(OBJDIR)/util/context.o \
   $(OBJDIR)/args.o \
   $(OBJDIR)/jamimpl.o \
   $(OBJDIR)/ksh/integrator.o \
@@ -66,8 +67,8 @@ ifneq ($(use_libjam2),)
   runjam_LIBS := $(libjam2_LIBS) $(pythia8_LIBS) $(runjam_LIBS) -ldl
 endif
 
-directories += $(OBJDIR) $(OBJDIR)/spectra $(OBJDIR)/ksh
-$(OBJDIR)/%.o: %.cpp | $(OBJDIR) $(OBJDIR)/spectra $(OBJDIR)/ksh
+directories += $(OBJDIR) $(OBJDIR)/spectra $(OBJDIR)/ksh $(OBJDIR)/util
+$(OBJDIR)/%.o: %.cpp | $(OBJDIR) $(OBJDIR)/spectra $(OBJDIR)/ksh $(OBJDIR)/util
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 all: runjam.exe
