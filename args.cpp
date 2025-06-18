@@ -19,6 +19,7 @@
 #include <sys/stat.h>
 #include <iostream>
 //#include <filesystem>
+#include <vector>
 #include "args.hpp"
 #include "config.hpp"
 
@@ -42,7 +43,7 @@ namespace fsys {
   static bool create_directories(const char* path) {
     if (is_directory(path)) return false;
 
-    std::string buff = path;
+    std::vector<char> buff(path, path + std::strlen(path) + 1);
     char* const p = buff.data();
     for (std::size_t index = 1; index < buff.size(); index++) {
       if (p[index] != '/') continue;
