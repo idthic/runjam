@@ -34,7 +34,7 @@ namespace {
 
   public:
     initial_condition_adapter(jam2::JAM* jam):
-      base(jam->settings, jam->jamParticleData, jam->rndm) {}
+      base(&jam->info, jam->jamParticleData) {}
 
     virtual ~initial_condition_adapter() {}
 
@@ -52,7 +52,7 @@ namespace {
 
       for (idt::runjam::Particle const& particle: *m_particles) {
         // find this particle in the JAM particle list.
-        Pythia8::ParticleDataEntry* const pa = jamParticleData->find(particle.pdg);
+        Pythia8::ParticleDataEntryPtr const pa = jamParticleData->find(particle.pdg);
         Pythia8::Vec4 const r(particle.pos[1], particle.pos[2], particle.pos[3], particle.pos[0]);
         Pythia8::Vec4 const p(particle.mom[1], particle.mom[2], particle.mom[3], particle.mom[0]);
 
@@ -79,8 +79,9 @@ namespace libjam2 {
 
   public:
     runner(std::string const& input_filename):
-      m_jam(input_filename, Pythia8_PREFIX "/share/Pythia8/xmldoc", false)
+      m_jam(Pythia8_PREFIX "/share/Pythia8/xmldoc", false)
     {
+      m_jam.readFile(input_filename);
       m_initial_condition = new initial_condition_adapter(&m_jam);
 
       Pythia8::Settings* const settings = this->settings();
@@ -126,7 +127,7 @@ namespace libjam2 {
     }
     int get_particle_stable_code(int pdg) const override {
       // Returns 1 for stable particle and 2 for unstable particle.
-      Pythia8::ParticleDataEntry const* const pd = m_jam.jamParticleData->find(pdg);
+      Pythia8::ParticleDataEntryPtr const pd = m_jam.jamParticleData->find(pdg);
       if (!pd) {
         std::cerr << "runjam (libjam2::get_particle_stable_code): particle data for pdg=" << pdg << " not found" << std::endl;
         std::exit(1);
