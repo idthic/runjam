@@ -21,11 +21,11 @@ event-by-event calculations of heavy-ion collisions.
 
 #### libjam
 
-This package requires the library `libjam` from JAM version 1.820 or before.
+This package requires the library `libjam` from JAM version 1.8 or before.
 The source code archives of JAM version 1 can be obtained from the following
 URL:
 
-- [ynara305/jam1past: past jam1 codes](https://github.com/ynara305/jam1past)
+- [ynara305/jam1past: past jam1 codes - GitHub](https://github.com/ynara305/jam1past)
 
 In the JAM package, the parameter `mxv` defined in `src/jam1.inc`
 should be rewritten to 200000 before the compile of JAM.
@@ -34,11 +34,11 @@ For illustration, the JAM library can be installed by the following commands.
 ```console
 $ wget https://github.com/ynara305/jam1past/raw/refs/heads/main/jam-1.822.tar.xz
 $ wget https://github.com/ynara305/jam1past/raw/refs/heads/main/jam-1.823-fix-print-format.patch
-$ tar xf jam-1.822.tar.bz
+$ tar xf jam-1.822.tar.bz2
 $ cd jam-1.822
 $ patch -p 1 < ../jam-1.823-fix-print-format.patch
 $ export F77=gfortran
-$ ./configure --prefix="$HOME"/.opt/jam/1.822
+$ ./configure --prefix="$HOME"/.opt/jam/1.823
 $ make -j
 $ make install
 ```
@@ -69,7 +69,7 @@ GitLab:
 $ git clone https://gitlab.com/transportmodel/jam2.git
 $ cd jam2
 $ autoreconf -i
-$ ./configure PYTHIA8=~/.opt/pythia/8.315 --prefix=$HOME/.opt/jam2/main
+$ ./configure PYTHIA8=~/.opt/pythia/8.315 --prefix="$HOME"/.opt/jam2/main
 $ make -j
 $ make install
 ```
@@ -81,7 +81,7 @@ $ make install
 ```console
 $ git clone https://github.com/idthic/runjam.git
 $ cd runjam
-$ ./configure --prefix="$HOME"/.opt/idt --with-jam1="$HOME"/.opt/jam/1.822
+$ ./configure --prefix="$HOME"/.opt/idt --with-jam1="$HOME"/.opt/jam/1.823
 $ make
 $ make install
 ```
@@ -89,7 +89,7 @@ $ make install
 To enable `libjam2`, please use the following `./configure` command:
 
 ```console
-$ ./configure --prefix="$HOME"/.opt/idt --with-jam1="$HOME"/.opt/jam/1.822 --with-jam2="$HOME"/.opt/jam2/main
+$ ./configure --prefix="$HOME"/.opt/idt --with-jam1="$HOME"/.opt/jam/1.823 --with-jam2="$HOME"/.opt/jam2/main
 ```
 
 ### License
