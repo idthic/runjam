@@ -1,11 +1,15 @@
-/* Copyright (C) 2006, T. Hirano, and Y. Nara, 2011-2020, K. Murase.
-   This file is a part of runjam <https://github.com/idthic/runjam>
-   and originates from the code used in `hydrojet' package.
+/* This file is an optional component of runjam
+   <https://github.com/idthic/runjam> and originates in the code used in the
+   `hydrojet' package.
+
+   Copyright (C) 2006, T. Hirano, and Y. Nara, 2011-2020, K. Murase.
+
+   SPDX-License-Identifier: GPL-2.0-or-later
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
    published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   License, or any later version.
 
    This program is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
