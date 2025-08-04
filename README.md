@@ -19,45 +19,86 @@ event-by-event calculations of heavy-ion collisions.
 
 ### Prerequisites
 
-This package requires the library `libjam` from JAM version 1.820 or
-before.  The source code of JAM can be obtained from the following URL:
+#### libjam
 
-  http://www.aiu.ac.jp/~ynara/jam/
+This package requires the library `libjam` from JAM version 1.820 or before.
+The source code archives of JAM version 1 can be obtained from the following
+URL:
+
+- [ynara305/jam1past: past jam1 codes](https://github.com/ynara305/jam1past)
 
 In the JAM package, the parameter `mxv` defined in `src/jam1.inc`
 should be rewritten to 200000 before the compile of JAM.
 For illustration, the JAM library can be installed by the following commands.
 
-```bash
-$ wget http://www.aiu.ac.jp/~ynara/jam/old/jam-1.820.tar.bz2
-$ tar xf jam-1.820.tar.bz
-$ cd jam-1.820
-$ EDIT src/jam1.inc
+```console
+$ wget https://github.com/ynara305/jam1past/raw/refs/heads/main/jam-1.822.tar.xz
+$ wget https://github.com/ynara305/jam1past/raw/refs/heads/main/jam-1.823-fix-print-format.patch
+$ tar xf jam-1.822.tar.bz
+$ cd jam-1.822
+$ patch -p 1 < ../jam-1.823-fix-print-format.patch
 $ export F77=gfortran
-$ ./configure --prefix=$HOME/opt/jam/1.820
+$ ./configure --prefix="$HOME"/.opt/jam/1.822
+$ make -j
+$ make install
+```
+
+#### libjam2 (Optional)
+
+Optionally, one may also link `libjam2` from JAM version 2.  To build JAM 2,
+one first needs to compile the corresponding version of Pythia 8.  As of
+2025-08-04, the verseion corresponding to the main branch of `jam2` is Pythia
+8.315.  You can download, compile, install with the following commands:
+
+```console
+$ wget https://pythia.org/download/pythia83/pythia8315.tar.bz2
+$ tar xf pythia8315.tar.bz2
+$ cd pythia8315
+$ ./configure --prefix="$HOME"/.opt/pythia/8.315
+$ make -j
+$ make install
+```
+
+After the installation of the Pythia 8.315 library, one may proceed to
+installing JAM 2.  The latest development version of JAM 2 can be obtained from
+GitLab:
+
+- [transportmodel / jam2 - GitLab](https://gitlab.com/transportmodel/jam2)
+
+```console
+$ git clone https://gitlab.com/transportmodel/jam2.git
+$ cd jam2
+$ autoreconf -i
+$ ./configure PYTHIA8=~/.opt/pythia/8.315 --prefix=$HOME/.opt/jam2/main
 $ make -j
 $ make install
 ```
 
 ### Compile
 
-`runjam.exe` can be compiled by the following commands.
+`runjam.exe` can be compiled with the following commands:
 
-```bash
+```console
 $ git clone https://github.com/idthic/runjam.git
 $ cd runjam
-$ ./configure --prefix=$HOME/opt/idt --with-jam=$HOME/opt/jam/1.820
+$ ./configure --prefix="$HOME"/.opt/idt --with-jam1="$HOME"/.opt/jam/1.822
 $ make
 $ make install
 ```
 
+To enable `libjam2`, please use the following `./configure` command:
+
+```console
+$ ./configure --prefix="$HOME"/.opt/idt --with-jam1="$HOME"/.opt/jam/1.822 --with-jam2="$HOME"/.opt/jam2/main
+```
+
 ### License
 
-This programs is provided under [GPLv2](LICENSE).
+This programs is provided under [GPL-2.0-or-later](LICENSE).
 
 ```
 runjam (idt) - Sample hadrons by Cooper-Frye formula / Run JAM cascade.
-Copyright (C) 2011-2020, Koichi Murase @akinomyoga
+Copyright (C) 2011-2025, Koichi Murase <myoga.murase at gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -171,9 +212,9 @@ contains the number of particles in the event.  When this number is `-999`, it
 means that this is the end of the file and that no more events are available.
 The second column contains the oversampling factor, i.e., the factor for the
 number of particles in the test-particle method for the Boltzmann equation.
-This is normally identity which corresponds to the real number of hadrons.
+This is normally `1` which corresponds to using the real number of hadrons.
 
-Then as many lines as the number of the particles are followed.  Each line
+Then, as many lines as the number of the particles are followed.  Each line
 carries one particle information with the following format:
 
 ```
