@@ -68,6 +68,7 @@ std::size_t irand(std::size_t n) {
 }
 
 int irand_poisson(double lambda){
+  if (lambda == 0.0) return 0;
   std::poisson_distribution<int> dist(lambda);
   return dist(eng);
 }
