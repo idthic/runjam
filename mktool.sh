@@ -39,17 +39,26 @@ function cmd:jam2-check-resodata {
 #cmd:jam2-check-resodata data/ResonanceJam2.dat
 
 function cmd:jam2-generate-resodata-full {
-  local fileListAll=out/listAll.txt
+  local fileListAll=${1-out/listAll.txt}
   if [[ ! -s $fileListAll ]]; then
     echo "$fileListAll: not found" >&2
     return 1
   fi
+
+  local -a awk2_args=()
+  if [[ -s feeddown.txt ]]; then
+    awk2_args=(mode=feeddown feeddown.txt)
+  fi
+  awk2_args+=(mode=input -)
 
   {
     echo "#MASS_MEV    DEG    DEGEFF   MU  BF ANTI          KEY            NAME           PDGCODES..."
     echo "#--------    ---    ------   --  -- ----          ---            ----           -----------"
     awk '
       $2 !~ /^[0-9]+$/ && $0 != "" {
+
+        # exclude no number
+        if ($1 !~ /[0-9]/) next;
 
         # exclude elementary particles and other exotic objects
         if ($1 <= 110) next;
@@ -72,6 +81,12 @@ function cmd:jam2-generate-resodata-full {
 
         # exclude nuclei
         if (1e9 <= $1 && $1 < 2e9) next;
+
+        # exclude qv1qv1
+        if ($1 ~ /^-?4901103$/) next;
+
+        # exclude Deltav1
+        if ($1 ~ /^-?490[1-8]114$/) next;
 
         if (i > 4) print "more than two particle names?" > "/dev/stderr";
         for (j = 2; j < i; j++) {
@@ -100,9 +115,24 @@ function cmd:jam2-generate-resodata-full {
         }
       }
     ' "$fileListAll" | sort -n -k1 -k2 -k5 | awk '
+      mode == "feeddown" {
+        name = $1;
+        npi = $6; # charged pion numbers
+        sub(/\(.*\)/, "", npi);
+        npi = npi + 0.0;
+        g_degeff[name] = npi;
+        next;
+      }
+
       function flush_line() {
         if (pnam == "") return;
-        print mass, deg, 0, 0, bf, anti, pkey, pnam, pdg;
+
+        # Get degeff
+        degeff = 0.0;
+        if (g_degeff[pkey] != "") degeff = g_degeff[pkey];
+        degeff = sprintf("%.3f", degeff);
+
+        print mass, deg, degeff, 0, bf, anti, pkey, pnam, pdg;
         pnam = "";
       }
 
@@ -126,7 +156,7 @@ function cmd:jam2-generate-resodata-full {
         }
       }
       END { flush_line(); }
-    '
+    ' "${awk2_args[@]}"
   } | column -t -R 1,2,3,4,5,6,9,10,11,12,13,14 | sed 's/[[:space:]]\{1,\}$//' > data/ResonanceJam2Full.dat
 }
 

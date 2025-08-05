@@ -404,7 +404,9 @@ The default is `eospce=6` and `kintmp=5` so that `ResonanceJam.dat` is used.
 
 ## resolist-feeddown-factor
 
-Calculate the feeddown factors of each hadrons based on the JAM decay. The result is saved in `feeddown.txt`
+Calculate the feeddown factors of each hadrons based on the JAM decay. The
+result is saved in `feeddown.txt`.  This file is used to fill column `DEGEFF`
+in the resonance list.
 
 ```bash
 # Use the default resonance list
@@ -415,4 +417,19 @@ Calculate the feeddown factors of each hadrons based on the JAM decay. The resul
 
 # Specify the JAM version
 ./runjam.exe resolist-feeddown-factor -1 -r data/ResonanceJam.dat
+```
+
+The full procedure to update `data/ResonanceJam2.dat` is as follows:
+
+```console
+$ echo 'ParticleData:listAll = 1' > jam.inp
+$ /path/to/jam2/jam > listAll.txt
+$ ./mktool.sh jam2-generate-resodata-full listAll.txt
+Note: This updates the particle list in data/ResonanceJam2.dat, but column
+DEGEFF is filled with 0.
+$ ./runjam.exe resolist-feeddown-factor -2 -r data/ResonanceJam2.dat
+Note: This creates a file "feeddown.txt"
+$ ./mktool.sh jam2-generate-resodata-full listAll.txt
+Note: The second call of the above command will generate data/ResonanceJam2.dat
+with column DEGEFF filled with the data extracted from "feeddown.txt".
 ```
