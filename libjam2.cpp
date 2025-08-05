@@ -107,7 +107,12 @@ namespace libjam2 {
 
       Pythia8::Settings* const settings = this->settings();
       settings->mode("Cascade:model", 3);
-      settings->mode("Cascade:initialCondition", 3);
+
+      // Set dummy value 12 to Cascade:initialCondition. An old JAM2 required
+      // to specify a value different from the existing ones to enable the
+      // initial condition specified through the argument of "m_jam.init()".
+      // The latest version of JAM >= 2.7103 does not have this restriction.
+      settings->mode("Cascade:initialCondition", 12);
     }
 
     Pythia8::Settings* settings() override {
