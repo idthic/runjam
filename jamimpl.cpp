@@ -134,30 +134,31 @@ namespace runjam {
       // weak decay
       {
         bool const weakdecay = ctx.get_config("runjam_switch_weak_decay", false);
+        std::string const setting = weakdecay ? ":mayDecay = on" : ":mayDecay = off";
 
-        settings->flag("111:mayDecay", weakdecay); // pi0
-        settings->flag("311:mayDecay", weakdecay); // k0
-        settings->flag("-311:mayDecay", weakdecay); // ak0
-        settings->flag("310:mayDecay", weakdecay); // k0_S
-        settings->flag("130:mayDecay", weakdecay); // k0_L
+        settings->readString("111" + setting); // pi0
+        settings->readString("311" + setting); // k0
+        settings->readString("-311" + setting); // ak0
+        settings->readString("310" + setting); // k0_S
+        settings->readString("130" + setting); // k0_L
 
-        settings->flag("411:mayDecay", weakdecay);  // D+
-        settings->flag("421:mayDecay", weakdecay);  // D0
-        settings->flag("221:mayDecay", weakdecay);  // eta
-        settings->flag("331:mayDecay", weakdecay);  // eta'
-        settings->flag("441:mayDecay", weakdecay);  // xeta_c
-        settings->flag("310:mayDecay", weakdecay);
-        settings->flag("431:mayDecay", weakdecay);
-        settings->flag("511:mayDecay", weakdecay);
-        settings->flag("521:mayDecay", weakdecay);
-        settings->flag("531:mayDecay", weakdecay);
-        settings->flag("3122:mayDecay", weakdecay);
-        settings->flag("3112:mayDecay", weakdecay);
-        settings->flag("3212:mayDecay", weakdecay);
-        settings->flag("3222:mayDecay", weakdecay);
-        settings->flag("3312:mayDecay", weakdecay);
-        settings->flag("3322:mayDecay", weakdecay);
-        settings->flag("3334:mayDecay", weakdecay);
+        settings->readString("411" + setting);  // D+
+        settings->readString("421" + setting);  // D0
+        settings->readString("221" + setting);  // eta
+        settings->readString("331" + setting);  // eta'
+        settings->readString("441" + setting);  // xeta_c
+        settings->readString("310" + setting);
+        settings->readString("431" + setting);
+        settings->readString("511" + setting);
+        settings->readString("521" + setting);
+        settings->readString("531" + setting);
+        settings->readString("3122" + setting);
+        settings->readString("3112" + setting);
+        settings->readString("3212" + setting);
+        settings->readString("3222" + setting);
+        settings->readString("3312" + setting);
+        settings->readString("3322" + setting);
+        settings->readString("3334" + setting);
       }
 
       // phi decay
