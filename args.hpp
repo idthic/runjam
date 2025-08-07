@@ -50,7 +50,13 @@ namespace runjam {
       return this->get_config<std::string>("hydrojet_directory", "test");
     }
 
+    const char* datadir() const;
     std::string cachedir() const;
+
+    std::string lookup_data_file(const char* file) const;
+    std::string lookup_data_file(std::string const& file) const {
+      return this->lookup_data_file(file.c_str());
+    }
   };
 
   struct runjam_commandline_arguments {

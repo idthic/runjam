@@ -88,7 +88,8 @@ $(INSDIR)/share/runjam/%: data/% | $(INSDIR)/share/runjam
 directories += $(INSDIR)/bin $(INSDIR)/share/runjam
 install-files += \
   $(INSDIR)/bin/runjam.exe \
-  $(patsubst data/%,$(INSDIR)/share/runjam/%,$(wildcard data/Resonance*.dat))
+  $(patsubst data/%,$(INSDIR)/share/runjam/%,$(wildcard data/Resonance*.dat)) \
+  $(patsubst data/%,$(INSDIR)/share/runjam/%,$(wildcard data/libjam2.*.txt))
 install: $(install-files)
 .PHONY: install
 

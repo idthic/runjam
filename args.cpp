@@ -127,10 +127,18 @@ std::string runjam_context::resodata() const {
     }
   }
 
-  if (fsys::is_file(file.c_str())) return file;
+  std::string const result = this->lookup_data_file(file);
+  if (result.size()) return result;
+
+  return file;
+}
+
+std::string runjam_context::lookup_data_file(const char* file) const {
+  if (fsys::is_file(file)) return file;
 
   if (file[0] != '/') {
-    std::string path = "data/" + file;
+    std::string path = "data/";
+    path += file;
     if (fsys::is_file(path.c_str())) return path;
 
     if (std::strlen(PACKAGE_PREFIX)) {
@@ -141,12 +149,23 @@ std::string runjam_context::resodata() const {
     }
 
     path = PACKAGE_BUILD;
-    path += "/";
+    path += "/data/";
     path += file;
     if (fsys::is_file(path.c_str())) return path;
   }
 
-  return file;
+  return "";
+}
+
+const char* runjam_context::datadir() const {
+  if (std::strlen(PACKAGE_PREFIX) && fsys::is_directory(PACKAGE_PREFIX "/share/runjam"))
+    return PACKAGE_PREFIX "/share/runjam";
+  if (fsys::is_directory(PACKAGE_BUILD "/data"))
+    return PACKAGE_BUILD "/data";
+
+  if (std::strlen(PACKAGE_PREFIX))
+    return PACKAGE_PREFIX "/share/runjam";
+  return PACKAGE_BUILD "/data";
 }
 
 std::string runjam_context::cachedir() const {

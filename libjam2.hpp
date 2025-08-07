@@ -45,5 +45,5 @@ namespace libjam2 {
     virtual double get_event_collision_number() const = 0;
   };
 
-  std::unique_ptr<irunner> create_runner(std::string const& input_filename = "/dev/null");
+  std::unique_ptr<irunner> create_runner(idt::runjam::runjam_context const&, std::string const& input_filename = "/dev/null");
 }

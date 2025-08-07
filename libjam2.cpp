@@ -20,8 +20,14 @@
    USA  */
 
 #include "config.hpp"
-#include "libjam2.hpp"
+
+#include <string>
+#include <fstream>
+#include <unordered_map>
+#include <vector>
+
 #include <jam2/JAM.h>
+#include "libjam2.hpp"
 
 namespace {
 
@@ -31,6 +37,7 @@ namespace {
 
   public:
     std::vector<idt::runjam::Particle> const* m_particles = nullptr;
+    std::unordered_map<int, int> m_new_pdg;
 
   private:
     // currently unused.
@@ -54,8 +61,28 @@ namespace {
     }
 
   public:
-    initial_condition_adapter(jam2::JAM* jam):
-      base(&jam->info, jam->jamParticleData) {}
+    initial_condition_adapter(idt::runjam::runjam_context const& ctx, jam2::JAM* jam):
+      base(&jam->info, jam->jamParticleData)
+    {
+      std::string const file = ctx.lookup_data_file("libjam2.pdg_new.txt");
+      if (file.empty()) {
+        std::fprintf(stderr, "runjam: the data file '%s/libjam2.pdg_new.txt' is not found.\n", ctx.datadir());
+        std::exit(EXIT_FAILURE);
+      }
+
+      std::ifstream str(file.c_str());
+      std::string line;
+      std::istringstream istr;
+      while (std::getline(str, line)) {
+        istr.str(line);
+        istr.clear();
+        int pdg1, pdg2;
+        if (istr >> pdg1 >> pdg2) {
+          m_new_pdg.insert(std::make_pair(pdg1, pdg2));
+          m_new_pdg.insert(std::make_pair(-pdg1, -pdg2));
+        }
+      }
+    }
 
     virtual ~initial_condition_adapter() {}
 
@@ -68,17 +95,28 @@ namespace {
       settings->parm("Beams:eCM", DEFAULT_MAX_CM_ENERGY);
     }
 
+    // Convert a PDG Monte-Carlo code used in JAM 1 or the past version of JAM
+    // 2 to the latest PDG Monte-Carlo code used in the latest version of JAM
+    // 2.7110.
+    int get_jam2_pdg(int pdg) const {
+      if (auto it = m_new_pdg.find(pdg); it != m_new_pdg.end())
+        return it->second;
+      return pdg;
+    }
+
     virtual void generate(jam2::Collision* event, int mode = 0) override {
       (void) mode;
 
       for (idt::runjam::Particle const& particle: *m_particles) {
+        int const pdg = get_jam2_pdg(particle.pdg);
+
         // find this particle in the JAM particle list.
-        Pythia8::ParticleDataEntryPtr const pa = jamParticleData->find(particle.pdg);
+        Pythia8::ParticleDataEntryPtr const pa = jamParticleData->find(pdg);
         Pythia8::Vec4 const r(particle.pos[1], particle.pos[2], particle.pos[3], particle.pos[0]);
         Pythia8::Vec4 const p(particle.mom[1], particle.mom[2], particle.mom[3], particle.mom[0]);
 
-        auto const cp = new jam2::EventParticle(particle.pdg, particle.mass, r, p, pa);
-        cp->setPID(jamParticleData->pid(std::abs(particle.pdg)));
+        auto const cp = new jam2::EventParticle(pdg, particle.mass, r, p, pa);
+        cp->setPID(jamParticleData->pid(std::abs(pdg)));
 
         // compute decay time if it is resonance.
         double const decay_time = jamParticleData->lifeTime(pa, particle.mass, particle.mom[0]);
@@ -99,11 +137,11 @@ namespace libjam2 {
     initial_condition_adapter* m_initial_condition;
 
   public:
-    runner(std::string const& input_filename):
+    runner(idt::runjam::runjam_context const& ctx, std::string const& input_filename):
       m_jam(Pythia8_PREFIX "/share/Pythia8/xmldoc", false)
     {
       m_jam.readFile(input_filename);
-      m_initial_condition = new initial_condition_adapter(&m_jam);
+      m_initial_condition = new initial_condition_adapter(ctx, &m_jam);
 
       Pythia8::Settings* const settings = this->settings();
       settings->mode("Cascade:model", 3);
@@ -153,7 +191,7 @@ namespace libjam2 {
     }
     int get_particle_stable_code(int pdg) const override {
       // Returns 1 for stable particle and 2 for unstable particle.
-      Pythia8::ParticleDataEntryPtr const pd = m_jam.jamParticleData->find(pdg);
+      Pythia8::ParticleDataEntryPtr const pd = m_jam.jamParticleData->find(m_initial_condition->get_jam2_pdg(pdg));
       if (!pd) {
         std::cerr << "runjam (libjam2::get_particle_stable_code): particle data for pdg=" << pdg << " not found" << std::endl;
         std::exit(1);
@@ -165,8 +203,8 @@ namespace libjam2 {
     }
   };
 
-  std::unique_ptr<irunner> create_runner(std::string const& input_filename) {
-    return std::make_unique<runner>(input_filename);
+  std::unique_ptr<irunner> create_runner(idt::runjam::runjam_context const& ctx, std::string const& input_filename) {
+    return std::make_unique<runner>(ctx, input_filename);
   }
 
 }
