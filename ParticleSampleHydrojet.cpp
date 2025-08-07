@@ -902,9 +902,9 @@ namespace {
       std::string const cachedir = ctx.indir();
       std::string const fn_freezeout_dat = inputfile + "/freezeout.dat";
       std::string const fn_position_dat = inputfile + "/position.dat";
-      ParticleSampleHydrojet* psamp = new ParticleSampleHydrojet(ctx, cachedir, ".PC170");
+      auto psamp = std::make_unique<ParticleSampleHydrojet>(ctx, cachedir, ".PC170");
       psamp->setHypersurfaceFilenames(fn_freezeout_dat, fn_position_dat);
-      return std::unique_ptr<ParticleSampleBase>(psamp);
+      return psamp;
     }
   } instance;
 

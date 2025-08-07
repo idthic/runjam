@@ -107,7 +107,7 @@ namespace {
   class ParticleSampleFactory: ParticleSampleFactoryBase {
     virtual std::unique_ptr<ParticleSampleBase> CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
       if (type != "psample") return nullptr;
-      return std::unique_ptr<ParticleSampleBase>(new ParticleSampleRead(ctx, inputfile));
+      return std::make_unique<ParticleSampleRead>(ctx, inputfile);
     }
   } instance;
 

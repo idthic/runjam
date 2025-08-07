@@ -279,32 +279,32 @@ public:
     if (ctx.get_config("runjam_output_phdat0", true)) {
       std::string filename = cfg_outdir + "/phasespace0.dat";
       ctx.read_config(filename, "runjam_fname_phdat0");
-      onbefore.emplace_back(new PhasespaceDataWriter(filename));
+      onbefore.emplace_back(std::make_unique<PhasespaceDataWriter>(filename));
     }
     if (ctx.get_config("runjam_output_phdat", true)) {
       std::string filename = cfg_outdir + "/phasespace.dat";
       ctx.read_config(filename, "runjam_fname_phdat");
-      onafter.emplace_back(new PhasespaceDataWriter(filename));
+      onafter.emplace_back(std::make_unique<PhasespaceDataWriter>(filename));
     }
     if (ctx.get_config("runjam_output_phbin0", false)) {
       std::string filename = cfg_outdir + "/phasespace0.bin";
       ctx.read_config(filename, "runjam_fname_phbin0");
-      onbefore.emplace_back(new PhasespaceBinaryWriter(filename));
+      onbefore.emplace_back(std::make_unique<PhasespaceBinaryWriter>(filename));
     }
     if (ctx.get_config("runjam_output_phbin", false)) {
       std::string filename = cfg_outdir + "/phasespace.bin";
       ctx.read_config(filename, "runjam_fname_phbin");
-      onafter.emplace_back(new PhasespaceBinaryWriter(filename));
+      onafter.emplace_back(std::make_unique<PhasespaceBinaryWriter>(filename));
     }
     if (ctx.get_config("runjam_output_phdat0_indexed", false)) {
       int const startIndex = ctx.get_config("runjam_output_index_start", 0);
       std::string suffix = "_phasespace0.dat";
-      onbefore.emplace_back(new IndexedPhasespaceDataWriter(cfg_outdir, suffix, startIndex));
+      onbefore.emplace_back(std::make_unique<IndexedPhasespaceDataWriter>(cfg_outdir, suffix, startIndex));
     }
     if (ctx.get_config("runjam_output_phdat_indexed", false)) {
       int const startIndex = ctx.get_config("runjam_output_index_start", 0);
       std::string suffix = "_phasespace.dat";
-      onafter.emplace_back(new IndexedPhasespaceDataWriter(cfg_outdir, suffix, startIndex));
+      onafter.emplace_back(std::make_unique<IndexedPhasespaceDataWriter>(cfg_outdir, suffix, startIndex));
     }
   }
 

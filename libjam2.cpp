@@ -134,14 +134,14 @@ namespace libjam2 {
 
   class runner: public irunner {
     jam2::JAM m_jam;
-    initial_condition_adapter* m_initial_condition;
+    std::unique_ptr<initial_condition_adapter> m_initial_condition;
 
   public:
     runner(idt::runjam::runjam_context const& ctx, std::string const& input_filename):
       m_jam(Pythia8_PREFIX "/share/Pythia8/xmldoc", false)
     {
       m_jam.readFile(input_filename);
-      m_initial_condition = new initial_condition_adapter(ctx, &m_jam);
+      m_initial_condition = std::make_unique<initial_condition_adapter>(ctx, &m_jam);
 
       Pythia8::Settings* const settings = this->settings();
       settings->mode("Cascade:model", 3);
@@ -162,7 +162,7 @@ namespace libjam2 {
     }
 
     void initialize() override {
-      m_jam.init(m_initial_condition);
+      m_jam.init(m_initial_condition.get());
     }
 
     void run(std::vector<idt::runjam::Particle> const& initial_state, std::vector<idt::runjam::Particle>& final_state) override {

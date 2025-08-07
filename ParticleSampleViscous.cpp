@@ -1631,11 +1631,11 @@ namespace {
         double const switchingTemperature = ctx.get_config("runjam_switching_temperature", -1.0);
         bool const turnsOffViscousEffect = ctx.get_config("runjam_turnsOffViscousEffect", false);
 
-        ParticleSampleViscous* psamp = new ParticleSampleViscous(ctx, inputfile);
+        auto psamp = std::make_unique<ParticleSampleViscous>(ctx, inputfile);
         if (switchingTemperature > 0.0)
           psamp->setSwitchingTemperature(switchingTemperature);
         psamp->setTurnsOffViscousEffect(turnsOffViscousEffect);
-        return std::unique_ptr<ParticleSampleBase>(psamp);
+        return psamp;
 
       } else if (type == "hydrojet") {
         double const switchingTemperature = ctx.get_config("runjam_switching_temperature", -1.0);
@@ -1644,14 +1644,14 @@ namespace {
         double const deltax = ctx.get_config("hydrojet_deltax", 0.3);
         double const deltay = ctx.get_config("hydrojet_deltay", 0.3);
 
-        ParticleSampleFromHydrojet* psamp = new ParticleSampleFromHydrojet(ctx, inputfile);
+        auto psamp = std::make_unique<ParticleSampleFromHydrojet>(ctx, inputfile);
         psamp->setDtau(deltat);
         psamp->setDh(deltah);
         psamp->setDx(deltax);
         psamp->setDy(deltay);
         if (switchingTemperature > 0.0)
           psamp->setSwitchingTemperature(switchingTemperature);
-        return std::unique_ptr<ParticleSampleBase>(psamp);
+        return psamp;
       }
 
       return nullptr;

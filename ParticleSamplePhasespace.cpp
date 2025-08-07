@@ -295,9 +295,9 @@ namespace {
   class ParticleSampleFactory: ParticleSampleFactoryBase {
     virtual std::unique_ptr<ParticleSampleBase> CreateInstance(runjam_context const& ctx, std::string const& type, std::string const& inputfile) {
       if (type == "phase1" || type == "phase") {
-        ParticleSampleReadPhasespaceData* psamp = new ParticleSampleReadPhasespaceData(ctx, inputfile);
+        auto psamp = std::make_unique<ParticleSampleReadPhasespaceData>(ctx, inputfile);
         if (type == "phase1") psamp->setNumberOfSamples(1);
-        return std::unique_ptr<ParticleSampleBase>(psamp);
+        return psamp;
       } else if (type == "phbin") {
         auto psamp = std::make_unique<ParticleSampleReadPhasespaceBinary>(ctx, inputfile);
         psamp->setNumberOfSamples(ctx.get_config("runjam_initial_phbin_size", 1000));
