@@ -160,7 +160,7 @@ function main {
     readargs/option:with-jam2 ~/.opt/jam/dev jam2 opt
   [[ $pythia8_PREFIX ]] ||
     readargs/option:with-pythia8 "$PREFIX" opt ||
-    readargs/option:with-pythia8 ~/.opt/pythia/8.244mod opt
+    readargs/option:with-pythia8 ~/.opt/pythia/8.315 opt
 
   # determine caps
   use_libjam1=
@@ -171,6 +171,8 @@ function main {
   fi
   if [[ $libjam2_PREFIX && $pythia8_PREFIX ]]; then
     use_libjam2=yes
+  elif [[ $libjam2_PREFIX ]]; then
+    printf 'note: libpythia-8.315 is required for the JAM2 support but not found.\n' >&2
   fi
 
   local ret; string#quote-arguments "$@"
