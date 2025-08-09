@@ -1187,7 +1187,7 @@ namespace {
       double const nlambda1 = totalIntegral * (1.0 / (8 * M_PI * M_PI)) * (temperature * temperature * temperature);
       double nlambda = nlambda1 * reso.deg * this->m_overSamplingFactor;
       if (nlambda < 0.0) {
-        if (nlambda < -1e-6) {
+        if (nlambda1 < -1e-6) {
           std::fprintf(stderr, "CFIntegral: negative nlambda: %g (integ=%g deg=%g)\n", nlambda, nlambda1, reso.deg);
           std::exit(1);
         } else {
