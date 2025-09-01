@@ -40,6 +40,7 @@
 
 namespace idt::runjam {
   int cmd_resolist_feeddown_factor(idt::runjam::runjam_context& ctx, idt::runjam::runjam_commandline_arguments const& args);
+  int cmd_resolist_eos(idt::runjam::runjam_context& ctx, idt::runjam::runjam_commandline_arguments const& args);
 }
 
 using namespace idt;
@@ -436,6 +437,8 @@ int main(int argc, char *argv[]) {
     return 0;
   } else if (args.subcommand == "resolist-feeddown-factor") {
     return cmd_resolist_feeddown_factor(ctx, args);
+  } else if (args.subcommand == "resolist-eos") {
+    return cmd_resolist_eos(ctx, args);
   } else {
     std::cerr << "runjam: unknown subcommand ' " << args.subcommand << "'" << std::endl;
     return 2;

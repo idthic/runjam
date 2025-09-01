@@ -54,6 +54,7 @@ runjam_OBJS := \
   $(OBJDIR)/ParticleSample.o \
   $(OBJDIR)/ResonanceList.o \
   $(OBJDIR)/cmd_resolist_feeddown_factor.o \
+  $(OBJDIR)/cmd_resolist_eos.o \
   $(OBJDIR)/main.o \
   $(patsubst %.cpp,$(OBJDIR)/%.o,$(wildcard ParticleSample*.cpp))
 

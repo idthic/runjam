@@ -733,7 +733,7 @@ namespace {
 
   private:
     double calculateIntegrandBulk(double x) const {
-      if (x >= CONST_ENERGY_MAX_FACTOR)return 0;
+      if (x >= CONST_ENERGY_MAX_FACTOR) return 0;
       //if (!isfinite(exp_)) { std::cerr << "exp: x=" << x << std::endl; std::exit(2); }
 
       // f(x)
