@@ -20,19 +20,12 @@
    USA  */
 
 #include "config.hpp"
-#include <cstddef>
-#include <cstdlib>
 #include <cmath>
-#include <iostream>
-#include <memory>
-#include <vector>
-#include <numeric>
-#include <fstream>
+#include <cstdio>
+#include <cstdlib>
 #include <ksh/integrator.hpp>
 
-#include "util.hpp"
 #include "args.hpp"
-#include "ParticleSample.hpp"
 #include "ResonanceList.hpp"
 
 namespace idt::runjam {
@@ -82,9 +75,10 @@ namespace {
         f = deg / (exp_ - sign);
       }
 
-      output[0] = jacob * jacob2 * f * x * x;
-      output[1] = jacob * jacob2 * f * (1.0 / 3.0) * bp2;
-      // output[2] = f * x; // particle number
+      double const w = jacob * jacob2 * f;
+      output[0] = w * (x * x);
+      output[1] = w * ((1.0 / 3.0) * bp2);
+      // output[3] = f * x; // particle number
     }
   };
 }
@@ -99,7 +93,7 @@ namespace {
       std::exit(1);
     }
 
-    std::fprintf(file, "#temperature(GeV) energy_density(GeV/fm^3) pressure(GeV/fm^3)\n");
+    std::fprintf(file, "#temperature(GeV) energy_density(GeV/fm^3) pressure(GeV/fm^3) (e-3P)/T^4\n");
 
     static const int itempN = 800;
     double const temp_min =  0.001 / hbarc_GeVfm;
@@ -121,14 +115,16 @@ namespace {
         pressure += result[1];
       }
 
+      double const trace_anomaly = energy_density - 3.0 * pressure;
       double const temp4 = std::pow(temp, 4.0);
       energy_density *= temp4;
       pressure *= temp4;
 
-      std::fprintf(file, "%21.15e %21.15e %21.15e\n",
+      std::fprintf(file, "%21.15e %21.15e %21.15e %21.15e\n",
         temp * hbarc_GeVfm,
         energy_density * hbarc_GeVfm,
-        pressure * hbarc_GeVfm);
+        pressure * hbarc_GeVfm,
+        trace_anomaly);
     }
     std::fclose(file);
 
