@@ -105,13 +105,16 @@ namespace {
     double const num = (((pi * t + an) * t  + bn) * t + cn) * t + dn;
     double const coeff = 0.5 * (1.0 + std::tanh(ct * (t - t0)));
 
-    return coeff * num / den;
+    double const temp4 = std::pow(temperature, 4.0);
+
+    return temp4 * coeff * num / den;
   }
 
   int cmd_resolist_eos(idt::runjam::runjam_context& ctx, idt::runjam::runjam_commandline_arguments const& args) {
     (void) args;
 
     idt::runjam::ResonanceList rlist(ctx);
+    //hadron resonance gas
     std::FILE* const file = std::fopen("eos.txt", "w");
     if (!file) {
       std::fprintf(stderr, "eos.txt: failed to open the file\n");
@@ -152,6 +155,41 @@ namespace {
         trace_anomaly);
     }
     std::fclose(file);
+
+    //lattice QGP
+    std::FILE* const file_QGP = std::fopen("eos_lattice.txt", "w");
+    if (!file_QGP) {
+      std::fprintf(stderr, "eos.txt: failed to open the file\n");
+      std::exit(1);
+    }
+
+    std::fprintf(file_QGP, "#temperature(GeV) energy_density(GeV/fm^3) pressure(GeV/fm^3) (e-3P)/T^4\n");
+
+    for (int itemp = 0; itemp <= itempN; itemp++) {
+      double const temp = temp_min * std::exp(dlnT * itemp); // fm^{-1}
+
+      double const trace_anomaly = 0.0;
+      double energy_density = 0.0; // fm^{-4}
+
+      //dp = s dT
+      //de = T ds
+      //e = \int de
+      //e = \int T ds
+      //e = \int T d(dp/dT)  温度0でエネルギー0 なので0からTの積分をする
+
+    for (int intT = 0; intT <= temp; intT++) {
+      //積分する
+    }
+      
+      double pressure = pressure_HotQCD2014kol(temp); // fm^{-4}
+
+      std::fprintf(file_QGP, "%21.15e %21.15e %21.15e %21.15e\n",
+        temp * hbarc_GeVfm,
+        energy_density * hbarc_GeVfm,
+        pressure * hbarc_GeVfm,
+        trace_anomaly);
+    }
+    std::fclose(file_QGP);
 
     return 0;
   }
