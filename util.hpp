@@ -28,8 +28,8 @@
 namespace idt {
   // static const double hbarc_MeVfm = 197.32; // hydrojet/src/spectra/ElementReso.h
   // static const double hbarc_MeVfm = 197.327053 ; // 197.327053 hydrojet/src/physicsbase/Const.h
-  static const double hbarc_MeVfm = 197.3269718; // 197.3269718(44) idt/rfh/i2/common/def.h
-  static const double hbarc_GeVfm = hbarc_MeVfm / 1000.0;
+  constexpr double hbarc_MeVfm = 197.3269718; // 197.3269718(44) idt/rfh/i2/common/def.h
+  constexpr double hbarc_GeVfm = hbarc_MeVfm / 1000.0;
 }
 
 namespace idt {

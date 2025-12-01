@@ -83,6 +83,31 @@ namespace {
   };
 }
 
+  // See Eq. (16) and Table II in HotQCD:2014kol
+  double pressure_HotQCD2014kol(
+    double temperature //!< [fm^{-1}]
+  ) {
+    constexpr double tc =  154.00 / hbarc_MeVfm; // [fm^{-1}]
+    constexpr double pi =  95.0 * M_PI * M_PI / 180.0;
+    constexpr double ct =  3.8706;
+    constexpr double an = -8.7704;
+    constexpr double bn =  3.9200;
+    constexpr double cn =  0.0000;
+    constexpr double dn =  0.3419;
+    constexpr double t0 =  0.9761;
+    constexpr double ad = -1.2600;
+    constexpr double bd =  0.8425;
+    constexpr double cd =  0.0000;
+    constexpr double dd = -0.0475;
+
+    double const t = temperature / tc;
+    double const den = (((     t + ad) * t  + bd) * t + cd) * t + dd;
+    double const num = (((pi * t + an) * t  + bn) * t + cn) * t + dn;
+    double const coeff = 0.5 * (1.0 + std::tanh(ct * (t - t0)));
+
+    return coeff * num / den;
+  }
+
   int cmd_resolist_eos(idt::runjam::runjam_context& ctx, idt::runjam::runjam_commandline_arguments const& args) {
     (void) args;
 
