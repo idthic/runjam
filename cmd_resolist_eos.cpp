@@ -174,24 +174,33 @@ namespace {
       //dp = s dT
       //de = T ds
       //e = \int de
-      //e = \int T ds
-      //e = \int T d(dp/dT)  温度0でエネルギー0 なので0からTの積分をする
-
-    for (int intT = 0; intT <= temp; intT++) {
-      //積分する
-    }
+      //  = \int T ds
+      //  = \int T d(dp/dT)  温度0でエネルギー0 なので0からTの積分をする
+      //  = \int T dT d^{2}p/dT^{2}
+      
+      int intTmax = 1000;
+      double const dT = temp / intTmax;
+      for (int intT = 0; intT < intTmax; intT++) {
+        //積分する
+        double T = dT * (intT + 0.5);
+        double p_T = pressure_HotQCD2014kol(T);
+        double epsilon = dT/10000;
+        double p_T_pluss = pressure_HotQCD2014kol(T + epsilon);
+        double p_T_minus = pressure_HotQCD2014kol(T - epsilon);
+        energy_density += T * dT * ((p_T_pluss - 2*p_T + p_T_minus) / (epsilon *  epsilon));       
+      }
       
       double pressure = pressure_HotQCD2014kol(temp); // fm^{-4}
 
       std::fprintf(file_QGP, "%21.15e %21.15e %21.15e %21.15e\n",
-        temp * hbarc_GeVfm,
-        energy_density * hbarc_GeVfm,
-        pressure * hbarc_GeVfm,
-        trace_anomaly);
+                   temp * hbarc_GeVfm,
+                   energy_density * hbarc_GeVfm,
+                   pressure * hbarc_GeVfm,
+                   trace_anomaly);
     }
     std::fclose(file_QGP);
 
     return 0;
   }
-
+  
 }
