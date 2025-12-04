@@ -35,6 +35,9 @@ namespace {
   static const double SQRT_TANGENT_ASYMPTOTE = M_SQRT2 / M_2_SQRTPI;
   static const double CONST_ENERGY_MAX_FACTOR = 100.0;
 
+  void save_HotQCD2014kol_eos(idt::runjam::runjam_context& ctx);
+  void save_HRG_eos(idt::runjam::runjam_context& ctx);
+  
   struct integrand_for_1d_eos {
     int sign;
     double deg;
@@ -81,38 +84,8 @@ namespace {
       // output[3] = f * x; // particle number
     }
   };
-}
 
-  // See Eq. (16) and Table II in HotQCD:2014kol
-  double pressure_HotQCD2014kol(
-    double temperature //!< [fm^{-1}]
-  ) {
-    constexpr double tc =  154.00 / hbarc_MeVfm; // [fm^{-1}]
-    constexpr double pi =  95.0 * M_PI * M_PI / 180.0;
-    constexpr double ct =  3.8706;
-    constexpr double an = -8.7704;
-    constexpr double bn =  3.9200;
-    constexpr double cn =  0.0000;
-    constexpr double dn =  0.3419;
-    constexpr double t0 =  0.9761;
-    constexpr double ad = -1.2600;
-    constexpr double bd =  0.8425;
-    constexpr double cd =  0.0000;
-    constexpr double dd = -0.0475;
-
-    double const t = temperature / tc;
-    double const den = (((     t + ad) * t  + bd) * t + cd) * t + dd;
-    double const num = (((pi * t + an) * t  + bn) * t + cn) * t + dn;
-    double const coeff = 0.5 * (1.0 + std::tanh(ct * (t - t0)));
-
-    double const temp4 = std::pow(temperature, 4.0);
-
-    return temp4 * coeff * num / den;
-  }
-
-  int cmd_resolist_eos(idt::runjam::runjam_context& ctx, idt::runjam::runjam_commandline_arguments const& args) {
-    (void) args;
-
+  void save_HRG_eos(idt::runjam::runjam_context& ctx){
     idt::runjam::ResonanceList rlist(ctx);
     //hadron resonance gas
     std::FILE* const file = std::fopen("eos.txt", "w");
@@ -155,6 +128,40 @@ namespace {
         trace_anomaly);
     }
     std::fclose(file);
+  }
+
+  // See Eq. (16) and Table II in HotQCD:2014kol
+  double pressure_HotQCD2014kol(
+    double temperature //!< [fm^{-1}]
+  ) {
+    constexpr double tc =  154.00 / hbarc_MeVfm; // [fm^{-1}]
+    constexpr double pi =  95.0 * M_PI * M_PI / 180.0;
+    constexpr double ct =  3.8706;
+    constexpr double an = -8.7704;
+    constexpr double bn =  3.9200;
+    constexpr double cn =  0.0000;
+    constexpr double dn =  0.3419;
+    constexpr double t0 =  0.9761;
+    constexpr double ad = -1.2600;
+    constexpr double bd =  0.8425;
+    constexpr double cd =  0.0000;
+    constexpr double dd = -0.0475;
+
+    double const t = temperature / tc;
+    double const den = (((     t + ad) * t  + bd) * t + cd) * t + dd;
+    double const num = (((pi * t + an) * t  + bn) * t + cn) * t + dn;
+    double const coeff = 0.5 * (1.0 + std::tanh(ct * (t - t0)));
+
+    double const temp4 = std::pow(temperature, 4.0);
+
+    return temp4 * coeff * num / den;
+  }
+ 
+  void save_HotQCD2014kol_eos(idt::runjam::runjam_context& ctx) {
+    static const int itempN = 800;
+    double const temp_min =  0.001 / hbarc_GeVfm;
+    double const temp_max = 10.000 / hbarc_GeVfm;
+    double const dlnT = std::log(temp_max / temp_min) / itempN;
 
     //lattice QGP
     std::FILE* const file_QGP = std::fopen("eos_lattice.txt", "w");
@@ -162,15 +169,14 @@ namespace {
       std::fprintf(stderr, "eos.txt: failed to open the file\n");
       std::exit(1);
     }
-
+    
     std::fprintf(file_QGP, "#temperature(GeV) energy_density(GeV/fm^3) pressure(GeV/fm^3) (e-3P)/T^4\n");
-
+    
     for (int itemp = 0; itemp <= itempN; itemp++) {
       double const temp = temp_min * std::exp(dlnT * itemp); // fm^{-1}
-
       double const trace_anomaly = 0.0;
       double energy_density = 0.0; // fm^{-4}
-
+      
       //dp = s dT
       //de = T ds
       //e = \int de
@@ -191,7 +197,7 @@ namespace {
       }
       
       double pressure = pressure_HotQCD2014kol(temp); // fm^{-4}
-
+      
       std::fprintf(file_QGP, "%21.15e %21.15e %21.15e %21.15e\n",
                    temp * hbarc_GeVfm,
                    energy_density * hbarc_GeVfm,
@@ -199,8 +205,12 @@ namespace {
                    trace_anomaly);
     }
     std::fclose(file_QGP);
-
+  }
+}
+  int cmd_resolist_eos(idt::runjam::runjam_context& ctx, idt::runjam::runjam_commandline_arguments const& args) {
+    (void) args;
+    save_HRG_eos(ctx);
+    save_HotQCD2014kol_eos(ctx);
     return 0;
   }
-  
 }
