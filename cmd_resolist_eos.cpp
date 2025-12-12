@@ -86,34 +86,20 @@ namespace {
     }
   };
   
-  double pressure_HRG(
-    double temperature //!< [fm^{-1}]
-  ) {
-    return 0.0;//**HRG の時のP(T)を計算すべし
-    //save_HRG_eosでpressure_HRGを呼び出すように編集したい
-  }
-  
-  void save_HRG_eos(idt::runjam::runjam_context& ctx){
-    idt::runjam::ResonanceList rlist(ctx);
+  double pressure_HRG(double temperature //!< [fm^{-1}]
+                      ) {
     //hadron resonance gas
-    std::FILE* const file = std::fopen("eos.txt", "w");
-    if (!file) {
-      std::fprintf(stderr, "eos.txt: failed to open the file\n");
-      std::exit(1);
-    }
-
-    std::fprintf(file, "#temperature(GeV) energy_density(GeV/fm^3) pressure(GeV/fm^3) (e-3P)/T^4\n");
-
+    idt::runjam::ResonanceList rlist(ctx);
     static const int itempN = 800;
     double const temp_min =  0.001 / hbarc_GeVfm;
     double const temp_max = 10.000 / hbarc_GeVfm;
     double const dlnT = std::log(temp_max / temp_min) / itempN;
     for (int itemp = 0; itemp <= itempN; itemp++) {
       double const temp = temp_min * std::exp(dlnT * itemp); // fm^{-1}
-
+      
       double energy_density = 0.0; // fm^{-4}
       double pressure = 0.0; // fm^{-4}
-
+      
       int const iresoN = rlist.size();
       for (int ireso = 0; ireso < iresoN; ireso++) {
         ResonanceRecord const& reso = rlist[ireso];
@@ -128,16 +114,28 @@ namespace {
       double const temp4 = std::pow(temp, 4.0);
       energy_density *= temp4;
       pressure *= temp4;
-
-      std::fprintf(file, "%21.15e %21.15e %21.15e %21.15e\n",
-        temp * hbarc_GeVfm,
-        energy_density * hbarc_GeVfm,
-        pressure * hbarc_GeVfm,
-        trace_anomaly);
     }
+    return pressure;//**HRG の時のP(T)を計算すべし
+    //save_HRG_eosでpressure_HRGを呼び出すように編集したい
+  }
+  
+  void save_HRG_eos(idt::runjam::runjam_context& ctx){
+    std::FILE* const file = std::fopen("eos.txt", "w");
+    if (!file) {
+      std::fprintf(stderr, "eos.txt: failed to open the file\n");
+      std::exit(1);
+    }
+    
+    std::fprintf(file, "#temperature(GeV) energy_density(GeV/fm^3) pressure(GeV/fm^3) (e-3P)/T^4\n");
+    std::fprintf(file, "%21.15e %21.15e %21.15e %21.15e\n",
+                 temp * hbarc_GeVfm,
+                 energy_density * hbarc_GeVfm,
+                 pressure_HRG(temp * hbarc_GeVfm) * hbarc_GeVfm,
+                 trace_anomaly);
+    
     std::fclose(file);
   }
-
+  
   // See Eq. (16) and Table II in HotQCD:2014kol
   double pressure_HotQCD2014kol(
     double temperature //!< [fm^{-1}]
