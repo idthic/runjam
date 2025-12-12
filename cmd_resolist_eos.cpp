@@ -37,6 +37,7 @@ namespace {
 
   void save_HotQCD2014kol_eos(idt::runjam::runjam_context& ctx);
   void save_HRG_eos(idt::runjam::runjam_context& ctx);
+  void save_HRG_QGP_eos(idt::runjam::runjam_context& ctx);
   
   struct integrand_for_1d_eos {
     int sign;
@@ -84,7 +85,14 @@ namespace {
       // output[3] = f * x; // particle number
     }
   };
-
+  
+  double pressure_HRG(
+    double temperature //!< [fm^{-1}]
+  ) {
+    return 0.0;//**HRG の時のP(T)を計算すべし
+    //save_HRG_eosでpressure_HRGを呼び出すように編集したい
+  }
+  
   void save_HRG_eos(idt::runjam::runjam_context& ctx){
     idt::runjam::ResonanceList rlist(ctx);
     //hadron resonance gas
@@ -206,6 +214,25 @@ namespace {
     }
     std::fclose(file_QGP);
   }
+
+  double pressure_HRG_QGP(
+    double temperature // [fm^{-1}]
+  ) {
+    double p_HQ;
+    double delta_Tc = 10.0 / hbarc_MeVfm; // [fm^{-1}]
+    double Tc = 154.00 / hbarc_MeVfm; // [fm^{-1}]
+
+    double func_T = (temperature - Tc)/delta_Tc;
+    p_HQ = 1/2 * (1 - tanh(func_T)) * pressure_HRG(temperature)
+      + 1/2 * (1 + tanh(func_T)) * pressure_HotQCD2014kol(temperature);
+    //combine pressure_HRG<-関数はまだ0. and pressure_QGP(T)<-pressure_hotqcd
+    return p_HQ;
+  }
+
+  void save_HRG_QGP_eos(idt::runjam::runjam_context& ctx){
+    //output pressure_HRG_QGP
+  }
+
 }
   int cmd_resolist_eos(idt::runjam::runjam_context& ctx, idt::runjam::runjam_commandline_arguments const& args) {
     (void) args;
