@@ -23,6 +23,8 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <memory>
+#include <utility>
 #include <ksh/integrator.hpp>
 
 #include "args.hpp"
@@ -38,104 +40,134 @@ namespace {
   void save_HotQCD2014kol_eos(idt::runjam::runjam_context& ctx);
   void save_HRG_eos(idt::runjam::runjam_context& ctx);
   void save_HRG_QGP_eos(idt::runjam::runjam_context& ctx);
-  
-  struct integrand_for_1d_eos {
-    int sign;
-    double deg;
-    double bmass;
-    double bmu;
 
-    /// @param[in] beta inverse temperature in fm^{-1}
-    integrand_for_1d_eos(double beta, ResonanceRecord const* reso) {
-      sign = -reso->bf;
-      bmass = beta * reso->mass;
-      bmu = beta * reso->mu;
-      deg = reso->deg;
-    }
+  class eosHRG_t {
+  private:
+    struct integrand_for_1d_eos {
+      int sign;
+      double deg;
+      double bmass;
+      double bmu;
 
-    /*?lwiki
-     * @fn void operator()(double* output, double t) const;
-     * @param[out] output
-     *   The integrand_for_1d_eoss for energy density and pressure
-     * @param[in] t
-     *   This specifies the integration variable $t$. The energy is calculated
-     *   as $x = \beta E = \tau t^2$.
-     */
-    void operator()(double* output, double t) const {
-      // variable transform t -> x
-      double const tantt = std::tan(t * t);
-      double const jacob = 2 * t * (tantt * tantt + 1);
-      double const x = tantt + bmass;
-
-      // d^3p /((2\pi)^3 E) = 4\pi p^2 dp / (8\pi^3 E) = p dE / 2\pi^2
-      double const bp2 = x * x - bmass * bmass;
-      double const jacob2 = (1.0 / (2.0 * M_PI * M_PI)) * std::sqrt(bp2);
-
-      double f;
-      if (x - bmu >= CONST_ENERGY_MAX_FACTOR) {
-        f = deg * std::exp(-(x - bmu));
-      } else {
-        double const exp_ = std::exp(x - bmu);
-        f = deg / (exp_ - sign);
+      /// @param[in] beta inverse temperature in fm^{-1}
+      integrand_for_1d_eos(double beta, ResonanceRecord const* reso) {
+        sign = -reso->bf;
+        bmass = beta * reso->mass;
+        bmu = beta * reso->mu;
+        deg = reso->deg;
       }
 
-      double const w = jacob * jacob2 * f;
-      output[0] = w * (x * x);
-      output[1] = w * ((1.0 / 3.0) * bp2);
-      // output[3] = f * x; // particle number
-    }
-  };
-  
-  double pressure_HRG(double temperature //!< [fm^{-1}]
-                      ) {
-    //hadron resonance gas
-    idt::runjam::ResonanceList rlist(ctx);
-    static const int itempN = 800;
-    double const temp_min =  0.001 / hbarc_GeVfm;
-    double const temp_max = 10.000 / hbarc_GeVfm;
-    double const dlnT = std::log(temp_max / temp_min) / itempN;
-    for (int itemp = 0; itemp <= itempN; itemp++) {
-      double const temp = temp_min * std::exp(dlnT * itemp); // fm^{-1}
-      
+      /*?lwiki
+       * @fn void operator()(double* output, double t) const;
+       * @param[out] output
+       *   The integrand_for_1d_eoss for energy density and pressure
+       * @param[in] t
+       *   This specifies the integration variable $t$. The energy is calculated
+       *   as $x = \beta E = \tau t^2$.
+       */
+      void operator()(double* output, double t) const {
+        // variable transform t -> x
+        double const tantt = std::tan(t * t);
+        double const jacob = 2 * t * (tantt * tantt + 1);
+        double const x = tantt + bmass;
+
+        // d^3p /((2\pi)^3 E) = 4\pi p^2 dp / (8\pi^3 E) = p dE / 2\pi^2
+        double const bp2 = x * x - bmass * bmass;
+        double const jacob2 = (1.0 / (2.0 * M_PI * M_PI)) * std::sqrt(bp2);
+
+        double f;
+        if (x - bmu >= CONST_ENERGY_MAX_FACTOR) {
+          f = deg * std::exp(-(x - bmu));
+        } else {
+          double const exp_ = std::exp(x - bmu);
+          f = deg / (exp_ - sign);
+        }
+
+        double const w = jacob * jacob2 * f;
+        output[0] = w * (x * x);
+        output[1] = w * ((1.0 / 3.0) * bp2);
+        // output[3] = f * x; // particle number
+      }
+    };
+
+  public:
+    idt::runjam::ResonanceList rlist;
+    eosHRG_t(idt::runjam::runjam_context& ctx): rlist(ctx) {}
+
+    std::pair<double, double> get_energy_density_and_pressure(
+      double temperature //!< [fm^{-1}]
+    ) const {
       double energy_density = 0.0; // fm^{-4}
       double pressure = 0.0; // fm^{-4}
-      
+
       int const iresoN = rlist.size();
       for (int ireso = 0; ireso < iresoN; ireso++) {
         ResonanceRecord const& reso = rlist[ireso];
-        integrand_for_1d_eos integ(1.0 / temp, &reso);
+        integrand_for_1d_eos integ(1.0 / temperature, &reso);
         double result[2];
         kashiwa::gauss_legendre_quadrature<256>(2, &result[0], 0.0, SQRT_TANGENT_ASYMPTOTE, integ);
         energy_density += result[0];
         pressure += result[1];
       }
 
-      double const trace_anomaly = energy_density - 3.0 * pressure;
-      double const temp4 = std::pow(temp, 4.0);
+      double const temp4 = std::pow(temperature, 4.0);
       energy_density *= temp4;
       pressure *= temp4;
+
+      return std::make_pair(energy_density, pressure);
     }
-    return pressure;//**HRG の時のP(T)を計算すべし
-    //save_HRG_eosでpressure_HRGを呼び出すように編集したい
-  }
-  
+
+    double pressure(
+      double temperature //!< [fm^{-1}]
+    ) const {
+      double pressure = 0.0; // fm^{-4}
+
+      int const iresoN = rlist.size();
+      for (int ireso = 0; ireso < iresoN; ireso++) {
+        ResonanceRecord const& reso = rlist[ireso];
+        integrand_for_1d_eos integ(1.0 / temperature, &reso);
+        double result[2];
+        kashiwa::gauss_legendre_quadrature<256>(2, &result[0], 0.0, SQRT_TANGENT_ASYMPTOTE, integ);
+        pressure += result[1];
+      }
+      pressure *= std::pow(temperature, 4.0);
+
+      return pressure;
+    }
+  };
+
+  std::unique_ptr<eosHRG_t> eosHRG;
+
   void save_HRG_eos(idt::runjam::runjam_context& ctx){
     std::FILE* const file = std::fopen("eos.txt", "w");
     if (!file) {
       std::fprintf(stderr, "eos.txt: failed to open the file\n");
       std::exit(1);
     }
-    
+
     std::fprintf(file, "#temperature(GeV) energy_density(GeV/fm^3) pressure(GeV/fm^3) (e-3P)/T^4\n");
-    std::fprintf(file, "%21.15e %21.15e %21.15e %21.15e\n",
-                 temp * hbarc_GeVfm,
-                 energy_density * hbarc_GeVfm,
-                 pressure_HRG(temp * hbarc_GeVfm) * hbarc_GeVfm,
-                 trace_anomaly);
-    
+
+    static const int itempN = 800;
+    double const temp_min =  0.001 / hbarc_GeVfm;
+    double const temp_max = 10.000 / hbarc_GeVfm;
+    double const dlnT = std::log(temp_max / temp_min) / itempN;
+    for (int itemp = 0; itemp <= itempN; itemp++) {
+      double const temp = temp_min * std::exp(dlnT * itemp); // fm^{-1}
+
+      auto const [energy_density, pressure] = eosHRG->get_energy_density_and_pressure(temp);
+
+      double const trace_anomaly = (energy_density - 3.0 * pressure) / std::pow(temp, 4.0);
+
+      std::fprintf(file, "%21.15e %21.15e %21.15e %21.15e\n",
+        temp * hbarc_GeVfm,
+        energy_density * hbarc_GeVfm,
+        pressure * hbarc_GeVfm,
+        trace_anomaly);
+    }
+
     std::fclose(file);
   }
-  
+
   // See Eq. (16) and Table II in HotQCD:2014kol
   double pressure_HotQCD2014kol(
     double temperature //!< [fm^{-1}]
@@ -162,7 +194,7 @@ namespace {
 
     return temp4 * coeff * num / den;
   }
- 
+
   void save_HotQCD2014kol_eos(idt::runjam::runjam_context& ctx) {
     static const int itempN = 800;
     double const temp_min =  0.001 / hbarc_GeVfm;
@@ -175,21 +207,20 @@ namespace {
       std::fprintf(stderr, "eos.txt: failed to open the file\n");
       std::exit(1);
     }
-    
+
     std::fprintf(file_QGP, "#temperature(GeV) energy_density(GeV/fm^3) pressure(GeV/fm^3) (e-3P)/T^4\n");
-    
+
     for (int itemp = 0; itemp <= itempN; itemp++) {
       double const temp = temp_min * std::exp(dlnT * itemp); // fm^{-1}
-      double const trace_anomaly = 0.0;
       double energy_density = 0.0; // fm^{-4}
-      
+
       //dp = s dT
       //de = T ds
       //e = \int de
       //  = \int T ds
       //  = \int T d(dp/dT)  温度0でエネルギー0 なので0からTの積分をする
       //  = \int T dT d^{2}p/dT^{2}
-      
+
       int intTmax = 1000;
       double const dT = temp / intTmax;
       for (int intT = 0; intT < intTmax; intT++) {
@@ -199,11 +230,12 @@ namespace {
         double epsilon = dT/10000;
         double p_T_pluss = pressure_HotQCD2014kol(T + epsilon);
         double p_T_minus = pressure_HotQCD2014kol(T - epsilon);
-        energy_density += T * dT * ((p_T_pluss - 2*p_T + p_T_minus) / (epsilon *  epsilon));       
+        energy_density += T * dT * ((p_T_pluss - 2*p_T + p_T_minus) / (epsilon *  epsilon));
       }
-      
-      double pressure = pressure_HotQCD2014kol(temp); // fm^{-4}
-      
+
+      double const pressure = pressure_HotQCD2014kol(temp); // fm^{-4}
+      double const trace_anomaly = (energy_density - 3.0 * pressure) / std::pow(temp, 4.0);
+
       std::fprintf(file_QGP, "%21.15e %21.15e %21.15e %21.15e\n",
                    temp * hbarc_GeVfm,
                    energy_density * hbarc_GeVfm,
@@ -216,24 +248,31 @@ namespace {
   double pressure_HRG_QGP(
     double temperature // [fm^{-1}]
   ) {
-    double p_HQ;
-    double delta_Tc = 10.0 / hbarc_MeVfm; // [fm^{-1}]
-    double Tc = 154.00 / hbarc_MeVfm; // [fm^{-1}]
+    constexpr double delta_Tc = 10.0 / hbarc_MeVfm; // [fm^{-1}]
+    constexpr double Tc = 154.00 / hbarc_MeVfm; // [fm^{-1}]
 
-    double func_T = (temperature - Tc)/delta_Tc;
-    p_HQ = 1/2 * (1 - tanh(func_T)) * pressure_HRG(temperature)
-      + 1/2 * (1 + tanh(func_T)) * pressure_HotQCD2014kol(temperature);
-    //combine pressure_HRG<-関数はまだ0. and pressure_QGP(T)<-pressure_hotqcd
+    double const pHRG = eosHRG->pressure(temperature);
+    double const pLattice = pressure_HotQCD2014kol(temperature);
+    double const func_T = (temperature - Tc)/delta_Tc;
+
+    double p_HQ = 1.0 / 2.0 * (1.0 - std::tanh(func_T)) * pHRG
+      + 1.0 / 2.0 * (1.0 + std::tanh(func_T)) * pLattice;
+
     return p_HQ;
   }
 
   void save_HRG_QGP_eos(idt::runjam::runjam_context& ctx){
+
     //output pressure_HRG_QGP
   }
 
 }
   int cmd_resolist_eos(idt::runjam::runjam_context& ctx, idt::runjam::runjam_commandline_arguments const& args) {
     (void) args;
+
+    // initialize
+    if (!eosHRG) eosHRG = std::make_unique<eosHRG_t>(ctx);
+
     save_HRG_eos(ctx);
     save_HotQCD2014kol_eos(ctx);
     return 0;
