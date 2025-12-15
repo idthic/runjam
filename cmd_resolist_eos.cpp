@@ -262,8 +262,49 @@ namespace {
   }
 
   void save_HRG_QGP_eos(idt::runjam::runjam_context& ctx){
-
     //output pressure_HRG_QGP
+
+    static const int itempN = 800;
+    double const temp_min =  0.001 / hbarc_GeVfm;
+    double const temp_max = 10.000 / hbarc_GeVfm;
+    double const dlnT = std::log(temp_max / temp_min) / itempN;
+
+    //QGP_HRG
+    std::FILE* const file_QGP_HRG = std::fopen("eos_QGP_HRG.txt", "w");
+    if (!file_QGP_HRG) {
+      std::fprintf(stderr, "eos_QGP_HRG.txt: failed to open the file\n");
+      std::exit(1);
+    }
+
+    std::fprintf(file_QGP_HRG, "#temperature(GeV) energy_density(GeV/fm^3) pressure(GeV/fm^3) (e-3P)/T^4\n");
+
+    for (int itemp = 0; itemp <= itempN; itemp++) {
+      double const temp = temp_min * std::exp(dlnT * itemp); // fm^{-1}
+      double energy_density = 0.0; // fm^{-4}
+      
+      int intTmax = 10;//QGPの時のように1000にするとすごく時間がかかる
+      double const dT = temp / intTmax;
+      
+      for (int intT = 0; intT < intTmax; intT++) {
+        //積分する
+        double T = dT * (intT + 0.5);
+        double p_T = pressure_HRG_QGP(T);
+        double epsilon = dT/10000;
+        double p_T_pluss = pressure_HRG_QGP(T + epsilon);
+        double p_T_minus = pressure_HRG_QGP(T - epsilon);
+        energy_density += T * dT * ((p_T_pluss - 2*p_T + p_T_minus) / (epsilon *  epsilon));
+      }
+
+      double const pressure = pressure_HRG_QGP(temp); // fm^{-4}
+      double const trace_anomaly = (energy_density - 3.0 * pressure) / std::pow(temp, 4.0);
+
+      std::fprintf(file_QGP_HRG, "%21.15e %21.15e %21.15e %21.15e\n",
+                   temp * hbarc_GeVfm,
+                   energy_density * hbarc_GeVfm,
+                   pressure * hbarc_GeVfm,
+                   trace_anomaly);
+    }
+    std::fclose(file_QGP_HRG);
   }
 
 }
@@ -275,6 +316,8 @@ namespace {
 
     save_HRG_eos(ctx);
     save_HotQCD2014kol_eos(ctx);
+    save_HRG_QGP_eos(ctx);
+
     return 0;
   }
 }
