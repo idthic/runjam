@@ -186,13 +186,86 @@ namespace {
     constexpr double dd = -0.0475;
 
     double const t = temperature / tc;
-    double const den = (((     t + ad) * t  + bd) * t + cd) * t + dd;
-    double const num = (((pi * t + an) * t  + bn) * t + cn) * t + dn;
+    double expansion;
+
+    // We use the Taylor expansion around $T = 100~\text{MeV}$ for $T <
+    // 100~\text{MeV}$.  The above parameters for the Pade approximation in
+    // Eq. (16) of HotQCD:2014kol are only valid for the temperature range T =
+    // [100, 400] MeV according to the caption in Table II.  In fact, the Pade
+    // expansion has a pole around T = 45 MeV, so we cannot use the expression
+    // for lower temperature.  We instead use a Taylor expansion of the Pade
+    // expansion at T = 100 MeV for a lower temperature T < 100 MeV.
+    //
+    // Note: I checked different orders of the Taylor expansion, but
+    // higher-order expansions are not necessarily stable.  I here decided to
+    // use the second-order Taylor expansion.
+    //
+    // Note: I also checked the behavior of the Taylor expansion at T = 130 MeV
+    // since the minimum temperature from the lattice data seems to be around
+    // 130 MeV, but I gave up the Taylor expansion around T = 130 MeV because
+    // it has a finite gap at T = 100 MeV with the second or third orders, and
+    // the higher orders are oscillatory.
+    //
+    // Note: I also checked the behavior of the Taylor expansion with respect
+    // to a different parameter $s = t^4$, whose dimension matches p, but it
+    // didn't improve the results (though it's not worse).
+    constexpr double tz = 100.0 / 154.0;
+    if (t < tz) {
+      constexpr double d0 = (((     tz + ad) * tz  + bd) * tz + cd) * tz + dd;
+      constexpr double d1 = ((4.0 * tz + 3.0 * ad) * tz  + 2.0 * bd) * tz + cd;
+      constexpr double d2 = (12.0 * tz + 6.0 * ad) * tz  + 2.0 * bd;
+      constexpr double d3 = 24.0 * tz + 6.0 * ad;
+      constexpr double d4 = 24.0;
+      constexpr double n0 = (((pi * tz + an) * tz  + bn) * tz + cn) * tz + dn;
+      constexpr double n1 = ((4.0 * pi * tz + 3.0 * an) * tz + 2.0 * bn) * tz + cn;
+      constexpr double n2 = (12.0 * pi * tz + 6.0 * an) * tz + 2.0 * bn;
+      constexpr double n3 = 24.0 * pi * tz + 6.0 * an;
+      constexpr double n4 = 24.0 * pi;
+      constexpr double p0 = n0 / d0;
+      constexpr double p1n = n1 * d0 - n0 * d1;
+      constexpr double p2n = (n2 * d0 - n0 * d2) * d0 - 2.0 * p1n * d1;
+      constexpr double p3n =
+        (n3 * d0 * d0 - 3 * n1 * d0 * d2 + n0 * (3 * d1 * d2 - d0 * d3)) * d0
+        - 3.0 * p2n * d1;
+      constexpr double p1 = p1n / (d0 * d0);
+      constexpr double p2 = p2n / (d0 * d0 * d0);
+      constexpr double p3 = p3n / (d0 * d0 * d0 * d0);
+
+      // std::printf("p0 = %21.15e\n", p0);
+      // std::printf("p1 = %21.15e\n", p1);
+      // std::printf("p2 = %21.15e\n", p2);
+      // std::printf("p3 = %21.15e\n", p3);
+      // std::exit(1);
+
+      double const dt = t - tz;
+      //expansion = p1 * dt + p0; // -> non-monotonic e/T^4
+      expansion = (p2 * dt + p1) * dt + p0; // -> fine, but de/dT jumps at T = 100 MeV
+      //expansion = ((p3 * dt + p2) * dt + p1) * dt + p0; // -> non-monotonic p/T^4
+
+      // Expansion wrt t^4
+      // constexpr double tz4 = tz * tz * tz * tz;
+      // constexpr double pb0 = p0;
+      // constexpr double pb1 = p1 / (4.0 * tz * tz * tz);
+      // constexpr double pb2 = (p2 * tz - 3.0 * p1) / (16.0 * tz * tz * tz * tz4);
+      // constexpr double pb3 = ((p3 * tz - 9.0 * p2) * tz + 21.0 * p1) / (64.0 * tz * tz * tz * tz4 * tz4);
+      // std::printf("pb0 = %21.15e\n", pb0);
+      // std::printf("pb1 = %21.15e\n", pb1);
+      // std::printf("pb2 = %21.15e\n", pb2);
+      // std::printf("pb3 = %21.15e\n", pb3);
+      // std::exit(1);
+      // double const dt4 = t * t * t * t - tz4;
+      // expansion = pb1 * dt4 + pb0; // -> non-monotonic e/T^4
+      // expansion = (pb2 * dt4 + pb1) * dt4 + pb0; // -> non-monotonic e/T^4
+      // expansion = ((pb3 * dt4 + pb2) * dt4 + pb1) * dt4 + pb0; // -> non-monotonic p/T^4
+    } else {
+      double const den = (((     t + ad) * t  + bd) * t + cd) * t + dd;
+      double const num = (((pi * t + an) * t  + bn) * t + cn) * t + dn;
+      expansion = num / den;
+    }
+
     double const coeff = 0.5 * (1.0 + std::tanh(ct * (t - t0)));
-
     double const temp4 = std::pow(temperature, 4.0);
-
-    return temp4 * coeff * num / den;
+    return temp4 * coeff * expansion;
   }
 
   void save_HotQCD2014kol_eos(idt::runjam::runjam_context& ctx) {
@@ -281,10 +354,10 @@ namespace {
     for (int itemp = 0; itemp <= itempN; itemp++) {
       double const temp = temp_min * std::exp(dlnT * itemp); // fm^{-1}
       double energy_density = 0.0; // fm^{-4}
-      
+
       int intTmax = 10;//QGPの時のように1000にするとすごく時間がかかる
       double const dT = temp / intTmax;
-      
+
       for (int intT = 0; intT < intTmax; intT++) {
         //積分する
         double T = dT * (intT + 0.5);
