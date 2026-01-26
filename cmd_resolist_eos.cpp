@@ -169,24 +169,20 @@ namespace {
   }
 
   // See Eq. (16) and Table II in HotQCD:2014kol
-  double pressure_HotQCD2014kol(
-    double temperature //!< [fm^{-1}]
-  ) {
-    constexpr double tc =  154.00 / hbarc_MeVfm; // [fm^{-1}]
-    constexpr double pi =  95.0 * M_PI * M_PI / 180.0;
-    constexpr double ct =  3.8706;
-    constexpr double an = -8.7704;
-    constexpr double bn =  3.9200;
-    constexpr double cn =  0.0000;
-    constexpr double dn =  0.3419;
-    constexpr double t0 =  0.9761;
-    constexpr double ad = -1.2600;
-    constexpr double bd =  0.8425;
-    constexpr double cd =  0.0000;
-    constexpr double dd = -0.0475;
-
-    double const t = temperature / tc;
-    double expansion;
+  class HotQCD2014kol {
+    // These coefficients are picked up from HotQCD:2014kol
+    static constexpr double tc =  154.00 / hbarc_MeVfm; // [fm^{-1}]
+    static constexpr double pi =  95.0 * M_PI * M_PI / 180.0;
+    static constexpr double ct =  3.8706;
+    static constexpr double an = -8.7704;
+    static constexpr double bn =  3.9200;
+    static constexpr double cn =  0.0000;
+    static constexpr double dn =  0.3419;
+    static constexpr double t0 =  0.9761;
+    static constexpr double ad = -1.2600;
+    static constexpr double bd =  0.8425;
+    static constexpr double cd =  0.0000;
+    static constexpr double dd = -0.0475;
 
     // We use the Taylor expansion around $T = 100~\text{MeV}$ for $T <
     // 100~\text{MeV}$.  The above parameters for the Pade approximation in
@@ -209,64 +205,132 @@ namespace {
     // Note: I also checked the behavior of the Taylor expansion with respect
     // to a different parameter $s = t^4$, whose dimension matches p, but it
     // didn't improve the results (though it's not worse).
-    constexpr double tz = 100.0 / 154.0;
-    if (t < tz) {
-      constexpr double d0 = (((     tz + ad) * tz  + bd) * tz + cd) * tz + dd;
-      constexpr double d1 = ((4.0 * tz + 3.0 * ad) * tz  + 2.0 * bd) * tz + cd;
-      constexpr double d2 = (12.0 * tz + 6.0 * ad) * tz  + 2.0 * bd;
-      constexpr double d3 = 24.0 * tz + 6.0 * ad;
-      constexpr double d4 = 24.0;
-      constexpr double n0 = (((pi * tz + an) * tz  + bn) * tz + cn) * tz + dn;
-      constexpr double n1 = ((4.0 * pi * tz + 3.0 * an) * tz + 2.0 * bn) * tz + cn;
-      constexpr double n2 = (12.0 * pi * tz + 6.0 * an) * tz + 2.0 * bn;
-      constexpr double n3 = 24.0 * pi * tz + 6.0 * an;
-      constexpr double n4 = 24.0 * pi;
-      constexpr double p0 = n0 / d0;
-      constexpr double p1n = n1 * d0 - n0 * d1;
-      constexpr double p2n = (n2 * d0 - n0 * d2) * d0 - 2.0 * p1n * d1;
-      constexpr double p3n =
-        (n3 * d0 * d0 - 3 * n1 * d0 * d2 + n0 * (3 * d1 * d2 - d0 * d3)) * d0
-        - 3.0 * p2n * d1;
-      constexpr double p1 = p1n / (d0 * d0);
-      constexpr double p2 = p2n / (d0 * d0 * d0);
-      constexpr double p3 = p3n / (d0 * d0 * d0 * d0);
+    //
+    // "tz" is the point where we do the Taylor expansion. "d[0-4]" are the
+    // derivatives of the denominator at "tz". "n[0-4]" are of the
+    // numerator. "p[1-3]n" are the numerator of the derivatives "p[1-3]".
+    static constexpr double tz = 100.0 / 154.0;
+    static constexpr double d0 = (((     tz + ad) * tz  + bd) * tz + cd) * tz + dd;
+    static constexpr double d1 = ((4.0 * tz + 3.0 * ad) * tz  + 2.0 * bd) * tz + cd;
+    static constexpr double d2 = (12.0 * tz + 6.0 * ad) * tz  + 2.0 * bd;
+    static constexpr double d3 = 24.0 * tz + 6.0 * ad;
+    static constexpr double d4 = 24.0;
+    static constexpr double n0 = (((pi * tz + an) * tz  + bn) * tz + cn) * tz + dn;
+    static constexpr double n1 = ((4.0 * pi * tz + 3.0 * an) * tz + 2.0 * bn) * tz + cn;
+    static constexpr double n2 = (12.0 * pi * tz + 6.0 * an) * tz + 2.0 * bn;
+    static constexpr double n3 = 24.0 * pi * tz + 6.0 * an;
+    static constexpr double n4 = 24.0 * pi;
+    static constexpr double p0 = n0 / d0;
+    static constexpr double p1n = n1 * d0 - n0 * d1;
+    static constexpr double p2n = (n2 * d0 - n0 * d2) * d0 - 2.0 * p1n * d1;
+    static constexpr double p3n =
+      (n3 * d0 * d0 - 3 * n1 * d0 * d2 + n0 * (3 * d1 * d2 - d0 * d3)) * d0
+      - 3.0 * p2n * d1;
+    static constexpr double p1 = p1n / (d0 * d0);
+    static constexpr double p2 = p2n / (d0 * d0 * d0);
+    static constexpr double p3 = p3n / (d0 * d0 * d0 * d0);
 
-      // std::printf("p0 = %21.15e\n", p0);
-      // std::printf("p1 = %21.15e\n", p1);
-      // std::printf("p2 = %21.15e\n", p2);
-      // std::printf("p3 = %21.15e\n", p3);
-      // std::exit(1);
+  public:
+    static double pressure(
+      double temperature //!< [fm^{-1}]
+    ) {
 
-      double const dt = t - tz;
-      //expansion = p1 * dt + p0; // -> non-monotonic e/T^4
-      expansion = (p2 * dt + p1) * dt + p0; // -> fine, but de/dT jumps at T = 100 MeV
-      //expansion = ((p3 * dt + p2) * dt + p1) * dt + p0; // -> non-monotonic p/T^4
+      double const t = temperature / tc;
+      double expansion;
 
-      // Expansion wrt t^4
-      // constexpr double tz4 = tz * tz * tz * tz;
-      // constexpr double pb0 = p0;
-      // constexpr double pb1 = p1 / (4.0 * tz * tz * tz);
-      // constexpr double pb2 = (p2 * tz - 3.0 * p1) / (16.0 * tz * tz * tz * tz4);
-      // constexpr double pb3 = ((p3 * tz - 9.0 * p2) * tz + 21.0 * p1) / (64.0 * tz * tz * tz * tz4 * tz4);
-      // std::printf("pb0 = %21.15e\n", pb0);
-      // std::printf("pb1 = %21.15e\n", pb1);
-      // std::printf("pb2 = %21.15e\n", pb2);
-      // std::printf("pb3 = %21.15e\n", pb3);
-      // std::exit(1);
-      // double const dt4 = t * t * t * t - tz4;
-      // expansion = pb1 * dt4 + pb0; // -> non-monotonic e/T^4
-      // expansion = (pb2 * dt4 + pb1) * dt4 + pb0; // -> non-monotonic e/T^4
-      // expansion = ((pb3 * dt4 + pb2) * dt4 + pb1) * dt4 + pb0; // -> non-monotonic p/T^4
-    } else {
-      double const den = (((     t + ad) * t  + bd) * t + cd) * t + dd;
-      double const num = (((pi * t + an) * t  + bn) * t + cn) * t + dn;
-      expansion = num / den;
+      if (t < tz) {
+        // std::printf("p0 = %21.15e\n", p0);
+        // std::printf("p1 = %21.15e\n", p1);
+        // std::printf("p2 = %21.15e\n", p2);
+        // std::printf("p3 = %21.15e\n", p3);
+        // std::exit(1);
+
+        double const dt = t - tz;
+        //expansion = p1 * dt + p0; // -> non-monotonic e/T^4
+        expansion = (p2 * dt + p1) * dt + p0; // -> fine, but de/dT jumps at T = 100 MeV
+        //expansion = ((p3 * dt + p2) * dt + p1) * dt + p0; // -> non-monotonic p/T^4
+
+        // Expansion wrt t^4
+        // constexpr double tz4 = tz * tz * tz * tz;
+        // constexpr double pb0 = p0;
+        // constexpr double pb1 = p1 / (4.0 * tz * tz * tz);
+        // constexpr double pb2 = (p2 * tz - 3.0 * p1) / (16.0 * tz * tz * tz * tz4);
+        // constexpr double pb3 = ((p3 * tz - 9.0 * p2) * tz + 21.0 * p1) / (64.0 * tz * tz * tz * tz4 * tz4);
+        // std::printf("pb0 = %21.15e\n", pb0);
+        // std::printf("pb1 = %21.15e\n", pb1);
+        // std::printf("pb2 = %21.15e\n", pb2);
+        // std::printf("pb3 = %21.15e\n", pb3);
+        // std::exit(1);
+        // double const dt4 = t * t * t * t - tz4;
+        // expansion = pb1 * dt4 + pb0; // -> non-monotonic e/T^4
+        // expansion = (pb2 * dt4 + pb1) * dt4 + pb0; // -> non-monotonic e/T^4
+        // expansion = ((pb3 * dt4 + pb2) * dt4 + pb1) * dt4 + pb0; // -> non-monotonic p/T^4
+      } else {
+        double const den = (((     t + ad) * t  + bd) * t + cd) * t + dd;
+        double const num = (((pi * t + an) * t  + bn) * t + cn) * t + dn;
+        expansion = num / den;
+      }
+
+      double const coeff = 0.5 * (1.0 + std::tanh(ct * (t - t0)));
+      double const temp4 = std::pow(temperature, 4.0);
+      return temp4 * coeff * expansion;
     }
 
-    double const coeff = 0.5 * (1.0 + std::tanh(ct * (t - t0)));
-    double const temp4 = std::pow(temperature, 4.0);
-    return temp4 * coeff * expansion;
-  }
+  public:
+    // The second order derivative of the pressure $d^2p/dT^2$
+    static double pressure_TT(
+      double temperature //!< [fm^{-1}]
+    ) {
+      double const t = temperature / tc;
+
+      //! 0th..2nd order derivatives of the Pade expansion with respect to $t$.
+      double ex0;
+      double ex1;
+      double ex2;
+
+      if (t < tz) {
+        double const dt = t - tz;
+        ex0 = (p2 * dt + p1) * dt + p0;
+        ex1 = 2.0 * p2 * dt + p1;
+        ex2 = 2.0 * p2;
+      } else {
+        //! 0th..2nd order derivatives of the denominator and numerator of the
+        //! Pade expansion.
+        double const den0 = (((     t + ad) * t  + bd) * t + cd) * t + dd;
+        double const den1 = ((4.0 * t + 3.0 * ad) * t  + 2.0 * bd) * t + cd;
+        double const den2 = (12.0 * t + 6.0 * ad) * t  + 2.0 * bd;
+        double const num0 = (((pi * t + an) * t  + bn) * t + cn) * t + dn;
+        double const num1 = ((4.0 * pi * t + 3.0 * an) * t + 2.0 * bn) * t + cn;
+        double const num2 = (12.0 * pi * t + 6.0 * an) * t + 2.0 * bn;
+
+        double const p0num = num0;
+        double const p1num = num1 * den0 - p0num * den1;
+        double const p2num = (num2 * den0 - num0 * den2) * den0 - 2.0 * p1num * den1;
+        ex0 = p0num / den0;
+        ex1 = p1num / (den0 * den0);
+        ex2 = p2num / (den0 * den0 * den0);
+      }
+
+      //! 0th..2nd order derivatives of $\tanh$ with respect to $c_t(t-t0)$.
+      double const th0 = std::tanh(ct * (t - t0));
+      double const th1 = 1.0 - th0 * th0;
+      double const th2 = -2.0 * th0 * th1;
+
+      //! 0th..2nd order derivatives of $(1/2)(1+th0)$ with respect to $t$.
+      double const coeff0 = 0.5 * (1.0 + th0);
+      double const coeff1 = 0.5 * th1 * ct;
+      double const coeff2 = 0.5 * th2 * (ct * ct);
+
+      //! 0th..2nd order derivatives of $T^4$ with respect to $t$.
+      double const temp40 = std::pow(temperature, 4.0);
+      double const temp41 = 4.0 * std::pow(temperature, 3.0) * tc;
+      double const temp42 = 12.0 * (temperature * temperature) * (tc * tc);
+
+      return (th0 * coeff0 * ex2
+        + 2.0 * (th0 * coeff1 + th1 * coeff0) * ex1
+        + (th0 * coeff2 + 2.0 * th1 * coeff1 + th2 * coeff0) * ex0) / (tc * tc);
+    }
+  };
 
   void save_HotQCD2014kol_eos(idt::runjam::runjam_context& ctx) {
     static const int itempN = 800;
@@ -299,14 +363,10 @@ namespace {
       for (int intT = 0; intT < intTmax; intT++) {
         //積分する
         double T = dT * (intT + 0.5);
-        double p_T = pressure_HotQCD2014kol(T);
-        double epsilon = dT/10000;
-        double p_T_pluss = pressure_HotQCD2014kol(T + epsilon);
-        double p_T_minus = pressure_HotQCD2014kol(T - epsilon);
-        energy_density += T * dT * ((p_T_pluss - 2*p_T + p_T_minus) / (epsilon *  epsilon));
+        energy_density += T * dT * HotQCD2014kol::pressure_TT(T);
       }
 
-      double const pressure = pressure_HotQCD2014kol(temp); // fm^{-4}
+      double const pressure = HotQCD2014kol::pressure(temp); // fm^{-4}
       double const trace_anomaly = (energy_density - 3.0 * pressure) / std::pow(temp, 4.0);
 
       std::fprintf(file_QGP, "%21.15e %21.15e %21.15e %21.15e\n",
@@ -325,7 +385,7 @@ namespace {
     constexpr double Tc = 154.00 / hbarc_MeVfm; // [fm^{-1}]
 
     double const pHRG = eosHRG->pressure(temperature);
-    double const pLattice = pressure_HotQCD2014kol(temperature);
+    double const pLattice = HotQCD2014kol::pressure(temperature);
     double const func_T = (temperature - Tc)/delta_Tc;
 
     double p_HQ = 1.0 / 2.0 * (1.0 - std::tanh(func_T)) * pHRG
