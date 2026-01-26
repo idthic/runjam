@@ -326,9 +326,9 @@ namespace {
       double const temp41 = 4.0 * std::pow(temperature, 3.0) * tc;
       double const temp42 = 12.0 * (temperature * temperature) * (tc * tc);
 
-      return (th0 * coeff0 * ex2
-        + 2.0 * (th0 * coeff1 + th1 * coeff0) * ex1
-        + (th0 * coeff2 + 2.0 * th1 * coeff1 + th2 * coeff0) * ex0) / (tc * tc);
+      return (temp40 * coeff0 * ex2
+        + 2.0 * (temp40 * coeff1 + temp41 * coeff0) * ex1
+        + (temp40 * coeff2 + 2.0 * temp41 * coeff1 + temp42 * coeff0) * ex0) / (tc * tc);
     }
   };
 
