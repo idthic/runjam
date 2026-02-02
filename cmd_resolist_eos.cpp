@@ -88,6 +88,31 @@ namespace {
         output[1] = w * ((1.0 / 3.0) * bp2);
         // output[3] = f * x; // particle number
       }
+
+      void integrand_pressure_TT(double* output, double const t) {
+        // variable transform t -> x
+        double const tantt = std::tan(t * t);
+        double const jacob = 2 * t * (tantt * tantt + 1);
+        double const x = tantt + bmass;
+
+        // d^3p /((2\pi)^3 E) = 4\pi p^2 dp / (8\pi^3 E) = p dE / 2\pi^2
+        double const bp2 = x * x - bmass * bmass;
+        double const jacob2 = (1.0 / (2.0 * M_PI * M_PI)) * std::sqrt(bp2);
+
+        double const xmu = x - bmu;
+        double f;
+        if (xmu >= CONST_ENERGY_MAX_FACTOR) {
+          f = deg * std::exp(-xmu);
+        } else {
+          f = deg / (std::exp(xmu) - sign);
+        }
+
+        double const w = jacob * jacob2 * f;
+        double const dlnf = xmu / (1.0 - sign * std::exp(-xmu)); // x * f * exp(x)
+        output[0] = w * ((1.0 / 3.0) * bp2);
+        output[1] = output[0] * dlnf;
+        output[2] = output[1] * (2.0 * dlnf - xmu - 2.0);
+      }
     };
 
   public:
@@ -133,6 +158,45 @@ namespace {
       pressure *= std::pow(temperature, 4.0);
 
       return pressure;
+    }
+
+    void get_pressure_TT(
+      double* pressure_deriv,
+      double temperature //!< [fm^{-1}]
+    ) const {
+      for (int i = 0; i < 3; i++)
+        pressure_deriv[i] = 0.0; // fm^{-4+i}
+
+      int const iresoN = rlist.size();
+      for (int ireso = 0; ireso < iresoN; ireso++) {
+        ResonanceRecord const& reso = rlist[ireso];
+        integrand_for_1d_eos integ(1.0 / temperature, &reso);
+        double result[3];
+        kashiwa::gauss_legendre_quadrature<256>(3, &result[0], 0.0, SQRT_TANGENT_ASYMPTOTE, [&integ] (double* output, double const t) {
+          integ.integrand_pressure_TT(output, t);
+        });
+
+        for (int i = 0; i < 3; i++)
+          pressure_deriv[i] += result[i];
+      }
+      for (int i = 0; i < 3; i++)
+        pressure_deriv[i] *= std::pow(temperature, 4 - i);
+    }
+
+    double pressure_T(
+      double temperature //!< [fm^{-1}]
+    ) const {
+      double pderiv[3];
+      get_pressure_TT(&pderiv[0], temperature);
+      return pderiv[1];
+    }
+
+    double pressure_TT(
+      double temperature //!< [fm^{-1}]
+    ) const {
+      double pderiv[3];
+      get_pressure_TT(&pderiv[0], temperature);
+      return pderiv[2];
     }
   };
 
@@ -277,8 +341,16 @@ namespace {
     }
 
   public:
-    // The second order derivative of the pressure $d^2p/dT^2$
-    static double pressure_TT(
+    /// Calculate the derivatives of the pressure with respect to the
+    /// temperature up to the second order, $P, dP/dT, d^2p/dT^2$.
+    ///
+    /// @param[out] pressure_deriv The obtained pressure derivatives are stored
+    /// in this array. pressure_deriv[0] is the pressure $p$, pressure_deriv[1]
+    /// is the first-order derivative $dP/dT$, and pressure_deriv[2] is the
+    /// second-order derivative $d^2P/dT^2$.
+    /// @param[in] temperature The temperature in unit of $\mathrm{fm}^{-1}$.
+    static void get_pressure_TT(
+      double* pressure_deriv,
       double temperature //!< [fm^{-1}]
     ) {
       double const t = temperature / tc;
@@ -326,9 +398,23 @@ namespace {
       double const temp41 = 4.0 * std::pow(temperature, 3.0) * tc;
       double const temp42 = 12.0 * (temperature * temperature) * (tc * tc);
 
-      return (temp40 * coeff0 * ex2
+      pressure_deriv[0] = temp40 * coeff0 * ex0;
+      pressure_deriv[1] = (temp40 * (coeff0 * ex1 + coeff1 * ex0) + temp41 * coeff0 * ex0) / tc;
+      pressure_deriv[2] = (temp40 * coeff0 * ex2
         + 2.0 * (temp40 * coeff1 + temp41 * coeff0) * ex1
         + (temp40 * coeff2 + 2.0 * temp41 * coeff1 + temp42 * coeff0) * ex0) / (tc * tc);
+    }
+
+    static double pressure_T(double temperature /*!< [fm^{-1}] */) {
+      double pderiv[3];
+      get_pressure_TT(&pderiv[0], temperature);
+      return pderiv[1];
+    }
+
+    static double pressure_TT(double temperature /*!< [fm^{-1}] */) {
+      double pderiv[3];
+      get_pressure_TT(&pderiv[0], temperature);
+      return pderiv[2];
     }
   };
 
@@ -381,24 +467,50 @@ namespace {
     std::fclose(file_QGP);
   }
 
-  double pressure_HRG_QGP(
-    double temperature // [fm^{-1}]
-  ) {
-    constexpr double delta_Tc = 10.0 / hbarc_MeVfm; // [fm^{-1}]
-    constexpr double Tc = 154.00 / hbarc_MeVfm; // [fm^{-1}]
+  class HRG_QGP {
+    static constexpr double delta_Tc = 10.0 / hbarc_MeVfm; // [fm^{-1}]
+    static constexpr double Tc = 154.00 / hbarc_MeVfm; // [fm^{-1}]
 
-    double const pHRG = eosHRG->pressure(temperature);
-    double const pLattice = HotQCD2014kol::pressure(temperature);
-    double const func_T = (temperature - Tc)/delta_Tc;
+  public:
+    static double pressure(
+      double temperature // [fm^{-1}]
+    ) {
+      double const pHRG = eosHRG->pressure(temperature);
+      double const pLattice = HotQCD2014kol::pressure(temperature);
+      double const func_T = (temperature - Tc) / delta_Tc;
 
-    double p_HQ = 1.0 / 2.0 * (1.0 - std::tanh(func_T)) * pHRG
-      + 1.0 / 2.0 * (1.0 + std::tanh(func_T)) * pLattice;
+      double const p_HQ
+        = 1.0 / 2.0 * (1.0 - std::tanh(func_T)) * pHRG
+        + 1.0 / 2.0 * (1.0 + std::tanh(func_T)) * pLattice;
 
-    return p_HQ;
-  }
+      return p_HQ;
+    }
+
+    static double pressure_TT(
+      double temperature // [fm^{-1}]
+    ) {
+      double pHRG[3];
+      eosHRG->get_pressure_TT(&pHRG[0], temperature);
+
+      double pQGP[3];
+      HotQCD2014kol::get_pressure_TT(&pQGP[0], temperature);
+
+      double const func_T = (temperature - Tc) / delta_Tc;
+      double th[3];
+      th[0] = std::tanh(func_T);
+      th[1] = (1.0 - th[0] * th[0]) / delta_Tc;
+      th[2] = -2.0 * th[0] * th[1] / delta_Tc;
+
+      double const p_HQ
+        = 1.0 / 2.0 * ((1.0 - th[0]) * pHRG[2] - 2.0 * th[1] * pHRG[1] - th[2] * pHRG[0])
+        + 1.0 / 2.0 * ((1.0 + th[0]) * pQGP[2] + 2.0 * th[1] * pQGP[1] + th[2] * pQGP[0]);
+
+      return p_HQ;
+    }
+  };
 
   void save_HRG_QGP_eos(idt::runjam::runjam_context& ctx){
-    //output pressure_HRG_QGP
+    //output HRG_QGP::pressure
 
     static const int itempN = 800;
     double const temp_min =  0.001 / hbarc_GeVfm;
@@ -422,17 +534,12 @@ namespace {
 
       // e += \int_{T_{prev}}^{T} dT T p_TT.
       double integ;
-      kashiwa::gauss_legendre_quadrature<32>(1, &integ, temp_prev, temp, [temp] (double* integrand, double const T){
-        double const p = pressure_HRG_QGP(T);
-        double const epsilon = temp / 1e3;
-        double const p_pluss = pressure_HRG_QGP(T + epsilon);
-        double const p_minus = pressure_HRG_QGP(T - epsilon);
-        double const p_TT = (p_pluss - 2*p + p_minus) / (epsilon *  epsilon);
-        integrand[0] = T * p_TT;
+      kashiwa::gauss_legendre_quadrature<16>(1, &integ, temp_prev, temp, [temp] (double* integrand, double const T){
+        integrand[0] = T * HRG_QGP::pressure_TT(T);
       });
       energy_density += integ;
 
-      double const pressure = pressure_HRG_QGP(temp); // fm^{-4}
+      double const pressure = HRG_QGP::pressure(temp); // fm^{-4}
       double const trace_anomaly = (energy_density - 3.0 * pressure) / std::pow(temp, 4.0);
 
       std::fprintf(file_QGP_HRG, "%21.15e %21.15e %21.15e %21.15e\n",
