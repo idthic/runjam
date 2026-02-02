@@ -347,9 +347,11 @@ namespace {
 
     std::fprintf(file_QGP, "#temperature(GeV) energy_density(GeV/fm^3) pressure(GeV/fm^3) (e-3P)/T^4\n");
 
+    double energy_density = 0.0; // fm^{-4}
+    double temp_prev = 0.0;
+
     for (int itemp = 0; itemp <= itempN; itemp++) {
       double const temp = temp_min * std::exp(dlnT * itemp); // fm^{-1}
-      double energy_density = 0.0; // fm^{-4}
 
       //dp = s dT
       //de = T ds
@@ -358,13 +360,12 @@ namespace {
       //  = \int T d(dp/dT)  温度0でエネルギー0 なので0からTの積分をする
       //  = \int T dT d^{2}p/dT^{2}
 
-      int intTmax = 1000;
-      double const dT = temp / intTmax;
-      for (int intT = 0; intT < intTmax; intT++) {
-        //積分する
-        double T = dT * (intT + 0.5);
-        energy_density += T * dT * HotQCD2014kol::pressure_TT(T);
-      }
+      // e += \int_{T_{prev}}^{T} dT T p_TT.
+      double integ;
+      kashiwa::gauss_legendre_quadrature<32>(1, &integ, temp_prev, temp, [] (double* integrand, double const T){
+        integrand[0] = T * HotQCD2014kol::pressure_TT(T);
+      });
+      energy_density += integ;
 
       double const pressure = HotQCD2014kol::pressure(temp); // fm^{-4}
       double const trace_anomaly = (energy_density - 3.0 * pressure) / std::pow(temp, 4.0);
@@ -374,6 +375,8 @@ namespace {
                    energy_density * hbarc_GeVfm,
                    pressure * hbarc_GeVfm,
                    trace_anomaly);
+
+      temp_prev = temp;
     }
     std::fclose(file_QGP);
   }
@@ -411,22 +414,23 @@ namespace {
 
     std::fprintf(file_QGP_HRG, "#temperature(GeV) energy_density(GeV/fm^3) pressure(GeV/fm^3) (e-3P)/T^4\n");
 
+    double energy_density = 0.0; // fm^{-4}
+    double temp_prev = 0.0;
+
     for (int itemp = 0; itemp <= itempN; itemp++) {
       double const temp = temp_min * std::exp(dlnT * itemp); // fm^{-1}
-      double energy_density = 0.0; // fm^{-4}
 
-      int intTmax = 10;//QGPの時のように1000にするとすごく時間がかかる
-      double const dT = temp / intTmax;
-
-      for (int intT = 0; intT < intTmax; intT++) {
-        //積分する
-        double T = dT * (intT + 0.5);
-        double p_T = pressure_HRG_QGP(T);
-        double epsilon = dT/10000;
-        double p_T_pluss = pressure_HRG_QGP(T + epsilon);
-        double p_T_minus = pressure_HRG_QGP(T - epsilon);
-        energy_density += T * dT * ((p_T_pluss - 2*p_T + p_T_minus) / (epsilon *  epsilon));
-      }
+      // e += \int_{T_{prev}}^{T} dT T p_TT.
+      double integ;
+      kashiwa::gauss_legendre_quadrature<32>(1, &integ, temp_prev, temp, [temp] (double* integrand, double const T){
+        double const p = pressure_HRG_QGP(T);
+        double const epsilon = temp / 1e3;
+        double const p_pluss = pressure_HRG_QGP(T + epsilon);
+        double const p_minus = pressure_HRG_QGP(T - epsilon);
+        double const p_TT = (p_pluss - 2*p + p_minus) / (epsilon *  epsilon);
+        integrand[0] = T * p_TT;
+      });
+      energy_density += integ;
 
       double const pressure = pressure_HRG_QGP(temp); // fm^{-4}
       double const trace_anomaly = (energy_density - 3.0 * pressure) / std::pow(temp, 4.0);
@@ -436,6 +440,8 @@ namespace {
                    energy_density * hbarc_GeVfm,
                    pressure * hbarc_GeVfm,
                    trace_anomaly);
+
+      temp_prev = temp;
     }
     std::fclose(file_QGP_HRG);
   }
