@@ -30,6 +30,13 @@
 #include "args.hpp"
 #include "ResonanceList.hpp"
 
+/// @def runjam_cmd_resolist_eos_CheckEnergyFundamentalRelation
+/// Perform the integration $e = \int_0^T dT T d^p/dT^2$ and compare the result
+/// with the one calculated by $e = sT - p$.  This is output in $6 in the
+/// output eos file.  If this macro is not defined, the comparison is skipped
+/// and $6 becomes nan.
+#undef runjam_cmd_resolist_eos_CheckEnergyFundamentalRelation
+
 namespace idt::runjam {
 namespace {
 
@@ -209,7 +216,7 @@ namespace {
       std::exit(1);
     }
 
-    std::fprintf(file, "#temperature(GeV) energy_density(GeV/fm^3) pressure(GeV/fm^3) (e-3P)/T^4\n");
+    std::fprintf(file, "#temperature(GeV) energy_density[GeV/fm^3] pressure[GeV/fm^3] (e-3P)/T^4\n");
 
     static const int itempN = 800;
     double const temp_min =  0.001 / hbarc_GeVfm;
@@ -431,45 +438,46 @@ namespace {
       std::exit(1);
     }
 
-    std::fprintf(file_QGP, "#temperature(GeV) energy_density(GeV/fm^3) pressure(GeV/fm^3) (e-3P)/T^4 s (e+p-sT)/T^4=0\n");
+    std::fprintf(file_QGP, "#temperature(GeV) energy_density[GeV/fm^3] pressure[GeV/fm^3] s[1/fm^3] (e-3P)/T^4 (e_check-e)/T^4\n");
 
-    double energy_density = 0.0; // fm^{-4}
-    double temp_prev = 0.0;
+#ifdef runjam_cmd_resolist_eos_CheckEnergyFundamentalRelation
+    double echeck = 0.0; // fm^{-4}
+    double echeck_temp = 0.0;
+#endif
 
     for (int itemp = 0; itemp <= itempN; itemp++) {
       double const temp = temp_min * std::exp(dlnT * itemp); // fm^{-1}
-
-      //dp = s dT
-      //de = T ds
-      //e = \int de
-      //  = \int T ds
-      //  = \int T d(dp/dT)  温度0でエネルギー0 なので0からTの積分をする
-      //  = \int T dT d^{2}p/dT^{2}
-
-      // e += \int_{T_{prev}}^{T} dT T p_TT.
-      double integ;
-      kashiwa::gauss_legendre_quadrature<32>(1, &integ, temp_prev, temp, [] (double* integrand, double const T){
-        integrand[0] = T * HotQCD2014kol::pressure_TT(T);
-      });
-      energy_density += integ;
 
       double p[3];
       HotQCD2014kol::get_pressure_derivatives(&p[0], temp);
       double const pressure = p[0];
       double const entropy_density = p[1];
+      double const energy_density = entropy_density * temp - pressure;
+
       double const temp4 = std::pow(temp, 4.0);
       double const trace_anomaly = (energy_density - 3.0 * pressure) / temp4;
+#ifdef runjam_cmd_resolist_eos_CheckEnergyFundamentalRelation
+      // e_check += \int_{T_{prev}}^{T} dT T p_TT.
+      double integ;
+      kashiwa::gauss_legendre_quadrature<32>(1, &integ, echeck_temp, temp, [] (double* integrand, double const T){
+        integrand[0] = T * HotQCD2014kol::pressure_TT(T);
+      });
+      echeck += integ;
+      echeck_temp = temp;
+      double const echeck_diff = (echeck - energy_density) / temp4;
+#else
+      double const echeck_diff = std::numeric_limits<double>::quiet_NaN();
+#endif
 
       std::fprintf(
         file_QGP, "%21.16e %21.16e %21.16e %21.16e %21.16e %21.16e\n",
         temp * hbarc_GeVfm,
         energy_density * hbarc_GeVfm,
         pressure * hbarc_GeVfm,
-        trace_anomaly,
         entropy_density,
-        (energy_density + pressure - entropy_density * temp) / temp4);
+        trace_anomaly,
+        echeck_diff);
 
-      temp_prev = temp;
     }
     std::fclose(file_QGP);
   }
@@ -552,38 +560,45 @@ namespace {
       std::exit(1);
     }
 
-    std::fprintf(file_QGP_HRG, "#temperature(GeV) energy_density(GeV/fm^3) pressure(GeV/fm^3) (e-3P)/T^4 s (e+p-sT)/T^4=0\n");
+    std::fprintf(file_QGP_HRG, "#temperature[GeV] energy_density[GeV/fm^3] pressure[GeV/fm^3] s[1/fm^3] (e-3P)/T^4 (e_check-e)/T^4\n");
 
-    double energy_density = 0.0; // fm^{-4}
-    double temp_prev = 0.0;
+#ifdef runjam_cmd_resolist_eos_CheckEnergyFundamentalRelation
+    double echeck = 0.0; // fm^{-4}
+    double echeck_temp = 0.0;
+#endif
 
     for (int itemp = 0; itemp <= itempN; itemp++) {
       double const temp = temp_min * std::exp(dlnT * itemp); // fm^{-1}
-
-      // e += \int_{T_{prev}}^{T} dT T p_TT.
-      double integ;
-      kashiwa::gauss_legendre_quadrature<32>(1, &integ, temp_prev, temp, [temp] (double* integrand, double const T){
-        integrand[0] = T * HRG_QGP::pressure_TT(T);
-      });
-      energy_density += integ;
 
       double p[3];
       HRG_QGP::get_pressure_derivatives(&p[0], temp);
       double const pressure = p[0]; // fm^{-4}
       double const entropy_density = p[1];
+      double const energy_density = entropy_density * temp - pressure;
+
       double const temp4 = std::pow(temp, 4.0);
       double const trace_anomaly = (energy_density - 3.0 * pressure) / temp4;
+#ifdef runjam_cmd_resolist_eos_CheckEnergyFundamentalRelation
+      // e += \int_{T_{prev}}^{T} dT T p_TT.
+      double integ;
+      kashiwa::gauss_legendre_quadrature<32>(1, &integ, echeck_temp, temp, [temp] (double* integrand, double const T){
+        integrand[0] = T * HRG_QGP::pressure_TT(T);
+      });
+      echeck += integ;
+      echeck_temp = temp;
+      double const echeck_diff = (echeck - energy_density) / temp4;
+#else
+      double const echeck_diff = std::numeric_limits<double>::quiet_NaN();
+#endif
 
       std::fprintf(
         file_QGP_HRG, "%21.16e %21.16e %21.16e %21.16e %21.16e %21.16e\n",
         temp * hbarc_GeVfm,
         energy_density * hbarc_GeVfm,
         pressure * hbarc_GeVfm,
-        trace_anomaly,
         entropy_density,
-        (energy_density + pressure - entropy_density * temp) / temp4);
-
-      temp_prev = temp;
+        trace_anomaly,
+        echeck_diff);
     }
     std::fclose(file_QGP_HRG);
   }
