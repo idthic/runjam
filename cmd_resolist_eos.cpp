@@ -160,7 +160,7 @@ namespace {
       return pressure;
     }
 
-    void get_pressure_TT(
+    void get_pressure_derivatives(
       double* pressure_deriv,
       double temperature //!< [fm^{-1}]
     ) const {
@@ -187,7 +187,7 @@ namespace {
       double temperature //!< [fm^{-1}]
     ) const {
       double pderiv[3];
-      get_pressure_TT(&pderiv[0], temperature);
+      get_pressure_derivatives(&pderiv[0], temperature);
       return pderiv[1];
     }
 
@@ -195,7 +195,7 @@ namespace {
       double temperature //!< [fm^{-1}]
     ) const {
       double pderiv[3];
-      get_pressure_TT(&pderiv[0], temperature);
+      get_pressure_derivatives(&pderiv[0], temperature);
       return pderiv[2];
     }
   };
@@ -349,7 +349,7 @@ namespace {
     /// is the first-order derivative $dP/dT$, and pressure_deriv[2] is the
     /// second-order derivative $d^2P/dT^2$.
     /// @param[in] temperature The temperature in unit of $\mathrm{fm}^{-1}$.
-    static void get_pressure_TT(
+    static void get_pressure_derivatives(
       double* pressure_deriv,
       double temperature //!< [fm^{-1}]
     ) {
@@ -407,13 +407,13 @@ namespace {
 
     static double pressure_T(double temperature /*!< [fm^{-1}] */) {
       double pderiv[3];
-      get_pressure_TT(&pderiv[0], temperature);
+      get_pressure_derivatives(&pderiv[0], temperature);
       return pderiv[1];
     }
 
     static double pressure_TT(double temperature /*!< [fm^{-1}] */) {
       double pderiv[3];
-      get_pressure_TT(&pderiv[0], temperature);
+      get_pressure_derivatives(&pderiv[0], temperature);
       return pderiv[2];
     }
   };
@@ -431,7 +431,7 @@ namespace {
       std::exit(1);
     }
 
-    std::fprintf(file_QGP, "#temperature(GeV) energy_density(GeV/fm^3) pressure(GeV/fm^3) (e-3P)/T^4\n");
+    std::fprintf(file_QGP, "#temperature(GeV) energy_density(GeV/fm^3) pressure(GeV/fm^3) (e-3P)/T^4 s (e+p-sT)/T^4=0\n");
 
     double energy_density = 0.0; // fm^{-4}
     double temp_prev = 0.0;
@@ -453,14 +453,21 @@ namespace {
       });
       energy_density += integ;
 
-      double const pressure = HotQCD2014kol::pressure(temp); // fm^{-4}
-      double const trace_anomaly = (energy_density - 3.0 * pressure) / std::pow(temp, 4.0);
+      double p[3];
+      HotQCD2014kol::get_pressure_derivatives(&p[0], temp);
+      double const pressure = p[0];
+      double const entropy_density = p[1];
+      double const temp4 = std::pow(temp, 4.0);
+      double const trace_anomaly = (energy_density - 3.0 * pressure) / temp4;
 
-      std::fprintf(file_QGP, "%21.15e %21.15e %21.15e %21.15e\n",
-                   temp * hbarc_GeVfm,
-                   energy_density * hbarc_GeVfm,
-                   pressure * hbarc_GeVfm,
-                   trace_anomaly);
+      std::fprintf(
+        file_QGP, "%21.16e %21.16e %21.16e %21.16e %21.16e %21.16e\n",
+        temp * hbarc_GeVfm,
+        energy_density * hbarc_GeVfm,
+        pressure * hbarc_GeVfm,
+        trace_anomaly,
+        entropy_density,
+        (energy_density + pressure - entropy_density * temp) / temp4);
 
       temp_prev = temp;
     }
@@ -472,6 +479,33 @@ namespace {
     static constexpr double Tc = 154.00 / hbarc_MeVfm; // [fm^{-1}]
 
   public:
+    static void get_pressure_derivatives(
+      double* pressure_deriv,
+      double temperature // [fm^{-1}]
+    ) {
+      double pHRG[3];
+      eosHRG->get_pressure_derivatives(&pHRG[0], temperature);
+
+      double pQGP[3];
+      HotQCD2014kol::get_pressure_derivatives(&pQGP[0], temperature);
+
+      double const func_T = (temperature - Tc) / delta_Tc;
+      double th[3];
+      th[0] = std::tanh(func_T);
+      th[1] = (1.0 - th[0] * th[0]) / delta_Tc;
+      th[2] = -2.0 * th[0] * th[1] / delta_Tc;
+
+      pressure_deriv[0]
+        = 0.5 * (1.0 - th[0]) * pHRG[0]
+        + 0.5 * (1.0 + th[0]) * pQGP[0];
+      pressure_deriv[1]
+        = 0.5 * ((1.0 - th[0]) * pHRG[1] - th[1] * pHRG[0])
+        + 0.5 * ((1.0 + th[0]) * pQGP[1] + th[1] * pQGP[0]);
+      pressure_deriv[2]
+        = 0.5 * ((1.0 - th[0]) * pHRG[2] - 2.0 * th[1] * pHRG[1] - th[2] * pHRG[0])
+        + 0.5 * ((1.0 + th[0]) * pQGP[2] + 2.0 * th[1] * pQGP[1] + th[2] * pQGP[0]);
+    }
+
     static double pressure(
       double temperature // [fm^{-1}]
     ) {
@@ -486,26 +520,20 @@ namespace {
       return p_HQ;
     }
 
+    static double pressure_T(
+      double temperature // [fm^{-1}]
+    ) {
+      double p[3];
+      get_pressure_derivatives(&p[0], temperature);
+      return p[1];
+    }
+
     static double pressure_TT(
       double temperature // [fm^{-1}]
     ) {
-      double pHRG[3];
-      eosHRG->get_pressure_TT(&pHRG[0], temperature);
-
-      double pQGP[3];
-      HotQCD2014kol::get_pressure_TT(&pQGP[0], temperature);
-
-      double const func_T = (temperature - Tc) / delta_Tc;
-      double th[3];
-      th[0] = std::tanh(func_T);
-      th[1] = (1.0 - th[0] * th[0]) / delta_Tc;
-      th[2] = -2.0 * th[0] * th[1] / delta_Tc;
-
-      double const p_HQ
-        = 1.0 / 2.0 * ((1.0 - th[0]) * pHRG[2] - 2.0 * th[1] * pHRG[1] - th[2] * pHRG[0])
-        + 1.0 / 2.0 * ((1.0 + th[0]) * pQGP[2] + 2.0 * th[1] * pQGP[1] + th[2] * pQGP[0]);
-
-      return p_HQ;
+      double p[3];
+      get_pressure_derivatives(&p[0], temperature);
+      return p[2];
     }
   };
 
@@ -524,7 +552,7 @@ namespace {
       std::exit(1);
     }
 
-    std::fprintf(file_QGP_HRG, "#temperature(GeV) energy_density(GeV/fm^3) pressure(GeV/fm^3) (e-3P)/T^4\n");
+    std::fprintf(file_QGP_HRG, "#temperature(GeV) energy_density(GeV/fm^3) pressure(GeV/fm^3) (e-3P)/T^4 s (e+p-sT)/T^4=0\n");
 
     double energy_density = 0.0; // fm^{-4}
     double temp_prev = 0.0;
@@ -534,19 +562,26 @@ namespace {
 
       // e += \int_{T_{prev}}^{T} dT T p_TT.
       double integ;
-      kashiwa::gauss_legendre_quadrature<16>(1, &integ, temp_prev, temp, [temp] (double* integrand, double const T){
+      kashiwa::gauss_legendre_quadrature<32>(1, &integ, temp_prev, temp, [temp] (double* integrand, double const T){
         integrand[0] = T * HRG_QGP::pressure_TT(T);
       });
       energy_density += integ;
 
-      double const pressure = HRG_QGP::pressure(temp); // fm^{-4}
-      double const trace_anomaly = (energy_density - 3.0 * pressure) / std::pow(temp, 4.0);
+      double p[3];
+      HRG_QGP::get_pressure_derivatives(&p[0], temp);
+      double const pressure = p[0]; // fm^{-4}
+      double const entropy_density = p[1];
+      double const temp4 = std::pow(temp, 4.0);
+      double const trace_anomaly = (energy_density - 3.0 * pressure) / temp4;
 
-      std::fprintf(file_QGP_HRG, "%21.15e %21.15e %21.15e %21.15e\n",
-                   temp * hbarc_GeVfm,
-                   energy_density * hbarc_GeVfm,
-                   pressure * hbarc_GeVfm,
-                   trace_anomaly);
+      std::fprintf(
+        file_QGP_HRG, "%21.16e %21.16e %21.16e %21.16e %21.16e %21.16e\n",
+        temp * hbarc_GeVfm,
+        energy_density * hbarc_GeVfm,
+        pressure * hbarc_GeVfm,
+        trace_anomaly,
+        entropy_density,
+        (energy_density + pressure - entropy_density * temp) / temp4);
 
       temp_prev = temp;
     }
