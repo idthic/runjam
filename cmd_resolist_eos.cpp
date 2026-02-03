@@ -45,10 +45,17 @@ namespace {
   static const double SQRT_TANGENT_ASYMPTOTE = M_SQRT2 / M_2_SQRTPI;
   static const double CONST_ENERGY_MAX_FACTOR = 100.0;
 
-  void save_HotQCD2014kol_eos(idt::runjam::runjam_context& ctx);
-  void save_HRG_eos(idt::runjam::runjam_context& ctx);
-  void save_HRG_QGP_eos(idt::runjam::runjam_context& ctx);
-
+  //! This function is used to determine the temperature corresponding to the
+  //! specified energy density $e$.
+  //! @param[in] tl,tu [tl, tu)` specifies the search range of the temperature.
+  //! @param[in] guess specifies the initial guess.  The initial guess needs to
+  //!   be a positive number that is sufficiently close to the correct value.
+  //!   If a negative number is specified to `guess`, we automatically
+  //!   determine the initial guess based on binary search.
+  //! @param[in] func is a function void(double (&buff)[2], double temperature)
+  //!   to obtain the enegy density $e$ and its temperature derivative $de/dT$.
+  //!   It stores the calculated energy density to `buff[0]`, and the
+  //!   derivative of the energy density to `buff[1]`.
   template<typename Derivative>
   double log_log_newton_search(const char* tag, double tl, double tu, double guess, double e, Derivative func) {
     double buff[2];
@@ -150,7 +157,68 @@ namespace {
     return tm;
   }
 
-  class eosHRG_t {
+  template<typename GetThermalState>
+  void save_eos_table_vs_temperature(idt::runjam::runjam_context& ctx, const char* filename, GetThermalState proc){
+    std::FILE* const file = std::fopen(filename, "w");
+    if (!file) {
+      std::fprintf(stderr, "%s: failed to open the file\n", filename);
+      std::exit(1);
+    }
+
+#ifdef runjam_cmd_resolist_eos_CheckEnergyFundamentalRelation
+    double echeck = 0.0; // fm^{-4}
+    double echeck_temp = 0.0;
+#endif
+
+    std::fprintf(file, "#T[GeV] e[GeV/fm^3] P[GeV/fm^3] s[fm^{-3}] cs2 (e-3P)/T^4 (e_check-e)/T^4\n");
+    static const int itempN = 800;
+    double const temp_min =  0.001 / hbarc_GeVfm;
+    double const temp_max = 10.000 / hbarc_GeVfm;
+    double const dlnT = std::log(temp_max / temp_min) / itempN;
+    for (int itemp = 0; itemp <= itempN; itemp++) {
+      double const temp = temp_min * std::exp(dlnT * itemp); // fm^{-1}
+
+      double state[4];
+      proc(state, temp);
+      double const energy_density = state[0];
+      double const pressure = state[1];
+      double const entropy_density = state[2];
+      double const squared_sound_velocity = state[3];
+
+#ifdef runjam_cmd_resolist_eos_CheckEnergyFundamentalRelation
+      // e_check += \int_{T_{prev}}^{T} dT T p_TT.
+      double integ;
+      kashiwa::gauss_legendre_quadrature<32>(1, &integ, echeck_temp, temp, [] (double* integrand, double const T){
+        double state[4];
+        proc(state, T);
+
+        // de/dT = (de/dp) (dp/dT) = s / cs2
+        integrand[0] = state[2] / state[3];
+      });
+      echeck += integ;
+      echeck_temp = temp;
+      double const echeck_diff = (echeck - energy_density) / temp4;
+#else
+      double const echeck_diff = std::numeric_limits<double>::quiet_NaN();
+#endif
+
+      double const trace_anomaly = (energy_density - 3.0 * pressure) / std::pow(temp, 4.0);
+
+      std::fprintf(
+        file, "%22.16e %22.16e %22.16e %22.16e %22.16e %22.16\n",
+        temp * hbarc_GeVfm,
+        energy_density * hbarc_GeVfm,
+        pressure * hbarc_GeVfm,
+        entropy_density,
+        squared_sound_velocity,
+        trace_anomaly,
+        echeck_diff);
+    }
+
+    std::fclose(file);
+  }
+
+  class EosHRG {
   private:
     struct integrand_for_1d_eos {
       int sign;
@@ -226,7 +294,7 @@ namespace {
 
   public:
     idt::runjam::ResonanceList rlist;
-    eosHRG_t(idt::runjam::runjam_context& ctx): rlist(ctx) {}
+    EosHRG(idt::runjam::runjam_context& ctx): rlist(ctx) {}
 
     std::pair<double, double> get_energy_density_and_pressure(
       double temperature //!< [fm^{-1}]
@@ -292,6 +360,13 @@ namespace {
         pressure_deriv[i] *= std::pow(temperature, 4 - i);
     }
 
+    // state=(e p s cs2)
+    void get_thermodynamic_quantities(double* state, double temperature /*!< [fm^{-1}] */) const {
+      get_pressure_derivatives(&state[1], temperature);
+      state[0] = temperature * state[2] - state[1]; // e = T p_T - p
+      state[3] = state[2] / (temperature * state[3]); // cs2 = p_T / (T p_TT)
+    }
+
     double pressure_T(
       double temperature //!< [fm^{-1}]
     ) const {
@@ -339,40 +414,17 @@ namespace {
         }
       );
     }
+
+  public:
+    static void save_table_vs_temperature(idt::runjam::runjam_context& ctx, const char* filename);
   };
 
-  std::unique_ptr<eosHRG_t> eosHRG;
+  std::unique_ptr<EosHRG> eosHRG;
 
-  void save_HRG_eos(idt::runjam::runjam_context& ctx){
-    std::FILE* const file = std::fopen("eos.txt", "w");
-    if (!file) {
-      std::fprintf(stderr, "eos.txt: failed to open the file\n");
-      std::exit(1);
-    }
-
-    std::fprintf(file, "#temperature[GeV] energy_density[GeV/fm^3] pressure[GeV/fm^3] entropy_density[fm^{-3}] (e-3P)/T^4\n");
-
-    static const int itempN = 800;
-    double const temp_min =  0.001 / hbarc_GeVfm;
-    double const temp_max = 10.000 / hbarc_GeVfm;
-    double const dlnT = std::log(temp_max / temp_min) / itempN;
-    for (int itemp = 0; itemp <= itempN; itemp++) {
-      double const temp = temp_min * std::exp(dlnT * itemp); // fm^{-1}
-
-      auto const [energy_density, pressure] = eosHRG->get_energy_density_and_pressure(temp);
-      double const entropy_density = (energy_density + pressure) / temp;
-
-      double const trace_anomaly = (energy_density - 3.0 * pressure) / std::pow(temp, 4.0);
-
-      std::fprintf(file, "%22.16e %22.16e %22.16e %22.16e %22.16e\n",
-        temp * hbarc_GeVfm,
-        energy_density * hbarc_GeVfm,
-        pressure * hbarc_GeVfm,
-        entropy_density,
-        trace_anomaly);
-    }
-
-    std::fclose(file);
+  void EosHRG::save_table_vs_temperature(idt::runjam::runjam_context& ctx, const char* filename) {
+    save_eos_table_vs_temperature(ctx, filename, [] (double (&state)[4], double temperature) {
+      eosHRG->get_thermodynamic_quantities(&state[0], temperature);
+    });
   }
 
   // See Eq. (16) and Table II in HotQCD:2014kol
@@ -548,18 +600,22 @@ namespace {
         + (temp40 * coeff2 + 2.0 * temp41 * coeff1 + temp42 * coeff0) * ex0) / (tc * tc);
     }
 
+    static void get_thermodynamic_quantities(double* state, double temperature /*!< [fm^{-1}] */) {
+      get_pressure_derivatives(&state[1], temperature);
+      state[0] = temperature * state[2] - state[1]; // e = T p_T - p
+      state[3] = state[2] / (temperature * state[3]); // cs2 = p_T / (T p_TT)
+    }
+
     static double pressure_T(double temperature /*!< [fm^{-1}] */) {
       double pderiv[3];
       get_pressure_derivatives(&pderiv[0], temperature);
       return pderiv[1];
     }
-
     static double pressure_TT(double temperature /*!< [fm^{-1}] */) {
       double pderiv[3];
       get_pressure_derivatives(&pderiv[0], temperature);
       return pderiv[2];
     }
-
     static double entropy_density(double temperature) {
       return pressure_T(temperature);
     }
@@ -586,70 +642,36 @@ namespace {
         }
       );
     }
-  };
 
-  void save_HotQCD2014kol_eos(idt::runjam::runjam_context& ctx) {
-    static const int itempN = 800;
-    double const temp_min =  0.001 / hbarc_GeVfm;
-    double const temp_max = 10.000 / hbarc_GeVfm;
-    double const dlnT = std::log(temp_max / temp_min) / itempN;
-
-    //lattice QGP
-    std::FILE* const file_QGP = std::fopen("eos_lattice.txt", "w");
-    if (!file_QGP) {
-      std::fprintf(stderr, "eos.txt: failed to open the file\n");
-      std::exit(1);
-    }
-
-    std::fprintf(file_QGP, "#temperature(GeV) energy_density[GeV/fm^3] pressure[GeV/fm^3] s[1/fm^3] (e-3P)/T^4 (e_check-e)/T^4\n");
-
-#ifdef runjam_cmd_resolist_eos_CheckEnergyFundamentalRelation
-    double echeck = 0.0; // fm^{-4}
-    double echeck_temp = 0.0;
-#endif
-
-    for (int itemp = 0; itemp <= itempN; itemp++) {
-      double const temp = temp_min * std::exp(dlnT * itemp); // fm^{-1}
-
-      double p[3];
-      HotQCD2014kol::get_pressure_derivatives(&p[0], temp);
-      double const pressure = p[0];
-      double const entropy_density = p[1];
-      double const energy_density = entropy_density * temp - pressure;
-
-      double const temp4 = std::pow(temp, 4.0);
-      double const trace_anomaly = (energy_density - 3.0 * pressure) / temp4;
-#ifdef runjam_cmd_resolist_eos_CheckEnergyFundamentalRelation
-      // e_check += \int_{T_{prev}}^{T} dT T p_TT.
-      double integ;
-      kashiwa::gauss_legendre_quadrature<32>(1, &integ, echeck_temp, temp, [] (double* integrand, double const T){
-        integrand[0] = T * HotQCD2014kol::pressure_TT(T);
+  public:
+    static void save_table_vs_temperature(idt::runjam::runjam_context& ctx, const char* filename) {
+      save_eos_table_vs_temperature(ctx, filename, [] (double (&state)[4], double temperature) {
+        get_thermodynamic_quantities(state, temperature);
       });
-      echeck += integ;
-      echeck_temp = temp;
-      double const echeck_diff = (echeck - energy_density) / temp4;
-#else
-      double const echeck_diff = std::numeric_limits<double>::quiet_NaN();
-#endif
-
-      std::fprintf(
-        file_QGP, "%22.16e %22.16e %22.16e %22.16e %22.16e %22.16e\n",
-        temp * hbarc_GeVfm,
-        energy_density * hbarc_GeVfm,
-        pressure * hbarc_GeVfm,
-        entropy_density,
-        trace_anomaly,
-        echeck_diff);
-
     }
-    std::fclose(file_QGP);
-  }
+  };
 
   class HRG_QGP {
     static constexpr double delta_Tc = 10.0 / hbarc_MeVfm; // [fm^{-1}]
     static constexpr double Tc = 154.00 / hbarc_MeVfm; // [fm^{-1}]
 
   public:
+    static double pressure(
+      double temperature // [fm^{-1}]
+    ) {
+      double const pHRG = eosHRG->pressure(temperature);
+      double const pLattice = HotQCD2014kol::pressure(temperature);
+      double const func_T = (temperature - Tc) / delta_Tc;
+
+      double const p_HQ
+        = 1.0 / 2.0 * (1.0 - std::tanh(func_T)) * pHRG
+        + 1.0 / 2.0 * (1.0 + std::tanh(func_T)) * pLattice;
+
+      return p_HQ;
+    }
+
+
+public:
     static void get_pressure_derivatives(
       double* pressure_deriv,
       double temperature // [fm^{-1}]
@@ -677,18 +699,10 @@ namespace {
         + 0.5 * ((1.0 + th[0]) * pQGP[2] + 2.0 * th[1] * pQGP[1] + th[2] * pQGP[0]);
     }
 
-    static double pressure(
-      double temperature // [fm^{-1}]
-    ) {
-      double const pHRG = eosHRG->pressure(temperature);
-      double const pLattice = HotQCD2014kol::pressure(temperature);
-      double const func_T = (temperature - Tc) / delta_Tc;
-
-      double const p_HQ
-        = 1.0 / 2.0 * (1.0 - std::tanh(func_T)) * pHRG
-        + 1.0 / 2.0 * (1.0 + std::tanh(func_T)) * pLattice;
-
-      return p_HQ;
+    static void get_thermodynamic_quantities(double* state, double temperature /*!< [fm^{-1}] */) {
+      get_pressure_derivatives(&state[1], temperature);
+      state[0] = temperature * state[2] - state[1]; // e = T p_T - p
+      state[3] = state[2] / (temperature * state[3]); // cs2 = p_T / (T p_TT)
     }
 
     static double pressure_T(
@@ -698,7 +712,6 @@ namespace {
       get_pressure_derivatives(&p[0], temperature);
       return p[1];
     }
-
     static double pressure_TT(
       double temperature // [fm^{-1}]
     ) {
@@ -706,7 +719,6 @@ namespace {
       get_pressure_derivatives(&p[0], temperature);
       return p[2];
     }
-
     static double entropy_density(double temperature) {
       return pressure_T(temperature);
     }
@@ -733,65 +745,14 @@ namespace {
         }
       );
     }
-  };
 
-  void save_HRG_QGP_eos(idt::runjam::runjam_context& ctx){
-    //output HRG_QGP::pressure
-
-    static const int itempN = 800;
-    double const temp_min =  0.001 / hbarc_GeVfm;
-    double const temp_max = 10.000 / hbarc_GeVfm;
-    double const dlnT = std::log(temp_max / temp_min) / itempN;
-
-    //QGP_HRG
-    std::FILE* const file_QGP_HRG = std::fopen("eos_QGP_HRG.txt", "w");
-    if (!file_QGP_HRG) {
-      std::fprintf(stderr, "eos_QGP_HRG.txt: failed to open the file\n");
-      std::exit(1);
-    }
-
-    std::fprintf(file_QGP_HRG, "#temperature[GeV] energy_density[GeV/fm^3] pressure[GeV/fm^3] s[1/fm^3] (e-3P)/T^4 (e_check-e)/T^4\n");
-
-#ifdef runjam_cmd_resolist_eos_CheckEnergyFundamentalRelation
-    double echeck = 0.0; // fm^{-4}
-    double echeck_temp = 0.0;
-#endif
-
-    for (int itemp = 0; itemp <= itempN; itemp++) {
-      double const temp = temp_min * std::exp(dlnT * itemp); // fm^{-1}
-
-      double p[3];
-      HRG_QGP::get_pressure_derivatives(&p[0], temp);
-      double const pressure = p[0]; // fm^{-4}
-      double const entropy_density = p[1];
-      double const energy_density = entropy_density * temp - pressure;
-
-      double const temp4 = std::pow(temp, 4.0);
-      double const trace_anomaly = (energy_density - 3.0 * pressure) / temp4;
-#ifdef runjam_cmd_resolist_eos_CheckEnergyFundamentalRelation
-      // e += \int_{T_{prev}}^{T} dT T p_TT.
-      double integ;
-      kashiwa::gauss_legendre_quadrature<32>(1, &integ, echeck_temp, temp, [temp] (double* integrand, double const T){
-        integrand[0] = T * HRG_QGP::pressure_TT(T);
+  public:
+    static void save_table_vs_temperature(idt::runjam::runjam_context& ctx, const char* filename) {
+      save_eos_table_vs_temperature(ctx, filename, [] (double (&state)[4], double temperature){
+        HRG_QGP::get_thermodynamic_quantities(&state[0], temperature);
       });
-      echeck += integ;
-      echeck_temp = temp;
-      double const echeck_diff = (echeck - energy_density) / temp4;
-#else
-      double const echeck_diff = std::numeric_limits<double>::quiet_NaN();
-#endif
-
-      std::fprintf(
-        file_QGP_HRG, "%22.16e %22.16e %22.16e %22.16e %22.16e %22.16e\n",
-        temp * hbarc_GeVfm,
-        energy_density * hbarc_GeVfm,
-        pressure * hbarc_GeVfm,
-        entropy_density,
-        trace_anomaly,
-        echeck_diff);
     }
-    std::fclose(file_QGP_HRG);
-  }
+  };
 
 }
 
@@ -828,13 +789,13 @@ namespace {
     (void) args;
 
     // initialize
-    if (!eosHRG) eosHRG = std::make_unique<eosHRG_t>(ctx);
+    if (!eosHRG) eosHRG = std::make_unique<EosHRG>(ctx);
 
     //debug_T_vs_e(); return 0;
 
-    save_HRG_eos(ctx);
-    save_HotQCD2014kol_eos(ctx);
-    save_HRG_QGP_eos(ctx);
+    EosHRG::save_table_vs_temperature(ctx, "eos.txt");
+    HotQCD2014kol::save_table_vs_temperature(ctx, "eos_lattice.txt");
+    HRG_QGP::save_table_vs_temperature(ctx, "eos_QGP_HRG.txt");
 
     return 0;
   }
