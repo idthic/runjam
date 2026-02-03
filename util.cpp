@@ -23,6 +23,9 @@
 #include <cstddef>
 #include <cstring>
 #include <random>
+#include <string>
+
+#include <cstdarg>
 
 namespace idt::util {
 
@@ -37,6 +40,41 @@ bool ends_with(std::string const& s, const char* suffix) {
 }
 bool ends_with(const char* s, const char* suffix) {
   return ends_with(s, std::strlen(s), suffix, std::strlen(suffix));
+}
+
+//-----------------------------------------------------------------------------
+// taken from fitmass/common.cpp
+
+std::string vstrprintf(const char* fmt, std::va_list va) {
+  std::va_list va1;
+  va_copy(va1, va);
+  std::size_t const sz = vsnprintf(NULL, 0, fmt, va1);
+  va_end(va1);
+
+  char* buff = (char*) std::malloc(sz + 1);
+  va_copy(va1, va);
+  std::vsprintf(buff, fmt, va1);
+  va_end(va1);
+
+  std::string str = buff;
+  std::free(buff);
+  return str;
+}
+
+std::string strprintf(const char* fmt, ...) {
+  std::va_list va;
+  va_start(va, fmt);
+  std::string const str = vstrprintf(fmt, va);
+  va_end(va);
+  return str;
+}
+
+std::string strprintf(std::string const& fmt, ...) {
+  std::va_list va;
+  va_start(va, fmt);
+  std::string const str = vstrprintf(fmt.c_str(), va);
+  va_end(va);
+  return str;
 }
 
 //-----------------------------------------------------------------------------

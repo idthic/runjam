@@ -25,6 +25,7 @@
 #include <cstdlib>
 #include <memory>
 #include <utility>
+#include <stdexcept>
 #include <ksh/integrator.hpp>
 
 #include "args.hpp"
@@ -47,6 +48,107 @@ namespace {
   void save_HotQCD2014kol_eos(idt::runjam::runjam_context& ctx);
   void save_HRG_eos(idt::runjam::runjam_context& ctx);
   void save_HRG_QGP_eos(idt::runjam::runjam_context& ctx);
+
+  template<typename Derivative>
+  double log_log_newton_search(const char* tag, double tl, double tu, double guess, double e, Derivative func) {
+    double buff[2];
+
+    int start_newton = 5;
+    double tm;
+    {
+      // check boundary
+      func(buff, tl);
+      double const el = buff[0];
+      if (e < el) {
+        tu = tl;
+        tl = 0.0;
+        start_newton = 999; // Do not use the Newton method
+      }
+
+      func(buff, tu);
+      double const eu = buff[0];
+      if (eu <= e) {
+        throw std::range_error(
+          idt::util::strprintf(
+            "error(%s): energy %g [GeV/fm^3]: out of range [%g, %g)",
+            tag,
+            e * hbarc_GeVfm,
+            el * hbarc_GeVfm,
+            eu * hbarc_GeVfm)
+        );
+      }
+
+      if (guess > 0.0) {
+        tm = guess;
+        start_newton = 0;
+      } else {
+        // tm: initial guess
+
+        // Initial guess by the linear interpolation.  This isn't bad but it
+        // produces a significantly small estimate ($\times 10^{-18}$ factor
+        // difference) as the initial value.
+        //tm = tl + (tu - tl) * (e - el) / (eu - el);
+
+        // Initial guess by the linear interpolation in unit of MeV.  This
+        // still produces a significantly small initial value with $\times
+        // 10^{-5}$.
+        //tm = tl + (tu - tl) * (std::pow(e, 0.25) - std::pow(el, 0.25)) / (std::pow(eu, 0.25) - std::pow(el, 0.25));
+
+        // Assume the approximate linear relation in the log-log space,
+        // $\ln(e/el) / \ln(eu/el) = \ln(t/tl) / \ln(tu/tl)$.
+        double const t1 = 2.0 / hbarc_MeVfm;
+        func(buff, t1);
+        double const e1 = buff[0];
+        tm = std::max(tl, t1 * std::pow(tu / t1, std::log(e / e1) / std::log(eu / e1)));
+      }
+    }
+
+    int i;
+    for (i = 0; i < 50; i++) {
+      func(buff, tm);
+      double const em = buff[0];
+      double const re = (em - e) / std::max(e, em);
+      if (std::abs(re) <= 1e-14) break;
+      //std::printf("i=%d: %.17g e=%g em=%g re=%g\n", i, tm * hbarc_MeVfm, e, em, re);
+
+      if (e < em) {
+        tu = tm;
+      } else {
+        tl = tm;
+      }
+
+      if (i >= start_newton) {
+        double const em_T = buff[1];
+
+        // The normal Newton method does not converge well.
+        //tm -= (em - e) / em_T;
+
+        // As an improved version of the Newton method, we consider $t^p$ as
+        // the horizontal axis, where $p$ is a constant.  The normal Newton
+        // method corresponds to $p=1$.  In this case, we solve $(e - em) /
+        // (t^p - tm^p) = ded(t^p)$ for the next $t$ to find the update rule.
+        // However, this is still slow to converge.  We need to make $p$
+        // extremely large such as $p=11$, but it becomes unstable.  constexpr
+        // double p = 11.0;
+        //tm *= std::pow(1.0 +  p * (e - em) / (tm * em_T), 1.0 / p);
+
+        // As yet another version of the Newton method, we consider it in the
+        // log-log space.  We may solve $\ln(e/e_m) / ln(t/t_m) =
+        // d\ln(e_m)/d\ln(t_m)$ for the new $t$.  This significantly improves
+        // the convergence.  However, it is better to apply this after
+        // narrowing down the range to some extent because this is initially
+        // unstable.
+        tm *= std::pow(e / em, em / (em_T * tm));
+
+        if (tl <= tm && tm < tu) continue;
+      }
+
+      tm = 0.5 * (tl + tu);
+    }
+
+    //std::printf("i=%d\n", i);
+    return tm;
+  }
 
   class eosHRG_t {
   private:
@@ -205,6 +307,38 @@ namespace {
       get_pressure_derivatives(&pderiv[0], temperature);
       return pderiv[2];
     }
+
+    double entropy_density(double temperature) const {
+      return pressure_T(temperature);
+    }
+    double energy_density(double temperature) const {
+      auto const [e, _] = get_energy_density_and_pressure(temperature);
+      return e;
+    }
+
+    // double e_T(double temperature) const {
+    //   double pderiv[3];
+    //   get_pressure_derivatives(&pderiv[0], temperature);
+    //   return temperature * pderiv[2];
+    // }
+
+  public:
+    double T_vs_e(double e /*!< [fm^{-4}] */, double temperature_guess = -1.0) const {
+      if (e <= 0.0) {
+        if (e < 0.0) return -T_vs_e(-e); // for regularity
+        return 0.0;
+      }
+
+      return log_log_newton_search(
+        "HRG/T_vs_e", 1e-3 / hbarc_GeVfm, 10.000 / hbarc_GeVfm, temperature_guess, e,
+        [this] (double (&buff)[2], double temperature) {
+          double pderiv[3];
+          get_pressure_derivatives(&pderiv[0], temperature);
+          buff[0] = temperature * pderiv[1] - pderiv[0]; // e
+          buff[1] = temperature * pderiv[2]; // de/dT
+        }
+      );
+    }
   };
 
   std::unique_ptr<eosHRG_t> eosHRG;
@@ -216,7 +350,7 @@ namespace {
       std::exit(1);
     }
 
-    std::fprintf(file, "#temperature(GeV) energy_density[GeV/fm^3] pressure[GeV/fm^3] (e-3P)/T^4\n");
+    std::fprintf(file, "#temperature[GeV] energy_density[GeV/fm^3] pressure[GeV/fm^3] entropy_density[fm^{-3}] (e-3P)/T^4\n");
 
     static const int itempN = 800;
     double const temp_min =  0.001 / hbarc_GeVfm;
@@ -226,13 +360,15 @@ namespace {
       double const temp = temp_min * std::exp(dlnT * itemp); // fm^{-1}
 
       auto const [energy_density, pressure] = eosHRG->get_energy_density_and_pressure(temp);
+      double const entropy_density = (energy_density + pressure) / temp;
 
       double const trace_anomaly = (energy_density - 3.0 * pressure) / std::pow(temp, 4.0);
 
-      std::fprintf(file, "%21.15e %21.15e %21.15e %21.15e\n",
+      std::fprintf(file, "%22.16e %22.16e %22.16e %22.16e %22.16e\n",
         temp * hbarc_GeVfm,
         energy_density * hbarc_GeVfm,
         pressure * hbarc_GeVfm,
+        entropy_density,
         trace_anomaly);
     }
 
@@ -423,6 +559,33 @@ namespace {
       get_pressure_derivatives(&pderiv[0], temperature);
       return pderiv[2];
     }
+
+    static double entropy_density(double temperature) {
+      return pressure_T(temperature);
+    }
+    static double energy_density(double temperature) {
+      double pderiv[3];
+      get_pressure_derivatives(&pderiv[0], temperature);
+      return temperature * pderiv[1] - pderiv[0];
+    }
+
+  public:
+    static double T_vs_e(double e /*!< [fm^{-4}] */, double temperature_guess = -1.0) {
+      if (e <= 0.0) {
+        if (e < 0.0) return -T_vs_e(-e); // for regularity
+        return 0.0;
+      }
+
+      return log_log_newton_search(
+        "HotQCD2014kol/T_vs_e", 1e-10 / hbarc_GeVfm, 10.000 / hbarc_GeVfm, temperature_guess, e,
+        [] (double (&buff)[2], double temperature) {
+          double pderiv[3];
+          get_pressure_derivatives(&pderiv[0], temperature);
+          buff[0] = temperature * pderiv[1] - pderiv[0]; // e
+          buff[1] = temperature * pderiv[2]; // de/dT
+        }
+      );
+    }
   };
 
   void save_HotQCD2014kol_eos(idt::runjam::runjam_context& ctx) {
@@ -470,7 +633,7 @@ namespace {
 #endif
 
       std::fprintf(
-        file_QGP, "%21.16e %21.16e %21.16e %21.16e %21.16e %21.16e\n",
+        file_QGP, "%22.16e %22.16e %22.16e %22.16e %22.16e %22.16e\n",
         temp * hbarc_GeVfm,
         energy_density * hbarc_GeVfm,
         pressure * hbarc_GeVfm,
@@ -543,6 +706,33 @@ namespace {
       get_pressure_derivatives(&p[0], temperature);
       return p[2];
     }
+
+    static double entropy_density(double temperature) {
+      return pressure_T(temperature);
+    }
+    static double energy_density(double temperature) {
+      double pderiv[3];
+      get_pressure_derivatives(&pderiv[0], temperature);
+      return temperature * pderiv[1] - pderiv[0];
+    }
+
+  public:
+    static double T_vs_e(double e /*!< [fm^{-4}] */, double temperature_guess = -1.0) {
+      if (e <= 0.0) {
+        if (e < 0.0) return -T_vs_e(-e); // for regularity
+        return 0.0;
+      }
+
+      return log_log_newton_search(
+        "HRG_QGP/T_vs_e", 1e-10 / hbarc_GeVfm, 10.000 / hbarc_GeVfm, temperature_guess, e,
+        [] (double (&buff)[2], double temperature) {
+          double pderiv[3];
+          get_pressure_derivatives(&pderiv[0], temperature);
+          buff[0] = temperature * pderiv[1] - pderiv[0]; // e
+          buff[1] = temperature * pderiv[2]; // de/dT
+        }
+      );
+    }
   };
 
   void save_HRG_QGP_eos(idt::runjam::runjam_context& ctx){
@@ -592,7 +782,7 @@ namespace {
 #endif
 
       std::fprintf(
-        file_QGP_HRG, "%21.16e %21.16e %21.16e %21.16e %21.16e %21.16e\n",
+        file_QGP_HRG, "%22.16e %22.16e %22.16e %22.16e %22.16e %22.16e\n",
         temp * hbarc_GeVfm,
         energy_density * hbarc_GeVfm,
         pressure * hbarc_GeVfm,
@@ -604,11 +794,43 @@ namespace {
   }
 
 }
+
+
+  void debug_T_vs_e_1(double temperature) {
+    temperature /= hbarc_MeVfm;
+    //double const guess = eosHRG->T_vs_e(eosHRG->energy_density(temperature));
+    // double const guess = HotQCD2014kol::T_vs_e(HotQCD2014kol::energy_density(temperature));
+    double const guess = HRG_QGP::T_vs_e(HRG_QGP::energy_density(temperature));
+    std::printf("(%g) %.17g %g\n", temperature * hbarc_MeVfm, guess * hbarc_MeVfm, guess / temperature - 1.0);
+  }
+
+  void debug_T_vs_e() {
+    debug_T_vs_e_1(0.0010);
+    debug_T_vs_e_1(0.1000);
+    debug_T_vs_e_1(0.2000);
+    debug_T_vs_e_1(0.3000);
+    debug_T_vs_e_1(0.4000);
+    debug_T_vs_e_1(0.5000);
+    debug_T_vs_e_1(1.0000);
+    debug_T_vs_e_1(2.0000);
+    debug_T_vs_e_1(3.1415);
+    debug_T_vs_e_1(10.000);
+    debug_T_vs_e_1(50.000);
+    debug_T_vs_e_1(150.000);
+    debug_T_vs_e_1(200.000);
+    debug_T_vs_e_1(500.000);
+    debug_T_vs_e_1(1000.000);
+    debug_T_vs_e_1(2000.000);
+    debug_T_vs_e_1(5000.000);
+  }
+
   int cmd_resolist_eos(idt::runjam::runjam_context& ctx, idt::runjam::runjam_commandline_arguments const& args) {
     (void) args;
 
     // initialize
     if (!eosHRG) eosHRG = std::make_unique<eosHRG_t>(ctx);
+
+    //debug_T_vs_e(); return 0;
 
     save_HRG_eos(ctx);
     save_HotQCD2014kol_eos(ctx);

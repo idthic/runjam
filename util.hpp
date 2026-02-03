@@ -41,6 +41,13 @@ namespace util {
 }
 }
 
+#include <cstdarg>
+namespace idt::util {
+  std::string vstrprintf(const char* fmt, std::va_list va);
+  std::string strprintf(const char* fmt, ...);
+  std::string strprintf(std::string const& fmt, ...);
+}
+
 #include <random>
 
 namespace idt {
