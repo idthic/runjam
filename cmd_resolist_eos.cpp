@@ -205,7 +205,7 @@ namespace {
       double const trace_anomaly = (energy_density - 3.0 * pressure) / std::pow(temp, 4.0);
 
       std::fprintf(
-        file, "%22.16e %22.16e %22.16e %22.16e %22.16e %22.16\n",
+        file, "%22.16e %22.16e %22.16e %22.16e %22.16e %22.16e %22.16e\n",
         temp * hbarc_GeVfm,
         energy_density * hbarc_GeVfm,
         pressure * hbarc_GeVfm,
@@ -213,6 +213,35 @@ namespace {
         squared_sound_velocity,
         trace_anomaly,
         echeck_diff);
+    }
+
+    std::fclose(file);
+  }
+
+  template<typename GetThermalState>
+  void save_rfheos(idt::runjam::runjam_context& ctx, const char* filename, GetThermalState proc) {
+    std::FILE* const file = std::fopen(filename, "w");
+    if (!file) {
+      std::fprintf(stderr, "%s: failed to open the file\n", filename);
+      std::exit(1);
+    }
+
+    static const int itempN = 1000;
+    double const temp_min =  0.0005; // about T = 0.1 MeV
+    double const temp_max = 50.0000; // about T = 10 GeV
+    double const dlnT = std::log(temp_max / temp_min) / itempN;
+    std::fprintf(file, "eos_lnT %.16g %.16g %d\n", temp_min, temp_max, itempN);
+
+    for (int itemp = 0; itemp <= itempN; itemp++) {
+      double const temp = temp_min * std::exp(dlnT * itemp); // fm^{-1}
+
+      double state[4];
+      proc(state, temp);
+      double const energy_density = state[0];
+      double const pressure = state[1];
+
+      // e[fm^{-4}] p[fm^{-4}]
+      std::fprintf(file, "%23.17e %23.17e\n", energy_density, pressure);
     }
 
     std::fclose(file);
@@ -417,12 +446,18 @@ namespace {
 
   public:
     static void save_table_vs_temperature(idt::runjam::runjam_context& ctx, const char* filename);
+    static void save_rfheos(idt::runjam::runjam_context& ctx, const char* filename);
   };
 
   std::unique_ptr<EosHRG> eosHRG;
 
   void EosHRG::save_table_vs_temperature(idt::runjam::runjam_context& ctx, const char* filename) {
     save_eos_table_vs_temperature(ctx, filename, [] (double (&state)[4], double temperature) {
+      eosHRG->get_thermodynamic_quantities(&state[0], temperature);
+    });
+  }
+  void EosHRG::save_rfheos(idt::runjam::runjam_context& ctx, const char* filename) {
+    idt::runjam::save_rfheos(ctx, filename, [] (double (&state)[4], double temperature) {
       eosHRG->get_thermodynamic_quantities(&state[0], temperature);
     });
   }
@@ -649,6 +684,11 @@ namespace {
         get_thermodynamic_quantities(state, temperature);
       });
     }
+    static void save_rfheos(idt::runjam::runjam_context& ctx, const char* filename) {
+      idt::runjam::save_rfheos(ctx, filename, [] (double (&state)[4], double temperature) {
+        get_thermodynamic_quantities(state, temperature);
+      });
+    }
   };
 
   class HRG_QGP {
@@ -752,6 +792,12 @@ public:
         HRG_QGP::get_thermodynamic_quantities(&state[0], temperature);
       });
     }
+
+    static void save_rfheos(idt::runjam::runjam_context& ctx, const char* filename) {
+      idt::runjam::save_rfheos(ctx, filename, [] (double (&state)[4], double temperature){
+        HRG_QGP::get_thermodynamic_quantities(&state[0], temperature);
+      });
+    }
   };
 
 }
@@ -796,6 +842,11 @@ public:
     EosHRG::save_table_vs_temperature(ctx, "eos.txt");
     HotQCD2014kol::save_table_vs_temperature(ctx, "eos_lattice.txt");
     HRG_QGP::save_table_vs_temperature(ctx, "eos_QGP_HRG.txt");
+
+    std::system("mkdir -p out");
+    EosHRG::save_rfheos(ctx, "out/eos.rfheos.txt");
+    HotQCD2014kol::save_rfheos(ctx, "out/HotQCD2014kol.rfheos.txt");
+    HRG_QGP::save_rfheos(ctx, "out/HRG_QGP.rfheos.txt");
 
     return 0;
   }
