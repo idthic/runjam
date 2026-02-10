@@ -25,6 +25,7 @@
 #include <vector>
 #include "args.hpp"
 #include "config.hpp"
+#include "jamimpl.hpp"
 
 // std::filesystem emulation
 namespace fsys {
@@ -196,7 +197,17 @@ std::string runjam_context::cachedir() const {
 namespace {
 
   static void print_version() {
-    std::cout << "runjam (idt) " << PACKAGE_VERSION << idt::runjam::package_hash << std::endl;
+    std::cout << "runjam (idt) " << PACKAGE_VERSION << idt::runjam::package_hash;
+
+    std::vector<std::string> const versions = idt::runjam::libjam_versions();
+    if (!versions.empty()) {
+      std::cout << " [" << versions[0];
+      for (std::size_t i = 1; i < versions.size(); i++)
+        std::cout << ", " << versions[i];
+      std::cout << "]";
+    }
+
+    std::cout << std::endl;
   }
 
   static void print_help() {

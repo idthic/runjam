@@ -46,4 +46,5 @@ namespace libjam2 {
   };
 
   std::unique_ptr<irunner> create_runner(idt::runjam::runjam_context const&, std::string const& input_filename = "/dev/null");
+  std::string version_string();
 }

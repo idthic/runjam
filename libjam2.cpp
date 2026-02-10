@@ -107,6 +107,10 @@ namespace {
     virtual void generate(jam2::Collision* event, int mode = 0) override {
       (void) mode;
 
+#if LIBJAM2_VERSION_ID >= 200080000
+      int const optCollisionOrdering = this->fixtime->collisionOrdering();
+#endif
+
       for (idt::runjam::Particle const& particle: *m_particles) {
         int const pdg = get_jam2_pdg(particle.pdg);
 
@@ -118,9 +122,32 @@ namespace {
         auto const cp = new jam2::EventParticle(pdg, particle.mass, r, p, pa);
         cp->setPID(jamParticleData->pid(std::abs(pdg)));
 
+#if LIBJAM2_VERSION_ID >= 200080000
+        // set evolution time
+        if ((10 <= optCollisionOrdering && optCollisionOrdering < 20) || optCollisionOrdering == 21) {
+          // If we are in the tau-eta coordinates for jam2, and the particle is
+          // outside the light-cone, we ignore the particle.
+          double const tau2 = r.e() * r.e() - r.pz() * r.pz();
+          if (tau2 < 1e-10) continue;
+          double const tau_dummy = std::sqrt(tau2);
+          double const lambda_dummy = (p.e() * r.e() - p.pz() * r.pz()) / (p.e() * tau_dummy);
+          this->fixtime->initializeEvolutionTime(cp, tau_dummy, lambda_dummy, 100);
+        } else if (optCollisionOrdering < 110) {
+          // Note: We here assume that pHat = (1, 0, 0, 0).
+          this->fixtime->initializeEvolutionTime(cp, r.e(), 1.0 / p.e(), 100);
+        } else {
+          std::fprintf(stderr, "error(libjam2): unsupported collisionOrdering=%d\n", optCollisionOrdering);
+          std::exit(1);
+        }
+
+        // set decay time
+        cp->sampleLifetime(jamParticleData, this->fixtime);
+#else
+
         // compute decay time if it is resonance.
         double const decay_time = jamParticleData->lifeTime(pa, particle.mass, particle.mom[0]);
         cp->setLifeTime(particle.pos[0] + decay_time);
+#endif
 
         // put this particle into the particle list.
         event->setPList(cp);
@@ -210,4 +237,11 @@ namespace libjam2 {
     return std::make_unique<runner>(ctx, input_filename);
   }
 
+  std::string version_string() {
+#ifdef LIBJAM2_VERSION
+    return "libjam2 " LIBJAM2_VERSION;
+#else
+    return "libjam2";
+#endif
+  }
 }

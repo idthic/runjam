@@ -467,5 +467,15 @@ namespace runjam {
     return std::unique_ptr<IJamRunner>();
   }
 
+  std::vector<std::string> libjam_versions() {
+    std::vector<std::string> ret;
+#ifdef USE_LIBJAM1
+    ret.push_back("libjam1");
+#endif
+#ifdef USE_LIBJAM2
+    ret.push_back(libjam2::version_string());
+#endif
+    return ret;
+  }
 }
 }

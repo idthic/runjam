@@ -1,8 +1,8 @@
 #include "config.hpp"
-#include <string>
 #include <memory>
+#include <string>
+#include <vector>
 #include "ParticleSample.hpp"
-#include "args.hpp"
 
 #if defined(USE_LIBJAM2)
 namespace libjam2 { class runner; }
@@ -10,6 +10,7 @@ namespace libjam2 { class runner; }
 
 namespace idt {
 namespace runjam {
+  class runjam_context;
 
   int getParticleStableCode(int kf);
 
@@ -31,5 +32,6 @@ namespace runjam {
   std::unique_ptr<IJamRunner> create_jam1_runner();
   std::unique_ptr<IJamRunner> create_jam2_runner();
   std::unique_ptr<IJamRunner> create_runner(runjam_context const& ctx);
+  std::vector<std::string> libjam_versions();
 }
 }
