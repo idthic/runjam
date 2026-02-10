@@ -27,6 +27,7 @@
 #include "config.hpp"
 
 // std::filesystem emulation
+namespace idt {
 namespace fsys {
   static bool exists(const char* path) {
     struct stat st;
@@ -43,7 +44,7 @@ namespace fsys {
   static bool is_directory(std::string const& path) {
     return is_directory(path.c_str());
   }
-  static bool create_directories(const char* path) {
+  bool create_directories(const char* path) {
     if (is_directory(path)) return false;
 
     std::vector<char> buff(path, path + std::strlen(path) + 1);
@@ -56,9 +57,10 @@ namespace fsys {
     }
     return mkdir(path, 0777) == 0;
   }
-  static bool create_directories(std::string const& path) {
+  bool create_directories(std::string const& path) {
     return create_directories(path.c_str());
   }
+}
 }
 
 static bool starts_with(const char* str, const char* head) {

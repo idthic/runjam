@@ -29,6 +29,13 @@
 #include "util/context.hpp"
 
 namespace idt {
+namespace fsys {
+  bool create_directories(const char* path);
+  bool create_directories(std::string const& path);
+}
+}
+
+namespace idt {
 namespace runjam {
 
   class runjam_context: public idt::util::application_context {

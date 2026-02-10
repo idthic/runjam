@@ -839,14 +839,33 @@ public:
 
     //debug_T_vs_e(); return 0;
 
-    EosHRG::save_table_vs_temperature(ctx, "eos.txt");
-    HotQCD2014kol::save_table_vs_temperature(ctx, "eos_lattice.txt");
-    HRG_QGP::save_table_vs_temperature(ctx, "eos_QGP_HRG.txt");
+    std::string const outdir = ctx.outdir();
+    fsys::create_directories(outdir);
 
-    std::system("mkdir -p out");
-    EosHRG::save_rfheos(ctx, "out/eos.rfheos.txt");
-    HotQCD2014kol::save_rfheos(ctx, "out/HotQCD2014kol.rfheos.txt");
-    HRG_QGP::save_rfheos(ctx, "out/HRG_QGP.rfheos.txt");
+    std::string path;
+
+    ctx.read_config(path, "runjam_resolist_eos_fname_HRG", outdir + "/eos-HRG.txt");
+    EosHRG::save_table_vs_temperature(ctx, path.c_str());
+    if (ctx.read_config(path, "runjam_resolist_eos_fname_lattice")) {
+      // default: outdir + "/eos-HotQCD2014kol.txt"
+      HotQCD2014kol::save_table_vs_temperature(ctx, path.c_str());
+    }
+    ctx.read_config(path, "runjam_resolist_eos_fname_hybrid", outdir + "/eos-hybrid.txt");
+    HRG_QGP::save_table_vs_temperature(ctx, path.c_str());
+
+    // rfheos
+
+    if (ctx.read_config(path, "runjam_resolist_eos_fname_rfheos_HRG")) {
+      // default: outdir + "/eos-HRG.rfheos.txt"?
+      EosHRG::save_rfheos(ctx, path.c_str());
+    }
+    if (ctx.read_config(path, "runjam_resolist_eos_fname_rfheos_lattice")) {
+      // default: outdir + "/eos-HotQCD2014kol.rfheos.txt"?
+      HotQCD2014kol::save_rfheos(ctx, path.c_str());
+    }
+    // We save eos-hybrid.rfheos.txt by default
+    ctx.read_config(path, "runjam_resolist_eos_fname_rfheos_hybrid", outdir + "/eos-hybrid.rfheos.txt");
+    HRG_QGP::save_rfheos(ctx, path.c_str());
 
     return 0;
   }
