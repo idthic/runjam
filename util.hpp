@@ -28,8 +28,8 @@
 namespace idt {
   // static const double hbarc_MeVfm = 197.32; // hydrojet/src/spectra/ElementReso.h
   // static const double hbarc_MeVfm = 197.327053 ; // 197.327053 hydrojet/src/physicsbase/Const.h
-  static const double hbarc_MeVfm = 197.3269718; // 197.3269718(44) idt/rfh/i2/common/def.h
-  static const double hbarc_GeVfm = hbarc_MeVfm / 1000.0;
+  constexpr double hbarc_MeVfm = 197.3269718; // 197.3269718(44) idt/rfh/i2/common/def.h
+  constexpr double hbarc_GeVfm = hbarc_MeVfm / 1000.0;
 }
 
 namespace idt {
@@ -39,6 +39,13 @@ namespace util {
   bool ends_with(std::string const& s, const char* suffix);
   bool ends_with(const char* s, const char* suffix);
 }
+}
+
+#include <cstdarg>
+namespace idt::util {
+  std::string vstrprintf(const char* fmt, std::va_list va);
+  std::string strprintf(const char* fmt, ...);
+  std::string strprintf(std::string const& fmt, ...);
 }
 
 #include <random>

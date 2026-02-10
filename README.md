@@ -433,3 +433,20 @@ $ ./mktool.sh jam2-generate-resodata-full listAll.txt
 Note: The second call of the above command will generate data/ResonanceJam2.dat
 with column DEGEFF filled with the data extracted from "feeddown.txt".
 ```
+
+## resolist-eos
+
+Calculate the equation of state and save the table.  The following environment
+variables specify the paths to save the EoS tables.  The environment variables
+with its name containing `_rfheos_` save the file in the `rfheos` format of
+`rfh`.  The other environment variables specify the EoS table files with the
+six columns of $T, e, p, s, c_s^2, (e-3p)/T^4$.
+
+```
+@env runjam_resolist_eos_fname_HRG=$outdir/eos-HRG.txt
+@env runjam_resolist_eos_fname_lattice=
+@env runjam_resolist_eos_fname_hybrid=$outdir/eos-hybrid.txt
+@env runjam_resolist_eos_fname_rfheos_HRG=
+@env runjam_resolist_eos_fname_rfheos_lattice=
+@env runjam_resolist_eos_fname_rfheos_hybrid=$outdir/eos-hybrid.rfheos.txt
+```
